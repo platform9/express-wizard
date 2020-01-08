@@ -113,3 +113,16 @@ def qbert_get_cluster_attach_status(du_url, project_id, token, node_uuid):
     return(attach_status)
 
 
+def credsmanager_is_responding(du_url, project_id, token):
+    try:
+        api_endpoint = "credsmanager"
+        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
+        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers, timeout=5)
+        if pf9_response.status_code == 200:
+            return True
+    except:
+        return False
+
+    return False
+
+

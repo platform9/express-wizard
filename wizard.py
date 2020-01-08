@@ -12,6 +12,10 @@ import sys
 from os.path import expanduser
 import du_utils
 import pmk_utils
+import reports
+import datamodel
+import user_io
+import interview
 
 ################################################################################
 # early functions
@@ -35,7 +39,6 @@ except:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-################################################################################
 # input functions
 def _parse_args():
     ap = argparse.ArgumentParser(sys.argv[0],formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -43,372 +46,18 @@ def _parse_args():
     return ap.parse_args()
 
 
-def read_kbd(user_prompt, allowed_values, default_value, flag_echo=True, disallow_null=True):
-    input_is_valid = False
-    while not input_is_valid:
-        if sys.version_info[0] == 3:
-            if flag_echo:
-                user_input = input("{} [{}]: ".format(user_prompt,default_value))
-            else:
-                user_input = getpass.getpass(prompt="{}: ".format(user_prompt), stream=None)
-        if sys.version_info[0] == 2:
-            if flag_echo:
-                user_input = raw_input("{} [{}]: ".format(user_prompt,default_value))
-            else:
-                user_input = getpass.getpass(prompt="{}: ".format(user_prompt), stream=None)
-
-        if user_input == "":
-            if disallow_null == True:
-                if default_value != "":
-                    user_input = default_value
-                    input_is_valid = True
-                else:
-                    input_is_valid = False
-            else:
-                user_input = default_value
-                input_is_valid = True
-        else:
-            if len(allowed_values) == 0:
-                input_is_valid = True
-            else:
-                if user_input in allowed_values:
-                    input_is_valid = True
-
-    return(user_input)
-
-
-################################################################################
-# cluster functions
-def get_cluster_metadata(du, project_id, token):
-    if du['du_type'] in ['KVM','VMware']:
-        sys.stdout.write("Invalid region type for adding cluster ({})\n".format(du['du_type']))
-        return({})
-
-    # initialize cluster record
-    cluster_metadata = {}
-    cluster_metadata['record_source'] = "User-Defined"
-    cluster_metadata['du_url'] = du['url']
-    cluster_metadata['name'] = read_kbd("--> Cluster Name", [], '', True, True)
-    if cluster_metadata['name'] == "q":
-        return({})
-
-    # get current cluster settings (if already defined)
-    cluster_settings = get_cluster_record(du['url'], cluster_metadata['name'])
-    if cluster_settings:
-        name = cluster_settings['name']
-        containers_cidr = cluster_settings['containers_cidr']
-        services_cidr = cluster_settings['services_cidr']
-        master_vip_ipv4 = cluster_settings['master_vip_ipv4']
-        master_vip_iface = cluster_settings['master_vip_iface']
-        metallb_cidr = cluster_settings['metallb_cidr']
-        privileged = cluster_settings['privileged']
-        app_catalog_enabled = cluster_settings['app_catalog_enabled']
-        allow_workloads_on_master = cluster_settings['allow_workloads_on_master']
-    else:
-        containers_cidr = "192.168.0.0/16"
-        services_cidr = "192.169.0.0/16"
-        master_vip_ipv4 = ""
-        master_vip_iface = "eth0"
-        metallb_cidr = ""
-        privileged = "1"
-        app_catalog_enabled = "0"
-        allow_workloads_on_master = "0"
-
-    cluster_metadata['containers_cidr'] = read_kbd("--> Containers CIDR", [], containers_cidr, True, True)
-    if cluster_metadata['containers_cidr'] == "q":
-        return({})
-    cluster_metadata['services_cidr'] = read_kbd("--> Services CIDR", [], services_cidr, True, True)
-    if cluster_metadata['services_cidr'] == "q":
-        return({})
-    cluster_metadata['master_vip_ipv4'] = read_kbd("--> Master VIP", [], master_vip_ipv4, True, True)
-    if cluster_metadata['master_vip_ipv4'] == "q":
-        return({})
-    cluster_metadata['master_vip_iface'] = read_kbd("--> Interface Name for VIP", [], master_vip_iface, True, True)
-    if cluster_metadata['master_vip_iface'] == "q":
-        return({})
-    cluster_metadata['metallb_cidr'] = read_kbd("--> IP Range for MetalLB", [], metallb_cidr, True, True)
-    if cluster_metadata['metallb_cidr'] == "q":
-        return({})
-    cluster_metadata['privileged'] = read_kbd("--> Privileged API Mode", ['0','1'], privileged, True, True)
-    if cluster_metadata['privileged'] == "q":
-        return({})
-    cluster_metadata['app_catalog_enabled'] = read_kbd("--> Enable Helm Application Catalog", ['0','1'], app_catalog_enabled, True, True)
-    if cluster_metadata['app_catalog_enabled'] == "q":
-        return({})
-    cluster_metadata['allow_workloads_on_master'] = read_kbd("--> Enable Workloads on Master Nodes", ['0','1'], allow_workloads_on_master, True, True)
-    if cluster_metadata['allow_workloads_on_master'] == "q":
-        return({})
-
-    return(cluster_metadata)
-
-
-################################################################################
-# host functions
-def get_host_metadata(du, project_id, token):
-    if du['du_type'] == "KVM":
-        du_host_type = "kvm"
-    elif du['du_type'] == "Kubernetes":
-        du_host_type = "kubernetes"
-    elif du['du_type'] == "VMware":
-        du_host_type = "vmware"
-    elif du['du_type'] == "KVM/Kubernetes":
-        du_host_type = read_kbd("--> Host Type ['kvm','kubernetes']", ['kvm','kubernetes'], 'kvm', True, True)
-        if du_host_type == "q":
-            return({})
-
-    # initialize host record
-    host_metadata = create_host_entry()
-    host_metadata['record_source'] = "User-Defined"
-    host_metadata['du_host_type'] = du_host_type
-    host_metadata['hostname'] = read_kbd("--> Hostname", [], '', True, True)
-    if host_metadata['hostname'] == "q":
-        return({})
-
-    # get current host settings (if already defined)
-    host_settings = get_host_record(du['url'], host_metadata['hostname'])
-    if host_settings:
-        host_ip = host_settings['ip']
-        host_ip_interfaces = host_settings['ip_interfaces']
-        host_bond_config = host_settings['bond_config']
-        host_nova = host_settings['nova']
-        host_glance = host_settings['glance']
-        host_cinder = host_settings['cinder']
-        host_designate = host_settings['designate']
-        host_node_type = host_settings['node_type']
-        host_pf9_kube = host_settings['pf9-kube']
-        host_cluster_name = host_settings['cluster_name']
-        host_metadata['ip_interfaces'] = host_settings['ip_interfaces']
-        host_metadata['uuid'] = host_settings['uuid']
-    else:
-        host_ip = ""
-        host_bond_config = ""
-        host_nova = "y"
-        host_glance = "n"
-        host_cinder = "n"
-        host_designate = "n"
-        host_node_type = ""
-        host_pf9_kube = "n"
-        host_cluster_name = "Unassigned"
-        host_metadata['ip_interfaces'] = ""
-        host_metadata['uuid'] = ""
-
-    host_metadata['ip'] = read_kbd("--> Primary IP Address", [], host_ip, True, True)
-    if host_metadata['ip'] == "q":
-        return({})
-    if du_host_type == "kvm":
-        host_metadata['bond_config'] = read_kbd("--> Bond Config", [], host_bond_config, True, False)
-        if host_metadata['bond_config'] == "q":
-            return({})
-        host_metadata['nova'] = read_kbd("--> Enable Nova", ['y','n'], host_nova, True, True)
-        if host_metadata['nova'] == "q":
-            return({})
-        host_metadata['glance'] = read_kbd("--> Enable Glance", ['y','n'], host_glance, True, True)
-        if host_metadata['glance'] == "q":
-            return({})
-        host_metadata['cinder'] = read_kbd("--> Enable Cinder", ['y','n'], host_cinder, True, True)
-        if host_metadata['cinder'] == "q":
-            return({})
-        host_metadata['designate'] = read_kbd("--> Enable Designate", ['y','n'], host_designate, True, True)
-        if host_metadata['designate'] == "q":
-            return({})
-        host_metadata['node_type'] = ""
-        host_metadata['pf9-kube'] = "n"
-        host_metadata['cluster_name'] = ""
-    elif du_host_type == "kubernetes":
-        host_metadata['bond_config'] = ""
-        host_metadata['nova'] = ""
-        host_metadata['glance'] = ""
-        host_metadata['cinder'] = ""
-        host_metadata['designate'] = ""
-        host_metadata['pf9-kube'] = "y"
-        host_metadata['node_type'] = read_kbd("--> Node Type [master, worker]", ['master','worker'], host_node_type, True, True)
-        if host_metadata['node_type'] == "q":
-            return({})
-        host_metadata['cluster_name'] = select_cluster(du['url'], host_cluster_name)
-        if host_metadata['cluster_name'] == "q":
-            return({})
-    elif du_host_type == "vmware":
-        sys.stdout.write("INFO: vmware host detected\n")
-
-    return(host_metadata)
-
-
-################################################################################
-# du/region functions
-def get_du_creds(existing_du_url):
-    # initialize du data structure
-    du_metadata = create_du_entry()
-
-    if existing_du_url == None:
-        user_url = read_kbd("--> Region URL", [], '', True, True)
-        if user_url == 'q':
-            return({})
-        if user_url.startswith('http://'):
-            user_url = user_url.replace('http://','https://')
-        if not user_url.startswith('https://'):
-            user_url = "https://{}".format(user_url)
-    else:
-        user_url = existing_du_url
-
-    du_metadata['du_url'] = user_url
-    du_settings = get_du_metadata(du_metadata['du_url'])
-
-    # define du types
-    du_types = [
-        'KVM',
-        'Kubernetes',
-        'KVM/Kubernetes',
-        'VMware'
-    ]
-
-    if du_settings:
-        selected_du_type = du_settings['du_type']
-        du_user = du_settings['username']
-        du_password = du_settings['password']
-        du_tenant = du_settings['tenant']
-        git_branch = du_settings['git_branch']
-        region_name = du_settings['region']
-        region_proxy = du_settings['region_proxy']
-        region_dns = du_settings['dns_list']
-        region_auth_type = du_settings['auth_type']
-        auth_ssh_key = du_settings['auth_ssh_key']
-        auth_password = du_settings['auth_password']
-        auth_username = du_settings['auth_username']
-        region_bond_if_name = du_settings['bond_ifname']
-        region_bond_mode = du_settings['bond_mode']
-        region_bond_mtu = du_settings['bond_mtu']
-    else:
-        selected_du_type = ""
-        du_user = "admin@platform9.net"
-        du_password = ""
-        du_tenant = "service"
-        git_branch = "master"
-        region_name = ""
-        region_proxy = "-"
-        region_dns = "8.8.8.8,8.8.4.4"
-        region_auth_type = "sshkey"
-        auth_ssh_key = "~/.ssh/id_rsa"
-        auth_password = ""
-        auth_username = "centos"
-        region_bond_if_name = "bond0"
-        region_bond_mode = "1"
-        region_bond_mtu = "9000"
-
-    # prompt for du type
-    cnt = 1
-    allowed_values = ['q']
-    for target_type in du_types:
-        sys.stdout.write("    {}. {}\n".format(cnt,target_type))
-        allowed_values.append(str(cnt))
-        cnt += 1
-    user_input = read_kbd("--> Region Type", allowed_values, selected_du_type, True, True)
-    if user_input == 'q':
-        return({})
-    else:
-        if sys.version_info[0] == 2:
-            if type(user_input) is unicode:
-                idx = du_types.index(selected_du_type)
-            else:
-                idx = int(user_input) - 1
-        else:
-            if type(user_input) == str:
-                idx = du_types.index(selected_du_type)
-            else:
-                idx = int(user_input) - 1
-        selected_du_type = du_types[idx]
-
-    # set du type
-    du_metadata['du_type'] = selected_du_type
-    du_metadata['region_name'] = ""
-
-    # get common du parameters
-    du_metadata['du_user'] = read_kbd("--> Region Username", [], du_user, True, True)
-    if du_metadata['du_user'] == 'q':
-        return({})
-    du_metadata['du_password'] = read_kbd("--> Region Password", [], '', False, True)
-    if du_metadata['du_password'] == 'q':
-        return({})
-    du_metadata['du_tenant'] = read_kbd("--> Region Tenant", [], du_tenant, True, True)
-    if du_metadata['du_tenant'] == 'q':
-        return({})
-    du_metadata['git_branch'] = read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True)
-    if du_metadata['git_branch'] == 'q':
-        return({})
-    #du_metadata['region_name'] = read_kbd("--> Region Name", [], region_name, True, True)
-    #if du_metadata['region_name'] == 'q':
-    #    return({})
-    du_metadata['region_auth_type'] = read_kbd("--> Authentication Type ['simple','sshkey']", ['simple','sshkey'], region_auth_type, True, True)
-    if du_metadata['region_auth_type'] == 'q':
-        return({})
-    du_metadata['auth_username'] = read_kbd("--> Username for Remote Access", [], auth_username, True, True)
-    if du_metadata['auth_username'] == 'q':
-        return({})
-    if du_metadata['region_auth_type'] == "simple":
-        du_metadata['auth_password'] = read_kbd("--> Password for Remote Access", [], auth_password, False, True)
-        if du_metadata['auth_password'] == 'q':
-            return({})
-    else:
-        du_metadata['auth_password'] = ""
-  
-    if du_metadata['region_auth_type'] == "sshkey":
-        du_metadata['auth_ssh_key'] = read_kbd("--> SSH Key for Remote Access", [], auth_ssh_key, True, True)
-        if du_metadata['auth_ssh_key'] == 'q':
-            return({})
-    else:
-        du_metadata['auth_ssh_key'] = ""
-
-    # get du-specific parameters
-    if selected_du_type in ['KVM','KVM/Kubernetes']:
-        du_metadata['region_proxy'] = read_kbd("--> Proxy", [], region_proxy, True, True)
-        if du_metadata['region_proxy'] == 'q':
-            return({})
-        du_metadata['region_dns'] = read_kbd("--> DNS Server (comma-delimited list or IPs)", [], region_dns, True, True)
-        if du_metadata['region_dns'] == 'q':
-            return({})
-        du_metadata['region_bond_if_name'] = read_kbd("--> Interface Name (for OVS Bond)", [], region_bond_if_name, True, True)
-        if du_metadata['region_bond_if_name'] == 'q':
-            return({})
-        du_metadata['region_bond_mode'] = read_kbd("--> Bond Mode", [], region_bond_mode, True, True)
-        if du_metadata['region_bond_mode'] == 'q':
-            return({})
-        du_metadata['region_bond_mtu'] = read_kbd("--> MTU for Bond Interface", [], region_bond_mtu, True, True)
-        if du_metadata['region_bond_mtu'] == 'q':
-            return({})
-    else:
-        du_metadata['region_proxy'] = ""
-        du_metadata['region_dns'] = ""
-        du_metadata['region_bond_if_name'] = ""
-        du_metadata['region_bond_mode'] = ""
-        du_metadata['region_bond_mtu'] = ""
-
-    return(du_metadata)
-
-
-def credsmanager_is_responding(du_url, project_id, token):
-    try:
-        api_endpoint = "credsmanager"
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers, timeout=5)
-        if pf9_response.status_code == 200:
-            return True
-    except:
-        return False
-
-    return False
-
-
 def get_du_type(du_url, project_id, token):
     region_type = "-"
     qbert_status = pmk_utils.qbert_is_responding(du_url, project_id, token)
     if qbert_status == True:
         region_type = "Kubernetes"
-        credsmanager_status = credsmanager_is_responding(du_url, project_id, token)
+        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
         if credsmanager_status == True:
             region_type = "KVM/Kubernetes"
         else:
             region_type = "VMware"
     else:
-        credsmanager_status = credsmanager_is_responding(du_url, project_id, token)
+        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
         if credsmanager_status == True:
             region_type = "KVM"
         else:
@@ -435,7 +84,7 @@ def discover_du_clusters(du_url, du_type, project_id, token):
 
     # process discovered clusters
     for cluster in json_response:
-        cluster_record = create_cluster_entry()
+        cluster_record = datamodel.create_cluster_entry()
         cluster_record['du_url'] = du_url
         cluster_record['name'] = cluster['name']
         cluster_record['uuid'] = cluster['uuid']
@@ -535,7 +184,7 @@ def discover_du_hosts(du_url, du_type, project_id, token):
         if host_primary_ip == "":
             ssh_status = "No Primary IP"
         else:
-            du_metadata = get_du_metadata(du_url)
+            du_metadata = datamodel.get_du_metadata(du_url,CONFIG_FILE)
             if du_metadata:
                 ssh_status = ssh_validate_login(du_metadata, host_primary_ip)
                 if ssh_status == True:
@@ -545,7 +194,7 @@ def discover_du_hosts(du_url, du_type, project_id, token):
             else:
                 ssh_status = "Unvalidated"
 
-        host_record = create_host_entry()
+        host_record = datamodel.create_host_entry()
         host_record['du_url'] = du_url
         host_record['du_type'] = du_type
         host_record['ip'] = host_primary_ip
@@ -593,84 +242,10 @@ def get_du_hosts(du_url, project_id, token):
     return(num_hosts)
 
 
-def report_cluster_info(cluster_entries):
-    from prettytable import PrettyTable
-
-    sys.stdout.write("\n------ Kubernetes Clusters ------\n")
-    if not os.path.isfile(CLUSTER_FILE):
-        sys.stdout.write("No clusters have been defined yet (run 'Add/Update Cluster')\n")
-        return()
-
-    du_table = PrettyTable()
-    du_table.field_names = ["Name","Containers","Services","VIP","MetalLB","Taint","UUID"]
-    du_table.title = "Kubernetes Clusters"
-    du_table.header = True
-    du_table.align["Name"] = "l"
-    du_table.align["Containers"] = "l"
-    du_table.align["Services"] = "l"
-    du_table.align["VIP"] = "l"
-    du_table.align["MetalLB"] = "l"
-    du_table.align["Taint"] = "l"
-    du_table.align["UUID"] = "l"
-
-    for cluster in cluster_entries:
-        table_row = [
-            cluster['name'],
-            cluster['containers_cidr'],
-            cluster['services_cidr'],
-            cluster['master_vip_ipv4'],
-            cluster['metallb_cidr'],
-            cluster['allow_workloads_on_master'],
-            cluster['uuid']
-        ]
-        du_table.add_row(table_row)
-
-    print(du_table)
-
-
 def dump_var(target_var):
     from inspect import getmembers
     from pprint import pprint
     pprint(getmembers(target_var))
-
-
-def report_du_info(du_entries):
-    from prettytable import PrettyTable
-
-    sys.stdout.write("\n------ Region(s) ------\n")
-    if not os.path.isfile(CONFIG_FILE):
-        sys.stdout.write("No regions have been defined yet (run 'Add/Update Region')\n")
-        return()
-
-    du_table = PrettyTable()
-    du_table.title = "Region Configuration"
-    du_table.field_names = ["Region URL","Region Auth","Region Type","Region Name","Tenant","SSH Auth Type","SSH User","# Hosts"]
-    du_table.align["Region URL"] = "l"
-    du_table.align["Region Auth"] = "l"
-    du_table.align["Region Type"] = "l"
-    du_table.align["Region Name"] = "l"
-    du_table.align["Tenant"] = "l"
-    du_table.align["SSH Auth Type"] = "l"
-    du_table.align["SSH User"] = "l"
-    du_table.align["# Hosts"] = "l"
-
-    for du in du_entries:
-        num_hosts = "-"
-        project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
-        if token == None:
-            auth_status = "Failed"
-            region_type = ""
-        else:
-            auth_status = "OK"
-            if du['auth_type'] == "sshkey":
-                ssh_keypass = du['auth_ssh_key']
-            else:
-                ssh_keypass = "********"
-            num_hosts = get_defined_hosts(du['url'])
-
-        du_table.add_row([du['url'], auth_status, du['du_type'], du['region'], du['tenant'], du['auth_type'], du['auth_username'], num_hosts])
-
-    print(du_table)
 
 
 def map_yn(map_key):
@@ -696,169 +271,6 @@ def ssh_validate_login(du_metadata, host_ip):
     return(False)
 
 
-def get_defined_hosts(du_url):
-    num_discovered_hosts = 0
-
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
-            host_configs = json.load(json_file)
-        for host in host_configs:
-            if host['du_url'] == du_url:
-                num_discovered_hosts += 1
-
-    return(num_discovered_hosts)
-
-
-def report_host_info(host_entries):
-    from prettytable import PrettyTable
-
-    if not os.path.isfile(HOST_FILE):
-        sys.stdout.write("\nNo hosts have been defined yet (run 'Add/Update Hosts')\n")
-        return()
-
-    if len(host_entries) == 0:
-        sys.stdout.write("\nNo hosts have been defined yet (run 'Add/Update Hosts')\n")
-        return()
-    
-    du_metadata = get_du_metadata(host_entries[0]['du_url'])
-
-    # display KVM hosts
-    if du_metadata['du_type'] == "KVM":
-        host_table = PrettyTable()
-        host_table.field_names = ["HOSTNAME","Primary IP","SSH Auth","Source","Nova","Glance","Cinder","Designate","IP Interfaces"]
-        host_table.title = "KVM Hosts"
-        host_table.align["HOSTNAME"] = "l"
-        host_table.align["Primary IP"] = "l"
-        host_table.align["SSH Auth"] = "l"
-        host_table.align["Source"] = "l"
-        host_table.align["Nova"] = "l"
-        host_table.align["Glance"] = "l"
-        host_table.align["Cinder"] = "l"
-        host_table.align["Designate"] = "l"
-        host_table.align["IP Interfaces"] = "l"
-        num_kvm_rows = 0
-        for host in host_entries:
-            if host['du_host_type'] != "kvm":
-                continue
-            host_table.add_row([host['hostname'],host['ip'], host['ssh_status'], host['record_source'], map_yn(host['nova']), map_yn(host['glance']), map_yn(host['cinder']), map_yn(host['designate']), host['ip_interfaces']])
-            num_kvm_rows += 1
-        if num_kvm_rows > 0:
-            sys.stdout.write("\n------ KVM Hosts ------\n")
-            print(host_table)
-
-    if du_metadata['du_type'] == "VMware":
-        host_table = PrettyTable()
-        host_table.field_names = ["HOSTNAME","Primary IP","SSH Auth","Source","Nova","Glance","Cinder","Designate"]
-        host_table.title = "KVM Hosts"
-        host_table.align["HOSTNAME"] = "l"
-        host_table.align["Primary IP"] = "l"
-        host_table.align["SSH Auth"] = "l"
-        host_table.align["Source"] = "l"
-        host_table.align["Nova"] = "l"
-        host_table.align["Glance"] = "l"
-        host_table.align["Cinder"] = "l"
-        host_table.align["Designate"] = "l"
-        num_kvm_rows = 0
-        for host in host_entries:
-            if host['du_host_type'] != "kvm":
-                continue
-            host_table.add_row([host['hostname'],host['ip'], host['ssh_status'], host['record_source'], map_yn(host['nova']), map_yn(host['glance']), map_yn(host['cinder']), map_yn(host['designate'])])
-            num_kvm_rows += 1
-        if num_kvm_rows > 0:
-            sys.stdout.write("\n------ VMware Gateways ------\n")
-            print(host_table)
-
-    # print K8s nodes
-    host_table = PrettyTable()
-    host_table.field_names = ["HOSTNAME","Primary IP","SSH Auth","Source","Node Type","Cluster Name","Attached"]
-    host_table.title = "Kubernetes Hosts"
-    host_table.align["HOSTNAME"] = "l"
-    host_table.align["Primary IP"] = "l"
-    host_table.align["SSH Auth"] = "l"
-    host_table.align["Source"] = "l"
-    host_table.align["Node Type"] = "l"
-    host_table.align["Cluster Name"] = "l"
-    host_table.align["Attached"] = "l"
-    num_k8s_rows = 0
-    for host in host_entries:
-        if host['du_host_type'] != "kubernetes":
-            continue
-        if host['cluster_name'] == "":
-            cluster_assigned = "Unassigned"
-        else:
-            cluster_assigned = host['cluster_name']
-
-        host_table.add_row([host['hostname'], host['ip'], host['ssh_status'], host['record_source'], host['node_type'], cluster_assigned, host['cluster_attach_status']])
-        num_k8s_rows += 1
-    if num_k8s_rows > 0:
-        sys.stdout.write("\n------ Kubernetes Nodes ------\n")
-        print(host_table)
-
-    # print unassigned hosts
-    unassigned_table = PrettyTable()
-    unassigned_table.field_names = ["HOSTNAME","Primary IP","SSH Auth","Source","IP Interfaces"]
-    unassigned_table.title = "Unassigned Hosts"
-    unassigned_table.align["HOSTNAME"] = "l"
-    unassigned_table.align["Primary IP"] = "l"
-    unassigned_table.align["SSH Auth"] = "l"
-    unassigned_table.align["Source"] = "l"
-    unassigned_table.align["IP Interfaces"] = "l"
-    num_unassigned_rows = 0
-    for host in host_entries:
-        if host['du_host_type'] != "unassigned":
-            continue
-
-        unassigned_table.add_row([host['hostname'], host['ip'], host['ssh_status'], host['record_source'],host['ip_interfaces']])
-        num_unassigned_rows += 1
-    if num_unassigned_rows > 0:
-        sys.stdout.write("\n------ Unassigned Hosts ------\n")
-        print(unassigned_table)
-
-
-def select_cluster(du_url, current_assigned_cluster):
-    selected_cluster = "Unassigned"
-    if not os.path.isdir(CONFIG_DIR):
-        return(selected_cluster)
-    elif not os.path.isfile(CLUSTER_FILE):
-        return(selected_cluster)
-    else:
-        defined_clusters = get_clusters(du_url)
-        if len(defined_clusters) == 0:
-            return(selected_cluster)
-        else:
-            cnt = 1
-            allowed_values = ['q','n']
-            sys.stdout.write("    Available Clusters:\n")
-            for cluster in defined_clusters:
-                if cluster['name'] == current_assigned_cluster:
-                    current_assigned_cluster = cnt
-                sys.stdout.write("    {}. {}\n".format(cnt,cluster['name']))
-                allowed_values.append(str(cnt))
-                cnt += 1
-
-            # manage unassigned option
-            if current_assigned_cluster == "Unassigned":
-                current_assigned_cluster = cnt
-            allowed_values.append(str(cnt))
-            sys.stdout.write("    {}. Unassigned\n".format(cnt))
-
-            user_input = read_kbd("--> Select Cluster", allowed_values, current_assigned_cluster, True, True)
-            if user_input == "q":
-                return(selected_cluster)
-            else:
-                if sys.version_info[0] == 2:
-                    idx = int(user_input)
-                else:
-                    idx = int(user_input)
-
-                if (int(user_input)) == cnt:
-                    return(selected_cluster)
-                idx = int(user_input) - 1
-                selected_cluster = defined_clusters[idx]['name']
-
-        return(selected_cluster)
-
-
 def add_edit_du():
     if not os.path.isdir(CONFIG_DIR):
         return(None)
@@ -877,7 +289,7 @@ def add_edit_du():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True)
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -905,7 +317,7 @@ def select_du():
                 sys.stdout.write("{}. {}\n".format(cnt,du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = read_kbd("Select Region", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
             if user_input == "q":
                 return({})
             else:
@@ -930,32 +342,6 @@ def get_configs(du_url=None):
         return(filtered_du_configs)
 
 
-def get_cluster_record(du_url, cluster_name):
-    cluster_metadata = {}
-    if os.path.isfile(CLUSTER_FILE):
-        with open(CLUSTER_FILE) as json_file:
-            cluster_configs = json.load(json_file)
-        for cluster in cluster_configs:
-            if cluster['du_url'] == du_url and cluster['name'] == cluster_name:
-                cluster_metadata = dict(cluster)
-                break
-
-    return(cluster_metadata)
-
-
-def get_host_record(du_url, hostname):
-    host_metadata = {}
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
-            host_configs = json.load(json_file)
-        for host in host_configs:
-            if host['du_url'] == du_url and host['hostname'] == hostname:
-                host_metadata = dict(host)
-                break
-
-    return(host_metadata)
-
-
 def delete_du(target_du):
     new_du_list = []
     if os.path.isfile(CONFIG_FILE):
@@ -975,36 +361,6 @@ def delete_du(target_du):
             json.dump(new_du_list, outfile)
     except:
         sys.stdout.write("\nERROR: failed to update Region database: {}".format(CONFIG_FILE))
-
-
-def get_du_metadata(du_url):
-    du_config = {}
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE) as json_file:
-            du_configs = json.load(json_file)
-        for du in du_configs:
-            if du['url'] == du_url:
-                du_config = dict(du)
-                break
-
-    return(du_config)
-
-
-def get_clusters(du_url):
-    du_clusters = []
-    if os.path.isfile(CLUSTER_FILE):
-        with open(CLUSTER_FILE) as json_file:
-            du_clusters = json.load(json_file)
-
-    if du_url == None:
-        filtered_clusters = list(du_clusters)
-    else:
-        filtered_clusters = []
-        for cluster in du_clusters:
-            if cluster['du_url'] == du_url:
-                filtered_clusters.append(cluster)
-
-    return(filtered_clusters)
 
 
 def get_hosts(du_url):
@@ -1031,7 +387,7 @@ def write_cluster(cluster):
         except:
             fail("failed to create directory: {}".format(CONFIG_DIR))
 
-    current_clusters = get_clusters(None)
+    current_clusters = datamodel.get_clusters(None,CLUSTER_FILE)
     if len(current_clusters) == 0:
         current_clusters.append(cluster)
         with open(CLUSTER_FILE, 'w') as outfile:
@@ -1112,9 +468,9 @@ def add_cluster(du):
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
-        cluster_metadata = get_cluster_metadata(du, project_id, token)
+        cluster_metadata = interview.get_cluster_metadata(du, project_id, token, CLUSTER_FILE)
         if cluster_metadata:
-            cluster = create_cluster_entry()
+            cluster = datamodel.create_cluster_entry()
             cluster['du_url'] = cluster_metadata['du_url']
             cluster['name'] = cluster_metadata['name']
             cluster['record_source'] = "User-Defined"
@@ -1137,9 +493,9 @@ def add_host(du):
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
-        host_metadata = get_host_metadata(du, project_id, token)
+        host_metadata = interview.get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE)
         if host_metadata:
-            host = create_host_entry()
+            host = datamodel.create_host_entry()
             host['du_url'] = du['url']
             host['du_host_type'] = host_metadata['du_host_type']
             host['ip'] = host_metadata['ip']
@@ -1160,7 +516,7 @@ def add_host(du):
             if host['ip'] == "":
                 ssh_status = "No Primary IP"
             else:
-                du_metadata = get_du_metadata(du['url'])
+                du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
                 if du_metadata:
                     ssh_status = ssh_validate_login(du_metadata, host['ip'])
                     if ssh_status == True:
@@ -1173,71 +529,6 @@ def add_host(du):
 
             # persist configurtion
             write_host(host)
-
-
-def create_du_entry():
-    du_record = {
-        'url': "",
-        'du_type': "",
-        'username': "",
-        'password': "",
-        'tenant': "",
-        'git_branch': "",
-        'region': "",
-        'region_proxy': "-",
-        'dns_list': "",
-        'auth_type': "",
-        'auth_ssh_key': "",
-        'auth_password': "",
-        'auth_username': "",
-        'bond_ifname': "",
-        'bond_mode': "",
-        'bond_mtu': ""
-    }
-    return(du_record)
-
-
-def create_cluster_entry():
-    cluster_record = {
-        'du_url': "",
-        'name': "",
-        'record_source': "",
-        'uuid': "",
-        'containers_cidr': "",
-        'services_cidr': "",
-        'master_vip_ipv4': "",
-        'master_vip_iface': "",
-        'metallb_cidr': "",
-        'privileged': "",
-        'app_catalog_enabled': "",
-        'allow_workloads_on_master': ""
-    }
-    return(cluster_record)
-
-
-def create_host_entry():
-    host_record = {
-        'du_url': "",
-        'du_type': "",
-        'ip': "",
-        'uuid': "",
-        'ip_interfaces': "",
-        'du_host_type': "",
-        'hostname': "",
-        'record_source': "",
-        'ssh_status': "",
-        'bond_config': "",
-        'pf9-kube': "",
-        'nova': "",
-        'glance': "",
-        'cinder': "",
-        'designate': "",
-        'node_type': "",
-        'cluster_name': "",
-        'cluster_attach_status': "",
-        'cluster_uuid': ""
-    }
-    return(host_record)
 
 
 def get_nodepool_id(du_url,project_id,token):
@@ -1316,12 +607,12 @@ def add_region(existing_du_url):
         sys.stdout.write("\nUpdate Region:\n")
 
     # du_metadata is created by create_du_entry() - and initialized or populated from existing du record
-    du_metadata = get_du_creds(existing_du_url)
+    du_metadata = interview.get_du_creds(existing_du_url,CONFIG_FILE)
     if not du_metadata:
         return(du_metadata)
     else:
         # initialize du data structure
-        du = create_du_entry()
+        du = datamodel.create_du_entry()
         du['url'] = du_metadata['du_url']
         du['du_type'] = du_metadata['du_type']
         du['username'] = du_metadata['du_user']
@@ -1363,12 +654,12 @@ def add_region(existing_du_url):
             if sub_region != du['url'].replace('https://',''):
                 sys.stdout.write("{}. {}\n".format(cnt, sub_region))
                 cnt += 1
-        user_input = read_kbd("\nDo you want to discover these regions as well", ['q','y','n'], 'n', True, True)
+        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q','y','n'], 'n', True, True)
         if user_input == "q":
             return(None)
         elif user_input == "y":
             for sub_region in sub_regions:
-                sub_du = create_du_entry()
+                sub_du = datamodel.create_du_entry()
                 sub_du['url'] = "https://{}".format(sub_region)
                 sub_du['du_type'] = "KVM/Kubernetes"
                 sub_du['region'] = du_name_list[sub_regions.index(sub_region)]
@@ -1397,9 +688,9 @@ def add_region(existing_du_url):
             sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
             region_type = get_du_type(discover_target['url'], project_id, token)
             if discover_target['url'] == du_metadata['du_url']:
-                confirmed_region_type = read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, du_metadata['du_type'], True, True)
+                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, du_metadata['du_type'], True, True)
             else:
-                confirmed_region_type = read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
+                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
             discover_target['du_type'] = confirmed_region_type
         write_config(discover_target)
 
@@ -1428,7 +719,7 @@ def add_region(existing_du_url):
                 discovered_clusters = discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
 
                 # get existing/user-defined clusters for region
-                defined_clusters = get_clusters(discover_target['url'])
+                defined_clusters = datamodel.get_clusters(discover_target['url'],CLUSTER_FILE)
 
                 # create any missing clusters
                 for cluster in defined_clusters:
@@ -1446,7 +737,7 @@ def add_region(existing_du_url):
 
 
 def get_cluster_uuid(du_url, cluster_name):
-    cluster_settings = get_cluster_record(du_url, cluster_name)
+    cluster_settings = datamodel.get_cluster_record(du_url, cluster_name, CLUSTER_FILE)
     if cluster_settings:
         return(cluster_settings['uuid'])
 
@@ -1689,7 +980,7 @@ def tail_log(p):
 
 def invoke_express(express_config, express_inventory, target_inventory, role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
-    user_input = read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 'n', True, True)
     if user_input == 'q':
         return()
     if user_input in ['y','n']:
@@ -1700,7 +991,7 @@ def invoke_express(express_config, express_inventory, target_inventory, role_fla
         else:
             wait_for_job(p)
 
-    user_input = read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True)
     if user_input == 'q':
         return()
     if role_flag == 1:
@@ -1761,20 +1052,20 @@ def run_express(du, host_entries):
     custom_idx = cnt
     sys.stdout.write("    {}. custom inventory\n".format(cnt))
     allowed_values.append(str(cnt))
-    user_input = read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '', True, True)
     if user_input == "q":
         return()
     if int(user_input) != custom_idx:
         idx = int(user_input) - 1
         target_inventory = express_inventories[idx]
     else:
-        user_input = read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True)
+        user_input = user_io.read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True)
         target_inventory = user_input
 
     sys.stdout.write("\nPF9-Express Role Assignment\n")
     sys.stdout.write("    1. Install Hostagent\n")
     sys.stdout.write("    2. Install Hostagent and Assign Roles\n")
-    assign_roles = read_kbd("\nRole Assignment", ['q','1','2'], '1', True, True)
+    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '1', True, True)
     if assign_roles == "q":
         return()
     else:
@@ -1811,7 +1102,7 @@ def view_log(log_files):
         sys.stdout.write("{}. {}\n".format(cnt,log_file))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = read_kbd("Select Log", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True)
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
@@ -1910,7 +1201,7 @@ def menu_level1():
     user_input = ""
     while not user_input in ['q','Q']:
         display_menu1()
-        user_input = read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
             selected_du = select_du()
             if selected_du:
@@ -1950,7 +1241,7 @@ def menu_level0():
     user_input = ""
     while not user_input in ['q','Q']:
         display_menu0()
-        user_input = read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = add_edit_du()
@@ -1961,7 +1252,7 @@ def menu_level0():
                     target_du = selected_du
                 new_du_list = add_region(target_du)
                 if new_du_list:
-                    report_du_info(new_du_list)
+                    reports.report_du_info(new_du_list,CONFIG_FILE,HOST_FILE)
         elif user_input == '2':
             action_header("MANAGE HOSTS")
             sys.stdout.write("\nSelect Region to add Host to:")
@@ -1971,7 +1262,7 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = add_host(selected_du)
-                        user_input = read_kbd("\nAdd Another Host?", ['y','n'], 'n', True, True)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'n', True, True)
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '3':
@@ -1987,12 +1278,12 @@ def menu_level0():
             if selected_du:
                 if selected_du != "q":
                     du_entries = get_configs(selected_du['url'])
-                    report_du_info(du_entries)
+                    reports.report_du_info(du_entries,CONFIG_FILE,HOST_FILE)
                     host_entries = get_hosts(selected_du['url'])
-                    report_host_info(host_entries)
+                    reports.report_host_info(host_entries,HOST_FILE,CONFIG_FILE)
                     if selected_du['du_type'] in ['Kubernetes','KVM/Kubernetes']:
-                        cluster_entries = get_clusters(selected_du['url'])
-                        report_cluster_info(cluster_entries)
+                        cluster_entries = datamodel.get_clusters(selected_du['url'],CLUSTER_FILE)
+                        reports.report_cluster_info(cluster_entries,CLUSTER_FILE)
         elif user_input == '5':
             action_header("ONBOARD HOSTS")
             selected_du = select_du()

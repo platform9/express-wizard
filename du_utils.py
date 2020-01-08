@@ -1,6 +1,7 @@
 import requests
 import json
 
+
 def login(du_host, username, password, project_name):
     url = "{}/keystone/v3/auth/tokens?nocatalog".format(du_host)
     body = {
