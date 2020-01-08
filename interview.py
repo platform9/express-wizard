@@ -4,6 +4,12 @@ import io
 import user_io
 import datamodel
 import interview
+import du_utils
+import ssh_utils
+import resmgr_utils
+import pmk_utils
+import datamodel
+
 
 def get_cluster_metadata(du, project_id, token, CLUSTER_FILE):
     if du['du_type'] in ['KVM','VMware']:
@@ -245,9 +251,11 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
         region_bond_mtu = du_settings['bond_mtu']
     else:
         selected_du_type = ""
-        du_user = "admin@platform9.net"
+        #du_user = "admin@platform9.net"
+        #du_tenant = "service"
+        du_user = "pf9-kubeheat"
+        du_tenant = "svc-pmo"
         du_password = ""
-        du_tenant = "service"
         git_branch = "master"
         region_name = ""
         region_proxy = "-"
@@ -377,5 +385,236 @@ def add_edit_du(CONFIG_DIR, CONFIG_FILE):
                 idx = int(user_input) - 1
                 return(current_config[idx]['url'])
         return(None)
+
+
+def select_du(CONFIG_DIR,CONFIG_FILE):
+    if not os.path.isdir(CONFIG_DIR):
+        sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+    elif not os.path.isfile(CONFIG_FILE):
+        sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+    else:
+        current_config = datamodel.get_configs(CONFIG_FILE)
+        if len(current_config) == 0:
+            sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+        else:
+            cnt = 1
+            allowed_values = ['q']
+            sys.stdout.write("\n")
+            for du in current_config:
+                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
+            if user_input == "q":
+                return({})
+            else:
+                idx = int(user_input) - 1
+                return(current_config[idx])
+        return({})
+
+
+def add_cluster(du,CONFIG_DIR,CLUSTER_FILE):
+    sys.stdout.write("\nAdding Cluster to Region: {}\n".format(du['url']))
+    project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
+    if token == None:
+        sys.stdout.write("--> failed to login to region")
+    else:
+        cluster_metadata = interview.get_cluster_metadata(du, project_id, token, CLUSTER_FILE)
+        if cluster_metadata:
+            cluster = datamodel.create_cluster_entry()
+            cluster['du_url'] = cluster_metadata['du_url']
+            cluster['name'] = cluster_metadata['name']
+            cluster['record_source'] = "User-Defined"
+            cluster['containers_cidr'] = cluster_metadata['containers_cidr']
+            cluster['services_cidr'] = cluster_metadata['services_cidr']
+            cluster['master_vip_ipv4'] = cluster_metadata['master_vip_ipv4']
+            cluster['master_vip_iface'] = cluster_metadata['master_vip_iface']
+            cluster['metallb_cidr'] = cluster_metadata['metallb_cidr']
+            cluster['privileged'] = cluster_metadata['privileged']
+            cluster['app_catalog_enabled'] = cluster_metadata['app_catalog_enabled']
+            cluster['allow_workloads_on_master'] = cluster_metadata['allow_workloads_on_master']
+
+            # persist configurtion
+            datamodel.write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE)
+
+
+def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
+    sys.stdout.write("\nAdding Host to Region: {}\n".format(du['url']))
+    project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
+    if token == None:
+        sys.stdout.write("--> failed to login to region")
+    else:
+        host_metadata = interview.get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE)
+        if host_metadata:
+            host = datamodel.create_host_entry()
+            host['du_url'] = du['url']
+            host['du_host_type'] = host_metadata['du_host_type']
+            host['ip'] = host_metadata['ip']
+            host['uuid'] = host_metadata['uuid']
+            host['ip_interfaces'] = host_metadata['ip_interfaces']
+            host['hostname'] = host_metadata['hostname']
+            host['record_source'] = host_metadata['record_source']
+            host['bond_config'] = host_metadata['bond_config']
+            host['pf9-kube'] = host_metadata['pf9-kube']
+            host['nova'] = host_metadata['nova']
+            host['glance'] = host_metadata['glance']
+            host['cinder'] = host_metadata['cinder']
+            host['designate'] = host_metadata['designate']
+            host['node_type'] = host_metadata['node_type']
+            host['cluster_name'] = host_metadata['cluster_name']
+
+            # validate ssh connectivity
+            if host['ip'] == "":
+                ssh_status = "No Primary IP"
+            else:
+                du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
+                if du_metadata:
+                    ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
+                    if ssh_status == True:
+                        ssh_status = "OK"
+                    else:
+                        ssh_status = "Failed"
+                else:
+                    ssh_status = "Unvalidated"
+            host['ssh_status'] = ssh_status
+
+            # persist configurtion
+            datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
+
+
+def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
+    if existing_du_url == None:
+        sys.stdout.write("\nAdding a Region:\n")
+    else:
+        sys.stdout.write("\nUpdate Region:\n")
+
+    # du_metadata is created by create_du_entry() - and initialized or populated from existing du record
+    du_metadata = interview.get_du_creds(existing_du_url,CONFIG_FILE)
+    if not du_metadata:
+        return(du_metadata)
+    else:
+        # initialize du data structure
+        du = datamodel.create_du_entry()
+        du['url'] = du_metadata['du_url']
+        du['du_type'] = du_metadata['du_type']
+        du['username'] = du_metadata['du_user']
+        du['password'] = du_metadata['du_password']
+        du['tenant'] = du_metadata['du_tenant']
+        du['git_branch'] = du_metadata['git_branch']
+        du['region'] = du_metadata['region_name']
+        du['region_proxy'] = du_metadata['region_proxy']
+        du['dns_list'] = du_metadata['region_dns']
+        du['auth_type'] = du_metadata['region_auth_type']
+        du['auth_ssh_key'] = du_metadata['auth_ssh_key']
+        du['auth_password'] = du_metadata['auth_password']
+        du['auth_username'] = du_metadata['auth_username']
+        du['bond_ifname'] = du_metadata['region_bond_if_name']
+        du['bond_mode'] = du_metadata['region_bond_mode']
+        du['bond_mtu'] = du_metadata['region_bond_mtu']
+
+    # initialize list of regions to be discovered
+    discover_targets = []
+
+    # define valid region types
+    region_types = [
+        "q",
+        "KVM",
+        "Kubernetes",
+        "KVM/Kubernetes",
+        "VMware"
+    ]
+
+    # check for sub-regions
+    sub_regions, du_name_list = du_utils.get_sub_dus(du)
+    if not sub_regions:
+        sys.stdout.write("\nINFO: No Sub-Regions Have Been Detected\n\n")
+        discover_targets.append(du)
+    else:
+        sys.stdout.write("\nThe Following Sub-Regions Have Been Detected:\n\n")
+        cnt = 1
+        for sub_region in sub_regions:
+            if sub_region != du['url'].replace('https://',''):
+                sys.stdout.write("{}. {}\n".format(cnt, sub_region))
+                cnt += 1
+        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q','y','n'], 'n', True, True)
+        if user_input == "q":
+            return(None)
+        elif user_input == "y":
+            for sub_region in sub_regions:
+                sub_du = datamodel.create_du_entry()
+                sub_du['url'] = "https://{}".format(sub_region)
+                sub_du['du_type'] = "KVM/Kubernetes"
+                sub_du['region'] = du_name_list[sub_regions.index(sub_region)]
+                sub_du['username'] = du_metadata['du_user']
+                sub_du['password'] = du_metadata['du_password']
+                sub_du['tenant'] = du_metadata['du_tenant']
+                sub_du['git_branch'] = "master"
+                sub_du['region_proxy'] = "-"
+                sub_du['dns_list'] = "8.8.8.8,8.8.4.4"
+                sub_du['auth_type'] = "sshkey"
+                sub_du['auth_ssh_key'] = "~/.ssh/id_rsa"
+                sub_du['auth_username'] = "centos"
+                sub_du['bond_ifname'] = "bond0"
+                sub_du['bond_mode'] = "1"
+                sub_du['bond_mtu'] = "9000"
+                discover_targets.append(sub_du)
+        else:
+            du['region'] = du_name_list[sub_regions.index(du_metadata['du_url'].replace('https://',''))]
+            discover_targets.append(du)
+
+    # create region (and sub-regions)
+    sys.stdout.write("\nCreating Regions:\n")
+    for discover_target in discover_targets:
+        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        if project_id:
+            sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
+            region_type = du_utils.get_du_type(discover_target['url'], project_id, token)
+            if discover_target['url'] == du_metadata['du_url']:
+                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, du_metadata['du_type'], True, True)
+            else:
+                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
+            discover_target['du_type'] = confirmed_region_type
+        datamodel.write_config(discover_target,CONFIG_DIR,CONFIG_FILE)
+
+    # perform host discovery
+    sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
+    for discover_target in discover_targets:
+        num_hosts = 0
+        sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
+        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        if project_id:
+            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, CONFIG_FILE)
+            for host in discovered_hosts:
+                datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
+                num_hosts += 1
+        sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+
+    # perform cluster discovery
+    sys.stdout.write("\nPerforming Cluster Discovery (and provisioning for user-defined clusters)\n")
+    for discover_target in discover_targets:
+        num_clusters = 0
+        if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
+            sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
+            project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+            if project_id:
+                # discover existing clusters
+                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
+                # get existing/user-defined clusters for region
+                defined_clusters = datamodel.get_clusters(discover_target['url'],CLUSTER_FILE)
+
+                # create any missing clusters
+                for cluster in defined_clusters:
+                    cluster_flag = datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters)
+                    if not datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters):
+                        pmk_utils.create_cluster(discover_target['url'],project_id,token,cluster)
+                    num_clusters += 1
+
+                for cluster in discovered_clusters:
+                    datamodel.write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE)
+            sys.stdout.write("    # of clusters discovered: {}\n".format(num_clusters))
+
+    # return
+    return(discover_targets)
 
 

@@ -152,4 +152,137 @@ def get_configs(CONFIG_FILE,du_url=None):
         return(filtered_du_configs)
 
 
+def delete_du(target_du,CONFIG_FILE):
+    new_du_list = []
+    if os.path.isfile(CONFIG_FILE):
+        with open(CONFIG_FILE) as json_file:
+            du_configs = json.load(json_file)
+        for du in du_configs:
+            if du['url'] == target_du['url']:
+                sys.stdout.write("--> found target Region\n")
+            else:
+                new_du_list.append(du)
+    else:
+        sys.stdout.write("\nERROR: failed to open Region database: {}".format(CONFIG_FILE))
+
+    # update DU database
+    try:
+        with open(CONFIG_FILE, 'w') as outfile:
+            json.dump(new_du_list, outfile)
+    except:
+        sys.stdout.write("\nERROR: failed to update Region database: {}".format(CONFIG_FILE))
+
+
+def get_hosts(du_url,HOST_FILE):
+    du_hosts = []
+    if os.path.isfile(HOST_FILE):
+        with open(HOST_FILE) as json_file:
+            du_hosts = json.load(json_file)
+
+    if du_url == None:
+        filtered_hosts = list(du_hosts)
+    else:
+        filtered_hosts = []
+        for du in du_hosts:
+            if du['du_url'] == du_url:
+                filtered_hosts.append(du)
+
+    return(filtered_hosts)
+
+
+def write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE):
+    if not os.path.isdir(CONFIG_DIR):
+        try:
+            os.mkdir(CONFIG_DIR)
+        except:
+            fail("failed to create directory: {}".format(CONFIG_DIR))
+
+    current_clusters = get_clusters(None,CLUSTER_FILE)
+    if len(current_clusters) == 0:
+        current_clusters.append(cluster)
+        with open(CLUSTER_FILE, 'w') as outfile:
+            json.dump(current_clusters, outfile)
+    else:
+        update_clusters = []
+        flag_found = False
+        for c in current_clusters:
+            if c['name'] == cluster['name']:
+                update_clusters.append(cluster)
+                flag_found = True
+            else:
+                update_clusters.append(c)
+        if not flag_found:
+            update_clusters.append(cluster)
+        with open(CLUSTER_FILE, 'w') as outfile:
+            json.dump(update_clusters, outfile)
+
+
+def write_host(host,CONFIG_DIR,HOST_FILE):
+    if not os.path.isdir(CONFIG_DIR):
+        try:
+            os.mkdir(CONFIG_DIR)
+        except:
+            fail("failed to create directory: {}".format(CONFIG_DIR))
+
+    # get all hosts
+    current_hosts = get_hosts(None,HOST_FILE)
+    if len(current_hosts) == 0:
+        current_hosts.append(host)
+        with open(HOST_FILE, 'w') as outfile:
+            json.dump(current_hosts, outfile)
+    else:
+        update_hosts = []
+        flag_found = False
+        for h in current_hosts:
+            if h['hostname'] == host['hostname'] and h['uuid'] == host['uuid']:
+                update_hosts.append(host)
+                flag_found = True
+            else:
+                update_hosts.append(h)
+        if not flag_found:
+            update_hosts.append(host)
+        with open(HOST_FILE, 'w') as outfile:
+            json.dump(update_hosts, outfile)
+
+
+def write_config(du,CONFIG_DIR,CONFIG_FILE):
+    if not os.path.isdir(CONFIG_DIR):
+        try:
+            os.mkdir(CONFIG_DIR)
+        except:
+            fail("failed to create directory: {}".format(CONFIG_DIR))
+
+    current_config = get_configs(CONFIG_FILE)
+    if len(current_config) == 0:
+        current_config.append(du)
+        with open(CONFIG_FILE, 'w') as outfile:
+            json.dump(current_config, outfile)
+    else:
+        update_config = []
+        flag_found = False
+        for config in current_config:
+            if config['url'] == du['url']:
+                update_config.append(du)
+                flag_found = True
+            else:
+                update_config.append(config)
+        if not flag_found:
+            update_config.append(du)
+        with open(CONFIG_FILE, 'w') as outfile:
+            json.dump(update_config, outfile)
+
+
+def cluster_in_array(target_url,target_name,target_clusters):
+    for cluster in target_clusters:
+        if cluster['du_url'] == target_url and cluster['name'] == target_name:
+            return(True)
+    return(False)
+
+
+def get_cluster_uuid(du_url, cluster_name,CLUSTER_FILE):
+    cluster_settings = datamodel.get_cluster_record(du_url, cluster_name, CLUSTER_FILE)
+    if cluster_settings:
+        return(cluster_settings['uuid'])
+    return(None)
+
 

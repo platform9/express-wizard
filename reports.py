@@ -3,6 +3,16 @@ import sys
 import du_utils
 import datamodel
 
+
+def map_yn(map_key):
+    if map_key == "y":
+        return("Enabled")
+    elif map_key == "n":
+        return("Disabled")
+    else:
+        return("failed-to-map")
+
+
 def report_du_info(du_entries,CONFIG_FILE,HOST_FILE):
     from prettytable import PrettyTable
 
