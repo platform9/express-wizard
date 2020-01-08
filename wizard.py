@@ -11,6 +11,7 @@ import os
 import sys
 from os.path import expanduser
 import du_utils
+import pmk_utils
 
 ################################################################################
 # early functions
@@ -74,47 +75,6 @@ def read_kbd(user_prompt, allowed_values, default_value, flag_echo=True, disallo
                     input_is_valid = True
 
     return(user_input)
-
-
-def get_sub_dus(du):
-    project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
-    if token == None:
-        return(None,None)
-
-    try:
-        api_endpoint = "keystone/v3/services?type=regionInfo"
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du['url'],api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                services_id = json_response['services'][0]['id']
-                if services_id:
-                    api_endpoint = "keystone/v3/endpoints?service_id={}".format(services_id)
-                    try:
-                        pf9_subresponse = requests.get("{}/{}".format(du['url'],api_endpoint), verify=False, headers=headers)
-                        if pf9_subresponse.status_code == 200:
-                            try:
-                                json_subresponse = json.loads(pf9_subresponse.text)
-                                url_list = []
-                                du_name_list = []
-                                for ep in json_subresponse['endpoints']:
-                                    baseurl = ep['url'].replace('https://','').split('/')[0]
-                                    if not baseurl in url_list:
-                                        url_list.append(baseurl)
-                                        du_name_list.append(ep['region'])
-                                return(url_list,du_name_list)
-                            except:
-                                return(None,None)
-                    except:
-                        return(None,None)
-                return(None,None)
-            except:
-                return(None,None)
-    except:
-        return(None,None)
-
-    return(None,None)
 
 
 ################################################################################
@@ -424,126 +384,6 @@ def get_du_creds(existing_du_url):
     return(du_metadata)
 
 
-################################################################################
-# api functions
-def qbert_is_responding(du_url, project_id, token):
-    try:
-        api_endpoint = "qbert/v3/{}/nodes".format(project_id)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            return True
-    except:
-        return False
-
-    return False
-
-
-def qbert_get_nodetype(du_url, project_id, token, node_uuid):
-    node_type = ""
-    try:
-        api_endpoint = "qbert/v3/{}/nodes/{}".format(project_id, node_uuid)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                if json_response['isMaster'] == 1:
-                    return("master")
-                else:
-                    return("worker")
-
-            except:
-                return(node_type)
-    except:
-        return node_type
-
-    return node_type
-
-
-def qbert_get_primary_ip(du_url, project_id, token, node_uuid):
-    primary_ip = ""
-    try:
-        api_endpoint = "qbert/v3/{}/nodes/{}".format(project_id, node_uuid)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                return(json_response['primaryIp'])
-            except:
-                return(primary_ip)
-    except:
-        return primary_ip
-
-    return primary_ip
-
-
-def qbert_get_cluster_attach_status(du_url, project_id, token, node_uuid):
-    attach_status = "Unattached"
-    try:
-        api_endpoint = "qbert/v3/{}/nodes/{}".format(project_id, node_uuid)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                if json_response['clusterName']:
-                    if json_response['status'] == "OK":
-                        attach_status = "Attached"
-                    else:
-                        attach_status = json_response['status']
-                return(attach_status)
-            except:
-                return(attach_status)
-    except:
-        return(attach_status)
-
-    return(attach_status)
-
-#{u'status': u'converging', u'cloudProviderType': u'local', u'isMaster': 1, u'nodePoolUuid': u'14e360b7-8409-41f3-91ab-1f710d95d3a1', u'clusterUuid': u'f1aae3a5-e87d-40e4-8124-be7837e15a50', u'name': u'linux-centos-node-0', u'clusterName': u'c4', u'projectId': u'', u'masterless': 0, u'api_responding': 0, u'startKube': 1, u'nodePoolName': u'defaultPool', u'primaryIp': u'10.128.229.36', u'uuid': u'42e61cfb-9630-4736-9f0f-0d5824fc47bf'}
-
-#{u'status': u'ok', u'cloudProviderType': u'local', u'isMaster': 0, u'nodePoolUuid': u'14e360b7-8409-41f3-91ab-1f710d95d3a1', u'clusterUuid': None, u'name': u'linux-centos-node-1', u'clusterName': None, u'projectId': u'', u'masterless': 0, u'api_responding': 0, u'startKube': 1, u'nodePoolName': u'defaultPool', u'primaryIp': u'10.128.229.10', u'uuid': u'31ab6802-0a67-40ab-9cef-ad5ae4e2102f'}
-
-#{u'status': u'ok', u'cloudProviderType': u'local', u'isMaster': 0, u'nodePoolUuid': u'14e360b7-8409-41f3-91ab-1f710d95d3a1', u'clusterUuid': None, u'name': u'linux-centos-node-2', u'clusterName': None, u'projectId': u'', u'masterless': 0, u'api_responding': 0, u'startKube': 1, u'nodePoolName': u'defaultPool', u'primaryIp': u'10.128.229.7', u'uuid': u'57dc2523-8c02-4f83-9bd5-d4f4a98bb9d6'}
-
-
-def qbert_get_cluster_uuid(du_url, project_id, token, node_uuid):
-    cluster_uuid = ""
-    try:
-        api_endpoint = "qbert/v3/{}/nodes/{}".format(project_id, node_uuid)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                return(json_response['clusterUuid'])
-            except:
-                return(cluster_uuid)
-    except:
-        return cluster_uuid
-
-    return cluster_uuid
-
-
-def qbert_get_cluster_name(du_url, project_id, token, cluster_uuid):
-    cluster_name = ""
-    try:
-        api_endpoint = "qbert/v3/{}/clusters/{}".format(project_id, cluster_uuid)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code == 200:
-            try:
-                json_response = json.loads(pf9_response.text)
-                return(json_response['name'])
-            except:
-                return(cluster_name)
-    except:
-        return cluster_name
-
-    return cluster_name
-
-
 def credsmanager_is_responding(du_url, project_id, token):
     try:
         api_endpoint = "credsmanager"
@@ -559,7 +399,7 @@ def credsmanager_is_responding(du_url, project_id, token):
 
 def get_du_type(du_url, project_id, token):
     region_type = "-"
-    qbert_status = qbert_is_responding(du_url, project_id, token)
+    qbert_status = pmk_utils.qbert_is_responding(du_url, project_id, token)
     if qbert_status == True:
         region_type = "Kubernetes"
         credsmanager_status = credsmanager_is_responding(du_url, project_id, token)
@@ -675,11 +515,11 @@ def discover_du_hosts(du_url, du_type, project_id, token):
         host_primary_ip = ""
         if flag_kubernetes:
             host_type = "kubernetes"
-            qbert_nodetype = qbert_get_nodetype(du_url, project_id, token, host['id'])
-            host_primary_ip = qbert_get_primary_ip(du_url, project_id, token, host['id'])
-            qbert_cluster_uuid = qbert_get_cluster_uuid(du_url, project_id, token, host['id'])
-            qbert_cluster_name = qbert_get_cluster_name(du_url, project_id, token, qbert_cluster_uuid)
-            qbert_attach_status = qbert_get_cluster_attach_status(du_url, project_id, token, host['id'])
+            qbert_nodetype = pmk_utils.qbert_get_nodetype(du_url, project_id, token, host['id'])
+            host_primary_ip = pmk_utils.qbert_get_primary_ip(du_url, project_id, token, host['id'])
+            qbert_cluster_uuid = pmk_utils.qbert_get_cluster_uuid(du_url, project_id, token, host['id'])
+            qbert_cluster_name = pmk_utils.qbert_get_cluster_name(du_url, project_id, token, qbert_cluster_uuid)
+            qbert_attach_status = pmk_utils.qbert_get_cluster_attach_status(du_url, project_id, token, host['id'])
         if flag_kvm:
             host_type = "kvm"
         if flag_unassigned:
@@ -1512,7 +1352,7 @@ def add_region(existing_du_url):
     ]
 
     # check for sub-regions
-    sub_regions, du_name_list = get_sub_dus(du)
+    sub_regions, du_name_list = du_utils.get_sub_dus(du)
     if not sub_regions:
         sys.stdout.write("\nINFO: No Sub-Regions Have Been Detected\n\n")
         discover_targets.append(du)
