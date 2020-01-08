@@ -126,3 +126,40 @@ def credsmanager_is_responding(du_url, project_id, token):
     return False
 
 
+def discover_du_clusters(du_url, du_type, project_id, token):
+    discovered_clusters = []
+    try:
+        api_endpoint = "qbert/v3/{}/clusters".format(project_id)
+        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
+        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
+        if pf9_response.status_code != 200:
+            return(discovered_clusters)
+    except:
+        return(discovered_clusters)
+
+    # parse resmgr response
+    try:
+        json_response = json.loads(pf9_response.text)
+    except:
+        return(discovered_clusters)
+
+    # process discovered clusters
+    for cluster in json_response:
+        cluster_record = datamodel.create_cluster_entry()
+        cluster_record['du_url'] = du_url
+        cluster_record['name'] = cluster['name']
+        cluster_record['uuid'] = cluster['uuid']
+        cluster_record['record_source'] = "Discovered"
+        cluster_record['containers_cidr'] = cluster['containersCidr']
+        cluster_record['services_cidr'] = cluster['servicesCidr']
+        cluster_record['master_vip_ipv4'] = cluster['masterVipIpv4']
+        cluster_record['master_vip_iface'] = cluster['masterVipIface']
+        cluster_record['metallb_cidr'] = cluster['metallbCidr']
+        cluster_record['privileged'] = cluster['privileged']
+        cluster_record['app_catalog_enabled'] = cluster['appCatalogEnabled']
+        cluster_record['allow_workloads_on_master'] = cluster['allowWorkloadsOnMaster']
+        discovered_clusters.append(cluster_record)
+
+    return(discovered_clusters)
+
+

@@ -1,5 +1,6 @@
 import requests
 import json
+import pmk_utils
 
 
 def login(du_host, username, password, project_name):
@@ -80,5 +81,24 @@ def get_sub_dus(du):
         return(None,None)
 
     return(None,None)
+
+
+def get_du_type(du_url, project_id, token):
+    region_type = "-"
+    qbert_status = pmk_utils.qbert_is_responding(du_url, project_id, token)
+    if qbert_status == True:
+        region_type = "Kubernetes"
+        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
+        if credsmanager_status == True:
+            region_type = "KVM/Kubernetes"
+        else:
+            region_type = "VMware"
+    else:
+        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
+        if credsmanager_status == True:
+            region_type = "KVM"
+        else:
+            region_type = "VMware"
+    return(region_type)
 
 

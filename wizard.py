@@ -12,6 +12,8 @@ import sys
 from os.path import expanduser
 import du_utils
 import pmk_utils
+import resmgr_utils
+import ssh_utils
 import reports
 import datamodel
 import user_io
@@ -46,202 +48,6 @@ def _parse_args():
     return ap.parse_args()
 
 
-def get_du_type(du_url, project_id, token):
-    region_type = "-"
-    qbert_status = pmk_utils.qbert_is_responding(du_url, project_id, token)
-    if qbert_status == True:
-        region_type = "Kubernetes"
-        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
-        if credsmanager_status == True:
-            region_type = "KVM/Kubernetes"
-        else:
-            region_type = "VMware"
-    else:
-        credsmanager_status = pmk_utils.credsmanager_is_responding(du_url, project_id, token)
-        if credsmanager_status == True:
-            region_type = "KVM"
-        else:
-            region_type = "VMware"
-    return(region_type)
-
-
-def discover_du_clusters(du_url, du_type, project_id, token):
-    discovered_clusters = []
-    try:
-        api_endpoint = "qbert/v3/{}/clusters".format(project_id)
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code != 200:
-            return(discovered_clusters)
-    except:
-        return(discovered_clusters)
-
-    # parse resmgr response
-    try:
-        json_response = json.loads(pf9_response.text)
-    except:
-        return(discovered_clusters)
-
-    # process discovered clusters
-    for cluster in json_response:
-        cluster_record = datamodel.create_cluster_entry()
-        cluster_record['du_url'] = du_url
-        cluster_record['name'] = cluster['name']
-        cluster_record['uuid'] = cluster['uuid']
-        cluster_record['record_source'] = "Discovered"
-        cluster_record['containers_cidr'] = cluster['containersCidr']
-        cluster_record['services_cidr'] = cluster['servicesCidr']
-        cluster_record['master_vip_ipv4'] = cluster['masterVipIpv4']
-        cluster_record['master_vip_iface'] = cluster['masterVipIface']
-        cluster_record['metallb_cidr'] = cluster['metallbCidr']
-        cluster_record['privileged'] = cluster['privileged']
-        cluster_record['app_catalog_enabled'] = cluster['appCatalogEnabled']
-        cluster_record['allow_workloads_on_master'] = cluster['allowWorkloadsOnMaster']
-        discovered_clusters.append(cluster_record)
-
-    return(discovered_clusters)
-
-
-def discover_du_hosts(du_url, du_type, project_id, token):
-    discovered_hosts = []
-    try:
-        api_endpoint = "resmgr/v1/hosts"
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-        if pf9_response.status_code != 200:
-            return(discovered_hosts)
-    except:
-        return(discovered_hosts)
-
-    # parse resmgr response
-    try:
-        json_response = json.loads(pf9_response.text)
-    except:
-        return(discovered_hosts)
-
-    # process/classify discovered hosts
-    cnt = 0
-    for host in json_response:
-        # get IP
-        try:
-            discover_ips = ",".join(host['extensions']['ip_address']['data'])
-        except:
-            discover_ips = ""
-
-        # initialize flags
-        flag_unassigned = True
-        flag_kvm = False
-        flag_kubernetes = False
-
-        # get roles
-        role_kube = "n"
-        role_nova = "n"
-        role_glance = "n"
-        role_cinder = "n"
-        role_designate = "n"
-        for role in host['roles']:
-            if role == "pf9-kube":
-                flag_unassigned = False
-                flag_kubernetes = True
-                role_kube = "y"
-            if role == "pf9-glance-role":
-                flag_unassigned = False
-                flag_kvm = True
-                role_glance = "y"
-            if role == "pf9-cindervolume-base":
-                flag_unassigned = False
-                flag_kvm = True
-                role_cinder = "y"
-            if role == "pf9-ostackhost-neutron":
-                flag_unassigned = False
-                flag_kvm = True
-                role_nova = "y"
-            if role == "pf9-designate":
-                flag_unassigned = False
-                flag_kvm = True
-                role_designate = "y"
-
-        host_primary_ip = ""
-        if flag_kubernetes:
-            host_type = "kubernetes"
-            qbert_nodetype = pmk_utils.qbert_get_nodetype(du_url, project_id, token, host['id'])
-            host_primary_ip = pmk_utils.qbert_get_primary_ip(du_url, project_id, token, host['id'])
-            qbert_cluster_uuid = pmk_utils.qbert_get_cluster_uuid(du_url, project_id, token, host['id'])
-            qbert_cluster_name = pmk_utils.qbert_get_cluster_name(du_url, project_id, token, qbert_cluster_uuid)
-            qbert_attach_status = pmk_utils.qbert_get_cluster_attach_status(du_url, project_id, token, host['id'])
-        if flag_kvm:
-            host_type = "kvm"
-        if flag_unassigned:
-            host_type = "unassigned"
-
-        if flag_kvm or flag_unassigned:
-            if discover_ips != "":
-                discovered_ips_list = discover_ips.split(',')
-                if len(discovered_ips_list) == 1:
-                    host_primary_ip = discovered_ips_list[0]
-        
-        # validate ssh connectivity
-        if host_primary_ip == "":
-            ssh_status = "No Primary IP"
-        else:
-            du_metadata = datamodel.get_du_metadata(du_url,CONFIG_FILE)
-            if du_metadata:
-                ssh_status = ssh_validate_login(du_metadata, host_primary_ip)
-                if ssh_status == True:
-                    ssh_status = "OK"
-                else:
-                    ssh_status = "Failed"
-            else:
-                ssh_status = "Unvalidated"
-
-        host_record = datamodel.create_host_entry()
-        host_record['du_url'] = du_url
-        host_record['du_type'] = du_type
-        host_record['ip'] = host_primary_ip
-        host_record['uuid'] = host['id']
-        host_record['ip_interfaces'] = discover_ips
-        host_record['du_host_type'] = host_type
-        host_record['hostname'] = host['info']['hostname']
-        host_record['record_source'] = "Discovered"
-        host_record['ssh_status'] = ssh_status
-        host_record['bond_config'] = ""
-        host_record['pf9-kube'] = role_kube
-        host_record['nova'] = role_nova
-        host_record['glance'] = role_glance
-        host_record['cinder'] = role_cinder
-        host_record['designate'] = role_designate
-        if flag_kubernetes:
-            host_record['node_type'] = qbert_nodetype
-            host_record['cluster_name'] = qbert_cluster_name
-            host_record['cluster_uuid'] = qbert_cluster_uuid
-            host_record['cluster_attach_status'] = qbert_attach_status
-        discovered_hosts.append(host_record)
-
-    return(discovered_hosts)
-
-
-def get_du_hosts(du_url, project_id, token):
-    num_hosts = 0
-    try:
-        api_endpoint = "resmgr/v1/hosts"
-        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
-        pf9_response = requests.get("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers, timeout=5)
-        if pf9_response.status_code != 200:
-            return(num_hosts)
-
-        try:
-            json_response = json.loads(pf9_response.text)
-        except:
-            return(num_hosts)
-
-        for item in json_response:
-            num_hosts += 1
-    except:
-        return(num_hosts)
-
-    return(num_hosts)
-
-
 def dump_var(target_var):
     from inspect import getmembers
     from pprint import pprint
@@ -257,56 +63,13 @@ def map_yn(map_key):
         return("failed-to-map")
 
 
-def ssh_validate_login(du_metadata, host_ip):
-    if du_metadata['auth_type'] == "simple":
-        return(False)
-    elif du_metadata['auth_type'] == "sshkey":
-        cmd = "ssh -o StrictHostKeyChecking=no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status == 0:
-            return(True)
-        else:
-            return(False)
-
-    return(False)
-
-
-def add_edit_du():
-    if not os.path.isdir(CONFIG_DIR):
-        return(None)
-    elif not os.path.isfile(CONFIG_FILE):
-        return("define-new-du")
-    else:
-        current_config = get_configs()
-        if len(current_config) == 0:
-            return(None)
-        else:
-            cnt = 1
-            allowed_values = ['q','n']
-            sys.stdout.write("\n")
-            for du in current_config:
-                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
-                allowed_values.append(str(cnt))
-                cnt += 1
-            sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True)
-            if user_input == "q":
-                return(None)
-            elif user_input == "n":
-                return("define-new-du")
-            else:
-                idx = int(user_input) - 1
-                return(current_config[idx]['url'])
-        return(None)
-
-
 def select_du():
     if not os.path.isdir(CONFIG_DIR):
         sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
     elif not os.path.isfile(CONFIG_FILE):
         sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
     else:
-        current_config = get_configs()
+        current_config = datamodel.get_configs(CONFIG_FILE)
         if len(current_config) == 0:
             sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
         else:
@@ -324,22 +87,6 @@ def select_du():
                 idx = int(user_input) - 1
                 return(current_config[idx])
         return({})
-
-
-def get_configs(du_url=None):
-    du_configs = []
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE) as json_file:
-            du_configs = json.load(json_file)
-
-    if not du_url:
-        return(du_configs)
-    else:
-        filtered_du_configs = []
-        for du in du_configs:
-            if du['url'] == du_url:
-                filtered_du_configs.append(du)
-        return(filtered_du_configs)
 
 
 def delete_du(target_du):
@@ -442,7 +189,7 @@ def write_config(du):
         except:
             fail("failed to create directory: {}".format(CONFIG_DIR))
 
-    current_config = get_configs()
+    current_config = datamodel.get_configs(CONFIG_FILE)
     if len(current_config) == 0:
         current_config.append(du)
         with open(CONFIG_FILE, 'w') as outfile:
@@ -518,7 +265,7 @@ def add_host(du):
             else:
                 du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
                 if du_metadata:
-                    ssh_status = ssh_validate_login(du_metadata, host['ip'])
+                    ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
                     if ssh_status == True:
                         ssh_status = "OK"
                     else:
@@ -686,7 +433,7 @@ def add_region(existing_du_url):
         project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
         if project_id:
             sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
-            region_type = get_du_type(discover_target['url'], project_id, token)
+            region_type = du_utils.get_du_type(discover_target['url'], project_id, token)
             if discover_target['url'] == du_metadata['du_url']:
                 confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, du_metadata['du_type'], True, True)
             else:
@@ -701,7 +448,7 @@ def add_region(existing_du_url):
         sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
         project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
         if project_id:
-            discovered_hosts = discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token)
+            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, CONFIG_FILE)
             for host in discovered_hosts:
                 write_host(host)
                 num_hosts += 1
@@ -716,7 +463,7 @@ def add_region(existing_du_url):
             project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
             if project_id:
                 # discover existing clusters
-                discovered_clusters = discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
 
                 # get existing/user-defined clusters for region
                 defined_clusters = datamodel.get_clusters(discover_target['url'],CLUSTER_FILE)
@@ -885,7 +632,7 @@ def build_express_inventory(du, host_entries):
 
 def checkout_branch(git_branch):
     cmd = "cd {} && git checkout {}".format(EXPRESS_INSTALL_DIR, git_branch)
-    exit_status, stdout = run_cmd(cmd)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
 
     current_branch = get_express_branch(git_branch)
     if current_branch != git_branch:
@@ -899,7 +646,7 @@ def get_express_branch(git_branch):
         return(None)
 
     cmd = "cd {} && git symbolic-ref --short -q HEAD".format(EXPRESS_INSTALL_DIR)
-    exit_status, stdout = run_cmd(cmd)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         return(None)
 
@@ -911,14 +658,14 @@ def install_express(du):
     if not os.path.isdir(EXPRESS_INSTALL_DIR):
         cmd = "git clone {} {}".format(EXPRESS_REPO, EXPRESS_INSTALL_DIR)
         sys.stdout.write("--> cloning repository ({})\n".format(cmd))
-        exit_status, stdout = run_cmd(cmd)
+        exit_status, stdout = ssh_utils.run_cmd(cmd)
         if not os.path.isdir(EXPRESS_INSTALL_DIR):
             sys.stdout.write("ERROR: failed to clone PF9-Express Repository\n")
             return(False)
 
     sys.stdout.write("--> refreshing repository (git fetch -a)\n")
     cmd = "cd {}; git fetch -a".format(EXPRESS_INSTALL_DIR)
-    exit_status, stdout = run_cmd(cmd)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         sys.stdout.write("ERROR: failed to fetch branches (git fetch -)\n")
         return(False)
@@ -933,7 +680,7 @@ def install_express(du):
 
     cmd = "cd {}; git pull origin {}".format(EXPRESS_INSTALL_DIR,du['git_branch'])
     sys.stdout.write("--> pulling latest code (git pull origin {})\n".format(du['git_branch']))
-    exit_status, stdout = run_cmd(cmd)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         sys.stdout.write("ERROR: failed to pull latest code (git pull origin {})\n".format(du['git_branch']))
         return(False)
@@ -1147,23 +894,6 @@ def dump_database(db_file):
         pprint.pprint(db_json)
 
 
-def run_cmd(cmd):
-    cmd_stdout = ""
-    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
-    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
-
-    # read output of command
-    if os.path.isfile(tmpfile):
-        try:
-            fh_tmpfile = open(tmpfile, 'r')
-            cmd_stdout = fh_tmpfile.readlines()
-        except:
-            None
-
-    os.remove(tmpfile)
-    return cmd_exitcode, cmd_stdout
-
-
 def action_header(title):
     title = "  {}  ".format(title)
     sys.stdout.write("\n{}".format(title.center(MAX_WIDTH,'*')))
@@ -1244,7 +974,7 @@ def menu_level0():
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
             action_header("MANAGE REGIONS")
-            selected_du = add_edit_du()
+            selected_du = interview.add_edit_du(CONFIG_DIR, CONFIG_FILE)
             if selected_du != None:
                 if selected_du == "define-new-du":
                     target_du = None
@@ -1277,7 +1007,7 @@ def menu_level0():
             selected_du = select_du()
             if selected_du:
                 if selected_du != "q":
-                    du_entries = get_configs(selected_du['url'])
+                    du_entries = datamodel.get_configs(CONFIG_FILE,selected_du['url'])
                     reports.report_du_info(du_entries,CONFIG_FILE,HOST_FILE)
                     host_entries = get_hosts(selected_du['url'])
                     reports.report_host_info(host_entries,HOST_FILE,CONFIG_FILE)

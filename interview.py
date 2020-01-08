@@ -350,3 +350,32 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
     return(du_metadata)
 
 
+def add_edit_du(CONFIG_DIR, CONFIG_FILE):
+    if not os.path.isdir(CONFIG_DIR):
+        return(None)
+    elif not os.path.isfile(CONFIG_FILE):
+        return("define-new-du")
+    else:
+        current_config = datamodel.get_configs(CONFIG_FILE)
+        if len(current_config) == 0:
+            return(None)
+        else:
+            cnt = 1
+            allowed_values = ['q','n']
+            sys.stdout.write("\n")
+            for du in current_config:
+                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            sys.stdout.write("\n")
+            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True)
+            if user_input == "q":
+                return(None)
+            elif user_input == "n":
+                return("define-new-du")
+            else:
+                idx = int(user_input) - 1
+                return(current_config[idx]['url'])
+        return(None)
+
+

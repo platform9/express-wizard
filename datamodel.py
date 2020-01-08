@@ -136,3 +136,20 @@ def get_clusters(du_url,CLUSTER_FILE):
     return(filtered_clusters)
 
 
+def get_configs(CONFIG_FILE,du_url=None):
+    du_configs = []
+    if os.path.isfile(CONFIG_FILE):
+        with open(CONFIG_FILE) as json_file:
+            du_configs = json.load(json_file)
+
+    if not du_url:
+        return(du_configs)
+    else:
+        filtered_du_configs = []
+        for du in du_configs:
+            if du['url'] == du_url:
+                filtered_du_configs.append(du)
+        return(filtered_du_configs)
+
+
+
