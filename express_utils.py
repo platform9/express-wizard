@@ -117,7 +117,10 @@ def build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE):
                     if cluster_uuid == None:
                         sys.stdout.write("ERROR: failed to lookup cluster UUID for {}\n".format(host['cluster_name']))
                         return(None)
-                    express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                    if cluster_uuid == "":
+                        express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                    else:
+                        express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
 
         # manage K8s_worker stanza
         express_inventory_fh.write("[k8s_worker]\n")
@@ -130,7 +133,10 @@ def build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE):
                     if cluster_uuid == None:
                         sys.stdout.write("ERROR: failed to lookup cluster UUID for {}\n".format(host['cluster_name']))
                         return(None)
-                    express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                    if cluster_uuid == "":
+                        express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                    else:
+                        express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
   
         # close inventory file
         express_inventory_fh.close()

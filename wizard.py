@@ -97,7 +97,7 @@ def get_logs():
 
 
 def view_inventory(du, host_entries, CONFIG_DIR):
-    express_inventory = express_utils.build_express_inventory(du,host_entries,CONFIG_DIR)
+    express_inventory = express_utils.build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE)
     if express_inventory:
         dump_text_file(express_inventory)
     else:
