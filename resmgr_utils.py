@@ -5,7 +5,7 @@ import datamodel
 import ssh_utils
 
 
-def discover_du_hosts(du_url, du_type, project_id, token, CONFIG_FILE):
+def discover_du_hosts(du_url, du_type, project_id, token, CONFIG_FILE, flag_validate_ssh):
     discovered_hosts = []
     try:
         api_endpoint = "resmgr/v1/hosts"
@@ -89,11 +89,14 @@ def discover_du_hosts(du_url, du_type, project_id, token, CONFIG_FILE):
         else:
             du_metadata = datamodel.get_du_metadata(du_url,CONFIG_FILE)
             if du_metadata:
-                ssh_status = ssh_utils.ssh_validate_login(du_metadata, host_primary_ip)
-                if ssh_status == True:
-                    ssh_status = "OK"
+                if flag_validate_ssh:
+                    ssh_status = ssh_utils.ssh_validate_login(du_metadata, host_primary_ip)
+                    if ssh_status == True:
+                        ssh_status = "OK"
+                    else:
+                        ssh_status = "Failed"
                 else:
-                    ssh_status = "Failed"
+                    ssh_status = "Unvalidated"
             else:
                 ssh_status = "Unvalidated"
 

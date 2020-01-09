@@ -578,12 +578,19 @@ def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
 
     # perform host discovery
     sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
+    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True)
+    if user_input == "q":
+        return(None)
+    elif user_input == "y":
+        flag_ssh = True
+    else:
+        flag_ssh = False
     for discover_target in discover_targets:
         num_hosts = 0
         sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
         project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
         if project_id:
-            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, CONFIG_FILE)
+            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, CONFIG_FILE, flag_ssh)
             for host in discovered_hosts:
                 datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
                 num_hosts += 1
