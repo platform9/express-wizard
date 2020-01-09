@@ -90,12 +90,13 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
 def report_host_info(host_entries,HOST_FILE,CONFIG_FILE):
     from prettytable import PrettyTable
 
+    sys.stdout.write("\n------ Hosts ------\n")
     if not os.path.isfile(HOST_FILE):
-        sys.stdout.write("\nNo hosts have been defined yet (run 'Add/Update Hosts')\n")
+        sys.stdout.write("No hosts have been defined yet (run 'Add/Update Hosts')\n")
         return()
 
     if len(host_entries) == 0:
-        sys.stdout.write("\nNo hosts have been defined yet (run 'Add/Update Hosts')\n")
+        sys.stdout.write("No hosts have been defined yet (run 'Add/Update Hosts')\n")
         return()
     
     du_metadata = datamodel.get_du_metadata(host_entries[0]['du_url'],CONFIG_FILE)

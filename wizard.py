@@ -96,16 +96,16 @@ def get_logs():
     return(log_files)
 
 
-def view_inventory(du, host_entries):
-    express_inventory = express_utils.build_express_inventory(du, host_entries)
+def view_inventory(du, host_entries, CONFIG_DIR):
+    express_inventory = express_utils.build_express_inventory(du,host_entries,CONFIG_DIR)
     if express_inventory:
         dump_text_file(express_inventory)
     else:
         sys.stdout.write("ERROR: failed to build inventory file: {}".format(express_inventory))
 
 
-def view_config(du):
-    express_config = express_utils.build_express_config(du)
+def view_config(du,CONFIG_DIR):
+    express_config = express_utils.build_express_config(du,CONFIG_DIR)
     if express_config:
         dump_text_file(express_config)
     else:
@@ -172,13 +172,13 @@ def menu_level1():
             selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
             if selected_du:
                 if selected_du != "q":
-                    new_host = view_config(selected_du)
+                    new_host = view_config(selected_du,CONFIG_DIR)
         elif user_input == '6':
             selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    new_host = view_inventory(selected_du, host_entries)
+                    new_host = view_inventory(selected_du, host_entries, CONFIG_DIR)
         elif user_input == '7':
             log_files = get_logs()
             if len(log_files) == 0:
