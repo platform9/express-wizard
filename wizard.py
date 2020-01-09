@@ -2,25 +2,11 @@
 ## PF9-Wizard | Onboarding Tool for Platform9 
 ## Copyright(c) 2019 Platform9 Systems, Inc.
 ####################################################################################################
-# To-Do:
-# 1. Call Express CLI for PMK
-# 2. Hierarchical/Scalable Data Model
-# 3. Add Region : Improve error recovery when DU auth fails
-####################################################################################################
 import os
 import sys
 from os.path import expanduser
-import du_utils
-import pmk_utils
-import resmgr_utils
-import ssh_utils
-import reports
-import datamodel
-import user_io
-import interview
-import express_utils
 
-################################################################################
+####################################################################################################
 # early functions
 def fail(m=None):
     sys.stdout.write("ASSERT: {}\n".format(m))
@@ -29,7 +15,7 @@ def fail(m=None):
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 
-################################################################################
+####################################################################################################
 # module imports
 try:
     import requests,urllib3,json,argparse,prettytable,signal,getpass,argparse,subprocess,time,pprint
@@ -41,8 +27,8 @@ except:
 # disable ssl warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-
-# input functions
+####################################################################################################
+# functions
 def _parse_args():
     ap = argparse.ArgumentParser(sys.argv[0],formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("--init", "-i", help="Initialize Configuration (delete all regions/hosts)", action="store_true")
@@ -120,8 +106,10 @@ def dump_database(db_file):
 
 
 def action_header(title):
+    MAX_WIDTH = 132
     title = "  {}  ".format(title)
     sys.stdout.write("\n{}".format(title.center(MAX_WIDTH,'*')))
+
 
 def display_menu1():
     sys.stdout.write("***************************************************\n")
@@ -194,6 +182,7 @@ def menu_level1():
 
 def menu_level0():
     user_input = ""
+    sys.stdout.write("\n")
     while not user_input in ['q','Q']:
         display_menu0()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
@@ -257,6 +246,60 @@ def menu_level0():
             sys.stdout.write("\n")
 
 
+def run_cmd(cmd):
+    cmd_stdout = ""
+    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
+    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
+
+    # read output of command
+    if os.path.isfile(tmpfile):
+        try:
+            fh_tmpfile = open(tmpfile, 'r')
+            cmd_stdout = fh_tmpfile.readlines()
+        except:
+            None
+
+    os.remove(tmpfile)
+    return cmd_exitcode, cmd_stdout
+
+
+def ssh_validate_login(du_metadata, host_ip):
+    if du_metadata['auth_type'] == "simple":
+        return(False)
+    elif du_metadata['auth_type'] == "sshkey":
+        cmd = "ssh -o StrictHostKeyChecking=no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status == 0:
+            return(True)
+        else:
+            return(False)
+
+    return(False)
+
+
+def get_branch(install_dir):
+    if not os.path.isdir(install_dir):
+        return(None)
+
+    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(install_dir)
+    exit_status, stdout = run_cmd(cmd)
+    if exit_status != 0:
+        return(None)
+
+    return(stdout[0].strip())
+    
+
+def checkout_git_branch(branch_name,install_dir):
+    cmd = "cd {} && git checkout {}".format(install_dir, branch_name)
+    exit_status, stdout = run_cmd(cmd)
+
+    current_branch = get_express_branch(branch_name,install_dir)
+    if current_branch != branch_name:
+        return(False)
+
+    return(True)
+
+
 ## main
 args = _parse_args()
 
@@ -266,11 +309,14 @@ CONFIG_DIR = "{}/.pf9-wizard".format(HOME_DIR)
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
+
 EXPRESS_REPO = "https://github.com/platform9/express.git"
-EXPRESS_INSTALL_DIR = "{}/.pf9-wizard/pf9-express".format(HOME_DIR)
 EXPRESS_LOG_DIR = "{}/.pf9-wizard/pf9-express/log".format(HOME_DIR)
 PF9_EXPRESS = "{}/.pf9-wizard/pf9-express/pf9-express".format(HOME_DIR)
-MAX_WIDTH = 132
+
+EXPRESS_INSTALL_DIR = "{}/express".format(CONFIG_DIR)
+EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
+EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
 
 # perform initialization (if invoked with '--init')
 if args.init:
@@ -282,6 +328,68 @@ if args.init:
     if os.path.isfile(CLUSTER_FILE):
         os.remove(CLUSTER_FILE)
 
+# define dependent repositories
+required_repos = [
+    {
+        "repo_url": "https://github.com/platform9/express.git",
+        "repo_name": "Express",
+        "install_dir": EXPRESS_INSTALL_DIR,
+        "branch": "master"
+    },
+    {
+        "repo_url": "https://github.com/platform9/express-cli.git",
+        "repo_name": "Express CLI",
+        "install_dir": EXPRESS_CLI_INSTALL_DIR,
+        "branch": "master"
+    },
+    {
+        "repo_url": "https://github.com/platform9/express-wizard.git",
+        "repo_name": "Express Wizard",
+        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
+        "branch": "master"
+    }
+]
+
+# manage dependent repositories
+sys.stdout.write("[Installing Dependencies]\n")
+for repo in required_repos:
+    sys.stdout.write("--> {}\n".format(repo['repo_name']))
+    if not os.path.isdir(repo['install_dir']):
+        sys.stdout.write("    cloning: {}\n".format(repo['repo_url']))
+        cmd = "git clone {} {}".format(repo['repo_url'], repo['install_dir'])
+        exit_status, stdout = run_cmd(cmd)
+        if not os.path.isdir(repo['install_dir']):
+            fail("ERROR: failed to clone repository")
+
+    cmd = "cd {}; git fetch -a".format(repo['install_dir'])
+    exit_status, stdout = run_cmd(cmd)
+    if exit_status != 0:
+        fail("ERROR: failed to fetch branches (git fetch -)")
+
+    current_branch = get_branch(repo['install_dir'])
+    if current_branch != repo['branch']:
+        sys.stdout.write("    switching branches: {}\n".format(repo['branch']))
+        if (checkout_git_branch(repo['branch'],repo['install_dir'])) == False:
+            fail("ERROR: failed to checkout git branch: {}".format(repo['branch']))
+
+    cmd = "cd {}; git pull origin {}".format(repo['install_dir'],repo['branch'])
+    exit_status, stdout = run_cmd(cmd)
+    if exit_status != 0:
+        fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
+ 
+
+# update path for module imports
+sys.path.append(EXPRESS_WIZARD_INSTALL_DIR)
+
+# perform import (from modules within dependent repos)
+import du_utils
+import pmk_utils
+import resmgr_utils
+import reports
+import datamodel
+import user_io
+import interview
+import express_utils
 # main menu loop
 menu_level0()
 
