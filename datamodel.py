@@ -280,7 +280,7 @@ def cluster_in_array(target_url,target_name,target_clusters):
 
 
 def get_cluster_uuid(du_url, cluster_name,CLUSTER_FILE):
-    cluster_settings = datamodel.get_cluster_record(du_url, cluster_name, CLUSTER_FILE)
+    cluster_settings = get_cluster_record(du_url, cluster_name, CLUSTER_FILE)
     if cluster_settings:
         return(cluster_settings['uuid'])
     return(None)

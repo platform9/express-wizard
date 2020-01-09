@@ -1,8 +1,10 @@
 import os
 import sys
+import time
 import user_io
 import ssh_utils
 import subprocess
+import datamodel
 
 def build_express_config(du,CONFIG_DIR):
     express_config = "{}/{}.conf".format(CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
@@ -33,7 +35,7 @@ def build_express_config(du,CONFIG_DIR):
     return(express_config)
 
 
-def build_express_inventory(du,host_entries,CONFIG_DIR):
+def build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE):
     express_inventory = "{}/{}.inv".format(CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
     sys.stdout.write("--> Building inventory file: {}\n".format(express_inventory))
 
@@ -133,7 +135,7 @@ def build_express_inventory(du,host_entries,CONFIG_DIR):
         # close inventory file
         express_inventory_fh.close()
     except Exception as ex:
-        sys.stdout.write("ERROR: faild to write inventory file: {}\n".format(ex.message))
+        sys.stdout.write("ERROR: failed to write express inventory file: {}\n".format(ex.message))
         return(None)
 
     # validate inventory was written
@@ -277,7 +279,7 @@ def invoke_express(PF9_EXPRESS, express_config, express_inventory, target_invent
         wait_for_job(p)
 
 
-def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS):
+def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE):
     sys.stdout.write("\nPF9-Express Inventory (region type = {})\n".format(du['du_type']))
     if du['du_type'] == "Kubernetes":
         express_inventories = [
@@ -338,7 +340,7 @@ def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_
     if flag_installed == True:
         express_config = build_express_config(du,CONFIG_DIR)
         if express_config:
-            express_inventory = build_express_inventory(du,host_entries,CONFIG_DIR)
+            express_inventory = build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE)
             if express_inventory:
                 invoke_express(PF9_EXPRESS, express_config, express_inventory, target_inventory, role_flag)
     

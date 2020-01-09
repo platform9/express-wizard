@@ -245,7 +245,7 @@ def menu_level0():
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    express_utils.run_express(selected_du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS)
+                    express_utils.run_express(selected_du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE)
         elif user_input == '6':
             menu_level1()
         elif user_input in ['q','Q']:
