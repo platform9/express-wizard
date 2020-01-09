@@ -309,11 +309,9 @@ CONFIG_DIR = "{}/.pf9-wizard".format(HOME_DIR)
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
-
 EXPRESS_REPO = "https://github.com/platform9/express.git"
 EXPRESS_LOG_DIR = "{}/.pf9-wizard/pf9-express/log".format(HOME_DIR)
-PF9_EXPRESS = "{}/.pf9-wizard/pf9-express/pf9-express".format(HOME_DIR)
-
+PF9_EXPRESS = "{}/.pf9-wizard/express/pf9-express".format(HOME_DIR)
 EXPRESS_INSTALL_DIR = "{}/express".format(CONFIG_DIR)
 EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
 EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
@@ -351,15 +349,17 @@ required_repos = [
 ]
 
 # manage dependent repositories
-sys.stdout.write("[Installing Dependencies]\n")
+sys.stdout.write("Validating Dependencies\n")
+flag_init_cli = False
 for repo in required_repos:
-    sys.stdout.write("--> {}\n".format(repo['repo_name']))
     if not os.path.isdir(repo['install_dir']):
-        sys.stdout.write("    cloning: {}\n".format(repo['repo_url']))
+        sys.stdout.write("--> cloning: {}\n".format(repo['repo_url']))
         cmd = "git clone {} {}".format(repo['repo_url'], repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
         if not os.path.isdir(repo['install_dir']):
             fail("ERROR: failed to clone repository")
+        if repo['repo_name'] == "Express CLI":
+            flag_init_cli = True
 
     cmd = "cd {}; git fetch -a".format(repo['install_dir'])
     exit_status, stdout = run_cmd(cmd)
@@ -368,7 +368,7 @@ for repo in required_repos:
 
     current_branch = get_branch(repo['install_dir'])
     if current_branch != repo['branch']:
-        sys.stdout.write("    switching branches: {}\n".format(repo['branch']))
+        sys.stdout.write("--> switching branches: {}\n".format(repo['branch']))
         if (checkout_git_branch(repo['branch'],repo['install_dir'])) == False:
             fail("ERROR: failed to checkout git branch: {}".format(repo['branch']))
 
@@ -377,19 +377,25 @@ for repo in required_repos:
     if exit_status != 0:
         fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
+    if flag_init_cli:
+        cmd = "cd {}; sudo pip install -e .[test]".format(repo['install_dir'])
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status != 0:
+            for line in stdout.lines:
+                sys.stdout.write("{}\n".format(stdout))
+            fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
 sys.path.append(EXPRESS_WIZARD_INSTALL_DIR)
 
 # perform import (from modules within dependent repos)
-import du_utils
-import pmk_utils
-import resmgr_utils
-import reports
-import datamodel
-import user_io
-import interview
-import express_utils
+try:
+    import du_utils,pmk_utils,resmgr_utils,reports,datamodel,user_io,interview,express_utils
+except:
+    except_str = str(sys.exc_info()[1])
+    module_name = except_str.split(' ')[-1]
+    fail("Failed to import module: {}".format(sys.exc_info()[1],module_name))
+
 # main menu loop
 menu_level0()
 
