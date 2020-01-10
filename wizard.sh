@@ -52,5 +52,21 @@ curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
 
 # start pf9-wizard in virtual environment
-eval ${venv_python} ${wizard_tmp_script}
-
+flag_started=0
+while [ ${flag_started} -eq 0 ]; do
+    eval ${venv_python} ${wizard_tmp_script}
+    if [ $? -eq 0 ]; then
+        flag_started=1
+    else
+        stdout=$(eval ${venv_python} ${wizard_tmp_script})
+        echo "${stdout}" | grep "ASSERT: Failed to import python module:" > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            module_name=$(echo "${stdout}" | cut -d : -f3)
+            echo "attempting in installing missing module: ${module_name}"
+            pip install ${module_name} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then assert "failed to install missing module"; fi
+        else
+            assert "${stdout}"
+        fi
+    fi
+done
