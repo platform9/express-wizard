@@ -47,6 +47,9 @@ case ${python_version} in
     assert "unsupported python version"
 esac
 
+# remove cached version of pf9-wizard
+if [ -r ${wizard_tmp_script} ]; then rm -f ${wizard_tmp_script}; fi
+
 # download pf9-wizard
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
@@ -54,6 +57,7 @@ if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Expr
 # start pf9-wizard in virtual environment
 flag_started=0
 while [ ${flag_started} -eq 0 ]; do
+    echo "starting: ${venv_python} ${wizard_tmp_script}"
     eval ${venv_python} ${wizard_tmp_script}
     if [ $? -eq 0 ]; then
         flag_started=1
