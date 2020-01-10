@@ -111,11 +111,11 @@ while [ ${flag_started} -eq 0 ]; do
         echo "${stdout}" | grep "ASSERT: Failed to import python module:" > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             module_name=$(echo "${stdout}" | cut -d : -f3 | awk -F ' ' '{print $1}' | sed -e "s/'//g")
-            echo "--> attempting in installing missing module: [${module_name}]"
+            echo "--> attempting to installing missing module: [${module_name}]"
             if [ "${python_version}" == "2" ]; then
                 (. ${venv_activate}; pip install ${module_name} > /dev/null 2>&1)
             elif [ "${python_version}" == "3" ]; then
-                (. ${venv_activate}; python -m pip install ${module_name})
+                (. ${venv_activate}; python -m pip install ${module_name} > /dev/null 2>&1)
             fi
             if [ $? -ne 0 ]; then assert "failed to install missing module"; fi
         else
