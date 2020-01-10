@@ -26,15 +26,15 @@ init_venv_python3() {
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
-# validate python stack
-which python > /dev/null 2>&1
-if [ $? -ne 0 ]; then assert "Python stack missing"; fi
-
 # initialize installation directory
-if [ -d ${wizard_basedir} ]; then
+if [ ! -d ${wizard_basedir} ]; then
     mkdir -p ${wizard_basedir}
     if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
 fi
+
+# validate python stack
+which python > /dev/null 2>&1
+if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
 # remove existing environment
 if [ -f ${wizard_venv} ]; then

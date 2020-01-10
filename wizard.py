@@ -377,13 +377,15 @@ for repo in required_repos:
     if exit_status != 0:
         fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
-    #if flag_init_cli:
-    #    cmd = "cd {}; sudo pip install -e .[test]".format(repo['install_dir'])
-    #    exit_status, stdout = run_cmd(cmd)
-    #    if exit_status != 0:
-    #        for line in stdout:
-    #            sys.stdout.write("{}\n".format(stdout))
-    #        fail("INFO: {}: installation failed".format(repo['repo_name']))
+    print("flag_init_cli = {}".format(flag_init_cli))
+    if flag_init_cli:
+        cmd = "cd {}; pip install -e .[test]".format(repo['install_dir'])
+        exit_status, stdout = run_cmd(cmd)
+        print(stdout)
+        if exit_status != 0:
+            for line in stdout:
+                sys.stdout.write("{}\n".format(stdout))
+            fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
 sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))

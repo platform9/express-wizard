@@ -13,3 +13,6 @@ sudo yum install rh-python36
 scl enable rh-python36 bash
 /opt/rh/rh-python36/root/usr/bin/python
 ```
+
+To-Do's:
+1. Add top-level menu: Express CLI
