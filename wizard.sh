@@ -20,17 +20,29 @@ init_venv_python2() {
 }
 
 init_venv_python3() {
-    echo "Initializing Virtual Environment (Python 2)"
+    echo "Initializing Virtual Environment (Python 3)"
+    cd ${wizard_basedir}
+    python -m venv ${wizard_venv}
+    if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
 # validate python stack
 which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
+echo "current python stack (pre-venv): $(which python)"
 
 # initialize installation directory
-if [ ! -d ${wizard_basedir} ]; then
+if [ -d ${wizard_basedir} ]; then
+    echo "creating install directory: ${wizard_basedir}"
     mkdir -p ${wizard_basedir}
-    if [ $? -ne 0 ]; then assert "failed to create directory: ${wizard_basedir}"; fi
+    if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
+fi
+
+# remove existing environment
+if [ -f ${wizard_venv} ]; then
+    echo "removing existing virtual environment: ${wizard_venv}"
+    rm -rf ${wizard_venv}
+    if [ ! -f ${wizard_venv} ]; then assert "failed to remove virtual environment"; fi
 fi
 
 # configure python virtual environment
@@ -59,11 +71,12 @@ if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Expr
 
 # activate python virtual environment
 source ${venv_activate}
+echo "new python stack (post-venv): $(which python)"
 
 # start pf9-wizard in virtual environment
 flag_started=0
 while [ ${flag_started} -eq 0 ]; do
-    echo "starting: ${wizard_tmp_script}"
+    echo "running: (. ${venv_activate} && ${venv_python} ${wizard_tmp_script})"
     (. ${venv_activate} && ${venv_python} ${wizard_tmp_script})
     if [ $? -eq 0 ]; then
         flag_started=1
@@ -72,8 +85,12 @@ while [ ${flag_started} -eq 0 ]; do
         echo "${stdout}" | grep "ASSERT: Failed to import python module:" > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             module_name=$(echo "${stdout}" | cut -d : -f3)
-            echo "attempting in installing missing module: ${module_name}"
-            pip install ${module_name} > /dev/null 2>&1
+            echo "attempting in installing missing module: [${module_name}]"
+            if [ "${python_version}" == "2" ]; then
+                pip install ${module_name} > /dev/null 2>&1
+            elif [ "${python_version}" == "3" ]; then
+                python -m pip install ${module_name}
+            fi
             if [ $? -ne 0 ]; then assert "failed to install missing module"; fi
         else
             assert "${stdout}"
