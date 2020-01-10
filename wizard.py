@@ -23,7 +23,7 @@ try:
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
-    fail("x.Failed to import python module: {}".format(module_name))
+    fail("Failed to import python module: {}".format(module_name))
 
 # disable ssl warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
