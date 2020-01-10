@@ -389,13 +389,13 @@ def add_edit_du(CONFIG_DIR, CONFIG_FILE):
 
 def select_du(CONFIG_DIR,CONFIG_FILE):
     if not os.path.isdir(CONFIG_DIR):
-        sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+        sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
     elif not os.path.isfile(CONFIG_FILE):
-        sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+        sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
     else:
         current_config = datamodel.get_configs(CONFIG_FILE)
         if len(current_config) == 0:
-            sys.stdout.write("\nNo regions have been defined yet (run 'Add/Update Region')\n")
+            sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
         else:
             cnt = 1
             allowed_values = ['q']

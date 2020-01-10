@@ -72,11 +72,12 @@ def build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE):
         express_inventory_fh.write("[hypervisors]\n")
         cnt = 0
         for host in host_entries:
-            if cnt < 2:
-                express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={} dhcp=on snat=on\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
-            else:
-                express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={}\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
-            cnt += 1
+            if host['nova'] == "y":
+                if cnt < 2:
+                    express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={} dhcp=on snat=on\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
+                else:
+                    express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={}\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
+                cnt += 1
 
         # manage glance group
         express_inventory_fh.write("[glance]\n")

@@ -100,6 +100,15 @@ fi
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
 
+# upgrade pip
+(. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
+
+# install Openstack CLI
+reqs=https://raw.githubusercontent.com/platform9/support-locker/master/openstack-clients/requirements.txt
+constraints=http://raw.githubusercontent.com/openstack/requirements/stable/pike/upper-constraints.txt
+(. ${venv_activate} && pip install --upgrade --requirement ${reqs} --constraint ${constraints} > ${log} 2>&1)
+
+
 # start pf9-wizard in virtual environment
 flag_started=0
 while [ ${flag_started} -eq 0 ]; do

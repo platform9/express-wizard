@@ -18,7 +18,7 @@ def report_du_info(du_entries,CONFIG_FILE,HOST_FILE):
 
     sys.stdout.write("\n------ Region(s) ------\n")
     if not os.path.isfile(CONFIG_FILE):
-        sys.stdout.write("No regions have been defined yet (run 'Add/Update Region')\n")
+        sys.stdout.write("No regions have been defined yet (run 'Discover/Add Region')\n")
         return()
 
     du_table = PrettyTable()
@@ -57,7 +57,7 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
 
     sys.stdout.write("\n------ Kubernetes Clusters ------\n")
     if not os.path.isfile(CLUSTER_FILE):
-        sys.stdout.write("No clusters have been defined yet (run 'Add/Update Cluster')\n")
+        sys.stdout.write("No clusters have been defined yet (run 'Discover/Add Cluster')\n")
         return()
 
     du_table = PrettyTable()
@@ -73,6 +73,8 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
     du_table.align["UUID"] = "l"
 
     for cluster in cluster_entries:
+        print(cluster)
+        print("--------------------------------------")
         table_row = [
             cluster['name'],
             cluster['containers_cidr'],
@@ -92,11 +94,11 @@ def report_host_info(host_entries,HOST_FILE,CONFIG_FILE):
 
     sys.stdout.write("\n------ Hosts ------\n")
     if not os.path.isfile(HOST_FILE):
-        sys.stdout.write("No hosts have been defined yet (run 'Add/Update Hosts')\n")
+        sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
 
     if len(host_entries) == 0:
-        sys.stdout.write("No hosts have been defined yet (run 'Add/Update Hosts')\n")
+        sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
     
     du_metadata = datamodel.get_du_metadata(host_entries[0]['du_url'],CONFIG_FILE)
