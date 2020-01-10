@@ -52,6 +52,7 @@ esac
 if [ -r ${wizard_tmp_script} ]; then rm -f ${wizard_tmp_script}; fi
 
 # download pf9-wizard
+echo "downloading: ${wizard_url}"
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
 

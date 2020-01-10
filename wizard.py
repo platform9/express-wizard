@@ -20,7 +20,7 @@ if not sys.version_info[0] in (2,3):
 ####################################################################################################
 # module imports
 try:
-    import fred,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import freddie,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
