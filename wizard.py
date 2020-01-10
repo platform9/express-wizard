@@ -328,29 +328,30 @@ if args.init:
 
 # define dependent repositories
 required_repos = [
-    {
-        "repo_url": "https://github.com/platform9/express.git",
-        "repo_name": "Express",
-        "install_dir": EXPRESS_INSTALL_DIR,
-        "branch": "master"
-    },
+#    {
+#        "repo_url": "https://github.com/platform9/express.git",
+#        "repo_name": "Express",
+#        "install_dir": EXPRESS_INSTALL_DIR,
+#        "branch": "master"
+#    },
     {
         "repo_url": "https://github.com/platform9/express-cli.git",
         "repo_name": "Express CLI",
         "install_dir": EXPRESS_CLI_INSTALL_DIR,
         "branch": "master"
-    },
-    {
-        "repo_url": "https://github.com/platform9/express-wizard.git",
-        "repo_name": "Express Wizard",
-        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
-        "branch": "master"
     }
+#    {
+#        "repo_url": "https://github.com/platform9/express-wizard.git",
+#        "repo_name": "Express Wizard",
+#        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
+#        "branch": "master"
+#    }
 ]
 
 # manage dependent repositories
 sys.stdout.write("Validating Dependencies\n")
 for repo in required_repos:
+    print("repo = " + repo['repo_name'])
     flag_init_cli = False
     if not os.path.isdir(repo['install_dir']):
         sys.stdout.write("--> cloning: {}\n".format(repo['repo_url']))
@@ -383,10 +384,9 @@ for repo in required_repos:
     if flag_init_cli:
         cmd = "cd {}; pwd; ls -l ; pip install -e .[test]".format(repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
-        if exit_status != 0:
-            for line in stdout:
-                sys.stdout.write("{}\n".format(stdout))
-            fail("INFO: {}: installation failed".format(repo['repo_name']))
+        for line in stdout:
+            sys.stdout.write("{}\n".format(stdout))
+        #fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
 sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))

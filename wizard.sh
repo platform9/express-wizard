@@ -63,10 +63,8 @@ if [ -f ${wizard_tmp_script} ]; then
 fi
 
 # download pf9-wizard
-ls -l ${wizard_tmp_script}
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
-ls -l ${wizard_tmp_script}
 
 # activate python virtual environment
 source ${venv_activate}
