@@ -350,8 +350,8 @@ required_repos = [
 
 # manage dependent repositories
 sys.stdout.write("Validating Dependencies\n")
-flag_init_cli = False
 for repo in required_repos:
+    flag_init_cli = False
     if not os.path.isdir(repo['install_dir']):
         sys.stdout.write("--> cloning: {}\n".format(repo['repo_url']))
         cmd = "git clone {} {}".format(repo['repo_url'], repo['install_dir'])
