@@ -12,23 +12,6 @@ def fail(m=None):
     sys.stdout.write("ASSERT: {}\n".format(m))
     sys.exit(1)
 
-def run_cmd(cmd):
-    cmd_stdout = ""
-    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
-    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
-
-    # read output of command
-    if os.path.isfile(tmpfile):
-        try:
-            fh_tmpfile = open(tmpfile, 'r')
-            cmd_stdout = fh_tmpfile.readlines()
-        except:
-            None
-
-    os.remove(tmpfile)
-    return cmd_exitcode, cmd_stdout
-
-
 # validate python version
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
@@ -36,7 +19,7 @@ if not sys.version_info[0] in (2,3):
 ####################################################################################################
 # module imports
 try:
-    import requests,urllib3,json,argparse,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
@@ -57,6 +40,23 @@ def dump_var(target_var):
     from inspect import getmembers
     from pprint import pprint
     pprint(getmembers(target_var))
+
+
+def run_cmd(cmd):
+    cmd_stdout = ""
+    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
+    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
+
+    # read output of command
+    if os.path.isfile(tmpfile):
+        try:
+            fh_tmpfile = open(tmpfile, 'r')
+            cmd_stdout = fh_tmpfile.readlines()
+        except:
+            None
+
+    os.remove(tmpfile)
+    return cmd_exitcode, cmd_stdout
 
 
 def dump_text_file(target_file):
