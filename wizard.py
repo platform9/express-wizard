@@ -358,8 +358,9 @@ for repo in required_repos:
         exit_status, stdout = run_cmd(cmd)
         if not os.path.isdir(repo['install_dir']):
             fail("ERROR: failed to clone repository")
-        if repo['repo_name'] == "Express CLI":
-            flag_init_cli = True
+
+    if repo['repo_name'] == "Express CLI":
+        flag_init_cli = True
 
     cmd = "cd {}; git fetch -a".format(repo['install_dir'])
     exit_status, stdout = run_cmd(cmd)
