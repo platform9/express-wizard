@@ -49,7 +49,11 @@ case ${python_version} in
 esac
 
 # remove cached version of pf9-wizard
-if [ -r ${wizard_tmp_script} ]; then rm -f ${wizard_tmp_script}; fi
+if [ -f ${wizard_tmp_script} ]; then
+    echo "removing cached copy: ${wizard_tmp_script}"
+    rm -f ${wizard_tmp_script}
+    if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file"; fi
+fi
 
 # download pf9-wizard
 echo "downloading: ${wizard_url}"
@@ -64,12 +68,14 @@ echo "new python stack: $(which python)"
 # start pf9-wizard in virtual environment
 flag_started=0
 while [ ${flag_started} -eq 0 ]; do
-    echo "starting: ${venv_python} ${wizard_tmp_script}"
-    eval ${venv_python} ${wizard_tmp_script}
-    if [ $? -eq 0 ]; then
+    echo "starting: (. ${venv_activate} && ${venv_python} ${wizard_tmp_script}"
+    (. ${venv_activate} && ${venv_python} ${wizard_tmp_script})
+    ex=$?
+    echo "exit status = ${ex}"
+    if [ ${ex} -eq 0 ]; then
         flag_started=1
     else
-        stdout=$(eval ${venv_python} ${wizard_tmp_script})
+        stdout=$(. ${venv_activate} && ${venv_python} ${wizard_tmp_script})
         echo "${stdout}" | grep "ASSERT: Failed to import python module:" > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             module_name=$(echo "${stdout}" | cut -d : -f3)
