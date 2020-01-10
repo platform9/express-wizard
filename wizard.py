@@ -13,14 +13,13 @@ def fail(m=None):
     sys.exit(1)
 
 # validate python version
-print("wizard.py: version = {}".format(sys.executable))
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 
 ####################################################################################################
 # module imports
 try:
-    import freddie,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]

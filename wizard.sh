@@ -15,8 +15,7 @@ assert() {
 init_venv_python2() {
     echo "Initializing Virtual Environment (Python 2)"
     cd ${wizard_basedir}
-    #virtualenv ${wizard_venv} > /dev/null 2>&1
-    virtualenv ${wizard_venv}
+    virtualenv ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
@@ -27,7 +26,6 @@ init_venv_python3() {
 # validate python stack
 which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
-echo "current python stack: $(which python)"
 
 # initialize installation directory
 if [ ! -d ${wizard_basedir} ]; then
@@ -48,9 +46,8 @@ case ${python_version} in
     assert "unsupported python version"
 esac
 
-# remove cached version of pf9-wizard
+# remove cached version of pf9-wizard.py
 if [ -f ${wizard_tmp_script} ]; then
-    echo "removing cached copy: ${wizard_tmp_script}"
     rm -f ${wizard_tmp_script}
     if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file"; fi
 fi
@@ -61,18 +58,14 @@ curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
 
 # activate python virtual environment
-echo "sourcing venv"
 source ${venv_activate}
-echo "new python stack: $(which python)"
 
 # start pf9-wizard in virtual environment
 flag_started=0
 while [ ${flag_started} -eq 0 ]; do
-    echo "starting: (. ${venv_activate} && ${venv_python} ${wizard_tmp_script}"
+    echo "starting: ${wizard_tmp_script}"
     (. ${venv_activate} && ${venv_python} ${wizard_tmp_script})
-    ex=$?
-    echo "exit status = ${ex}"
-    if [ ${ex} -eq 0 ]; then
+    if [ $? -eq 0 ]; then
         flag_started=1
     else
         stdout=$(. ${venv_activate} && ${venv_python} ${wizard_tmp_script})
