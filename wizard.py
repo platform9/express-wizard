@@ -378,11 +378,11 @@ for repo in required_repos:
     if exit_status != 0:
         fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
+
     print("flag_init_cli = {}".format(flag_init_cli))
     if flag_init_cli:
-        cmd = "cd {}; pip install -e .[test]".format(repo['install_dir'])
+        cmd = "cd {}; pwd; ls -l ; pip install -e .[test]".format(repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
-        print(stdout)
         if exit_status != 0:
             for line in stdout:
                 sys.stdout.write("{}\n".format(stdout))
