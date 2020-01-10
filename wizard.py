@@ -19,11 +19,11 @@ if not sys.version_info[0] in (2,3):
 ####################################################################################################
 # module imports
 try:
-    import argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import fred,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
-    fail("Failed to import python module: {}".format(module_name))
+    fail("Failed to import python module: {}:{}".format(module_name,sys.executable))
 
 # disable ssl warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
