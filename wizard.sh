@@ -41,7 +41,7 @@ init_venv_python2() {
 init_venv_python3() {
     echo "Initializing Virtual Environment (Python 3)"
     cd ${wizard_basedir}
-    python -m venv ${wizard_venv}
+    python -m venv ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
