@@ -7,6 +7,12 @@ venv_activate="${wizard_venv}/bin/activate"
 wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/master/wizard.py
 wizard_tmp_script=/tmp/pf9-wizard.py
 
+# functions
+usage() {
+    echo "Usage: $(basename $0) [-i|--init]"
+    exit 1
+}
+
 assert() {
     if [ $# -gt 0 ]; then echo "ASSERT: ${1}"; fi
     exit 1
@@ -26,6 +32,24 @@ init_venv_python3() {
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
+## main
+
+# parse commandline
+while [ $# -gt 0 ]; do
+    case ${1} in
+    -h|--help)
+        usage
+        ;;
+    -i|--init)
+        if [ -d ${wizard_basedir} ]; then
+            rm -rf ${wizard_basedir}
+            if [ -d ${wizard_basedir} ]; then assert "failed to remove ${wizard_basedir}"; fi
+        fi
+        ;;
+    esac
+    shift
+done
+
 # initialize installation directory
 if [ ! -d ${wizard_basedir} ]; then
     mkdir -p ${wizard_basedir}
@@ -36,28 +60,25 @@ fi
 which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
-# remove existing environment
-if [ -f ${wizard_venv} ]; then
-    rm -rf ${wizard_venv}
-    if [ ! -f ${wizard_venv} ]; then assert "failed to remove virtual environment"; fi
-fi
-
 # configure python virtual environment
-python_version=$(python <<< "import sys; print(sys.version_info[0])")
-case ${python_version} in
-2)
-    init_venv_python2
-    ;;
-3)
-    init_venv_python3
-    ;;
-*)
-    assert "unsupported python version"
-esac
+if [ ! -f ${wizard_venv} ]; then
+    python_version=$(python <<< "import sys; print(sys.version_info[0])")
+    case ${python_version} in
+    2)
+        init_venv_python2
+        ;;
+    3)
+        init_venv_python3
+        ;;
+    *)
+        assert "unsupported python version"
+    esac
+else
+    echo "INFO: using exising virtual environment"
+fi
 
 # remove cached version of pf9-wizard.py
 if [ -f ${wizard_tmp_script} ]; then
-    echo "rm -f ${wizard_tmp_script}"
     rm -f ${wizard_tmp_script}
     if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file"; fi
 fi
@@ -65,9 +86,6 @@ fi
 # download pf9-wizard
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
-
-# activate python virtual environment
-source ${venv_activate}
 
 # start pf9-wizard in virtual environment
 flag_started=0
@@ -82,9 +100,9 @@ while [ ${flag_started} -eq 0 ]; do
             module_name=$(echo "${stdout}" | cut -d : -f3 | awk -F ' ' '{print $1}' | sed -e "s/'//g")
             echo "attempting in installing missing module: [${module_name}]"
             if [ "${python_version}" == "2" ]; then
-                pip install ${module_name} > /dev/null 2>&1
+                (. ${venv_activate}; pip install ${module_name} > /dev/null 2>&1)
             elif [ "${python_version}" == "3" ]; then
-                source ${venv_activate}; python -m pip install ${module_name}
+                (. ${venv_activate}; python -m pip install ${module_name})
             fi
             if [ $? -ne 0 ]; then assert "failed to install missing module"; fi
         else
