@@ -20,6 +20,19 @@ assert() {
 
 init_venv_python2() {
     echo "Initializing Virtual Environment (Python 2)"
+    which virtualenv
+    if [ $? -ne 0 ]; then
+        echo "ERROR: missing python package: virtualenv (attempting to install via 'pip install virtualenv')"
+        pip install virtualenv
+        if [ $? -ne 0 ]; then
+            echo "ERROR: failed to install python package (attempting to install via 'sudo pip install virtualenv')"
+            sudo pip install virtualenv
+            if [ $? -ne 0 ]; then
+                assert "Please install the 'virtualenv' module using 'pip install virtualenv'"
+            fi
+        fi
+    fi
+
     cd ${wizard_basedir}
     virtualenv ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
