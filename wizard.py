@@ -375,7 +375,14 @@ for repo in required_repos:
     cmd = "cd {}; git pull origin {}".format(repo['install_dir'],repo['branch'])
     exit_status, stdout = run_cmd(cmd)
     if exit_status != 0:
-        fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
+        cmd = "cd {}; git stash".format(repo['install_dir'])
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status != 0:
+            fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
+        cmd = "cd {}; git pull origin {}".format(repo['install_dir'],repo['branch'])
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status != 0:
+            fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
     if flag_init_cli:
         sys.stdout.write("INFO: Initializing EXPRESS CLI\n")
