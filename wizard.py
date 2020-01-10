@@ -351,7 +351,6 @@ required_repos = [
 # manage dependent repositories
 sys.stdout.write("Validating Dependencies\n")
 for repo in required_repos:
-    print("repo = " + repo['repo_name'])
     flag_init_cli = False
     if not os.path.isdir(repo['install_dir']):
         sys.stdout.write("--> cloning: {}\n".format(repo['repo_url']))
@@ -361,10 +360,7 @@ for repo in required_repos:
             fail("ERROR: failed to clone repository")
 
     if repo['repo_name'] == "Express CLI":
-        print("--> IS Express CLI")
         flag_init_cli = True
-    else:
-        print("--> NOT Express CLI")
 
     cmd = "cd {}; git fetch -a".format(repo['install_dir'])
     exit_status, stdout = run_cmd(cmd)
@@ -382,17 +378,14 @@ for repo in required_repos:
     if exit_status != 0:
         fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
-
     if flag_init_cli:
-        print("====> intalling EXPRESS CLI")
-        cmd = "cd {}; pwd; ls -l ; pip install -e .[test]".format(repo['install_dir'])
+        sys.stdout.write("INFO: Initializing EXPRESS CLI\n")
+        cmd = "cd {}; pip install -e .[test]".format(repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
         if exit_status != 0:
             for line in stdout:
-                sys.stdout.write("{}\n".format(stdout))
+                sys.stdout.write("{}\n".format(line))
             fail("INFO: {}: installation failed".format(repo['repo_name']))
-    else:
-        print("====> NOT intalling EXPRESS CLI")
 
 # update path for module imports
 sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
