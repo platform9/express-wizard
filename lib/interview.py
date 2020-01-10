@@ -444,8 +444,11 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
+        print("-------------A-------------")
         host_metadata = interview.get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE)
+        print("-------------B-------------")
         if host_metadata:
+            print("====> -------------1-------------")
             host = datamodel.create_host_entry()
             host['du_url'] = du['url']
             host['du_host_type'] = host_metadata['du_host_type']
@@ -467,19 +470,25 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
             if host['ip'] == "":
                 ssh_status = "No Primary IP"
             else:
-                du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
-                if du_metadata:
-                    ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
-                    if ssh_status == True:
-                        ssh_status = "OK"
+                user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts", ['q','y','n'], 'n', True, True)
+                if user_input == "y":
+                    du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
+                    if du_metadata:
+                        ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
+                        if ssh_status == True:
+                            ssh_status = "OK"
+                        else:
+                            ssh_status = "Failed"
                     else:
-                        ssh_status = "Failed"
+                        ssh_status = "Unvalidated"
                 else:
                     ssh_status = "Unvalidated"
             host['ssh_status'] = ssh_status
 
             # persist configurtion
             datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
+        else:
+            print("====> -------------2-------------")
 
 
 def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
