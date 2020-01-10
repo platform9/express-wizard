@@ -444,11 +444,8 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
-        print("-------------A-------------")
         host_metadata = interview.get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE)
-        print("-------------B-------------")
         if host_metadata:
-            print("====> -------------1-------------")
             host = datamodel.create_host_entry()
             host['du_url'] = du['url']
             host['du_host_type'] = host_metadata['du_host_type']
@@ -487,8 +484,6 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
 
             # persist configurtion
             datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
-        else:
-            print("====> -------------2-------------")
 
 
 def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
