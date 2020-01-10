@@ -12,6 +12,23 @@ def fail(m=None):
     sys.stdout.write("ASSERT: {}\n".format(m))
     sys.exit(1)
 
+def run_cmd(cmd):
+    cmd_stdout = ""
+    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
+    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
+
+    # read output of command
+    if os.path.isfile(tmpfile):
+        try:
+            fh_tmpfile = open(tmpfile, 'r')
+            cmd_stdout = fh_tmpfile.readlines()
+        except:
+            None
+
+    os.remove(tmpfile)
+    return cmd_exitcode, cmd_stdout
+
+
 # validate python version
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
@@ -23,7 +40,7 @@ try:
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
-    fail("Failed to import module: {} (try running 'pip install {}')".format(sys.exc_info()[1],module_name))
+    fail("Failed to import python module: {}".format(module_name))
 
 # disable ssl warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -52,23 +69,6 @@ def dump_text_file(target_file):
         target_fh.close()
     except:
         sys.stdout.write("ERROR: failed to open file: {}".format(target_file))
-
-
-def run_cmd(cmd):
-    cmd_stdout = ""
-    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
-    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
-
-    # read output of command
-    if os.path.isfile(tmpfile):
-        try:
-            fh_tmpfile = open(tmpfile, 'r')
-            cmd_stdout = fh_tmpfile.readlines()
-        except:
-            None
-
-    os.remove(tmpfile)
-    return cmd_exitcode, cmd_stdout
 
 
 def view_log(log_files):
