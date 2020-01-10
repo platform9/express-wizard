@@ -13,6 +13,7 @@ def fail(m=None):
     sys.exit(1)
 
 # validate python version
+print("wizard.py: version = {}".format(sys.executable))
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 

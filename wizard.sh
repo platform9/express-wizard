@@ -15,9 +15,9 @@ assert() {
 init_venv_python2() {
     echo "Initializing Virtual Environment (Python 2)"
     cd ${wizard_basedir}
-    virtualenv ${wizard_venv} > /dev/null 2>&1
+    #virtualenv ${wizard_venv} > /dev/null 2>&1
+    virtualenv ${wizard_venv}
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
-    eval source ${venv_activate}
 }
 
 init_venv_python3() {
@@ -27,6 +27,7 @@ init_venv_python3() {
 # validate python stack
 which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
+echo "current python stack: $(which python)"
 
 # initialize installation directory
 if [ ! -d ${wizard_basedir} ]; then
@@ -53,6 +54,11 @@ if [ -r ${wizard_tmp_script} ]; then rm -f ${wizard_tmp_script}; fi
 # download pf9-wizard
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
+
+# activate python virtual environment
+echo "sourcing venv"
+source ${venv_activate}
+echo "new python stack: $(which python)"
 
 # start pf9-wizard in virtual environment
 flag_started=0
