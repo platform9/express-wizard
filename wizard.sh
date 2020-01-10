@@ -106,7 +106,7 @@ if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Expr
 # install Openstack CLI
 reqs=https://raw.githubusercontent.com/platform9/support-locker/master/openstack-clients/requirements.txt
 constraints=http://raw.githubusercontent.com/openstack/requirements/stable/pike/upper-constraints.txt
-(. ${venv_activate} && pip install --upgrade --requirement ${reqs} --constraint ${constraints} > ${log} 2>&1)
+(. ${venv_activate} && pip install --upgrade --requirement ${reqs} --constraint ${constraints} > /dev/null 2>&1)
 
 
 # start pf9-wizard in virtual environment
