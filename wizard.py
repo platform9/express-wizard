@@ -328,24 +328,24 @@ if args.init:
 
 # define dependent repositories
 required_repos = [
-#    {
-#        "repo_url": "https://github.com/platform9/express.git",
-#        "repo_name": "Express",
-#        "install_dir": EXPRESS_INSTALL_DIR,
-#        "branch": "master"
-#    },
+    {
+        "repo_url": "https://github.com/platform9/express.git",
+        "repo_name": "Express",
+        "install_dir": EXPRESS_INSTALL_DIR,
+        "branch": "master"
+    },
     {
         "repo_url": "https://github.com/platform9/express-cli.git",
         "repo_name": "Express CLI",
         "install_dir": EXPRESS_CLI_INSTALL_DIR,
         "branch": "master"
+    },
+    {
+        "repo_url": "https://github.com/platform9/express-wizard.git",
+        "repo_name": "Express Wizard",
+        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
+        "branch": "master"
     }
-#    {
-#        "repo_url": "https://github.com/platform9/express-wizard.git",
-#        "repo_name": "Express Wizard",
-#        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
-#        "branch": "master"
-#    }
 ]
 
 # manage dependent repositories
@@ -361,7 +361,10 @@ for repo in required_repos:
             fail("ERROR: failed to clone repository")
 
     if repo['repo_name'] == "Express CLI":
+        print("--> IS Express CLI")
         flag_init_cli = True
+    else:
+        print("--> NOT Express CLI")
 
     cmd = "cd {}; git fetch -a".format(repo['install_dir'])
     exit_status, stdout = run_cmd(cmd)
@@ -380,13 +383,16 @@ for repo in required_repos:
         fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
  
 
-    print("flag_init_cli = {}".format(flag_init_cli))
     if flag_init_cli:
+        print("====> intalling EXPRESS CLI")
         cmd = "cd {}; pwd; ls -l ; pip install -e .[test]".format(repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
-        for line in stdout:
-            sys.stdout.write("{}\n".format(stdout))
-        #fail("INFO: {}: installation failed".format(repo['repo_name']))
+        if exit_status != 0:
+            for line in stdout:
+                sys.stdout.write("{}\n".format(stdout))
+            fail("INFO: {}: installation failed".format(repo['repo_name']))
+    else:
+        print("====> NOT intalling EXPRESS CLI")
 
 # update path for module imports
 sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
