@@ -6,6 +6,8 @@ import user_io
 import ssh_utils
 import subprocess
 import datamodel
+import reports
+import interview
 
 def build_express_config(du,CONFIG_DIR):
     express_config = "{}/{}.conf".format(CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
@@ -266,25 +268,8 @@ def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express
         return()
     if role_flag == 1:
         if target_inventory in ['k8s_master','ks8_worker']:
-            # invoke express-cli (new way)
-            try:
-                shutil.copyfile(express_config, PF9_EXPRESS_CONFIG_PATH)
-            except:
-                sys.stdout.write("ERROR: failed to update {}\n".format(PF9_EXPRESS_CONFIG_PATH))
-                return()
-
-            # if cluster not created, create it
-
-            # attach master nodes
-
-            # attach worker nodes
-
-            sys.stdout.write("Running: express cluster attach-node \n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            # p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-            # invoke pf9-express (Old way)
-            # sys.stdout.write("Running: {} -a -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            # p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: {} -a -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
             sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
             p = subprocess.Popen([PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -302,6 +287,39 @@ def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express
         tail_log(p)
     else:
         wait_for_job(p)
+
+
+def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
+    selected_cluster = interview.select_cluster(CLUSTER_FILE,du['url'])
+    if selected_cluster:
+        user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'n', True, True)
+        if user_input == "y":
+            master_entries = datamodel.get_unattached_masters(selected_cluster,HOST_FILE)
+            if master_entries:
+                reports.report_host_info(master_entries,HOST_FILE,CONFIG_FILE)
+                allowed_values = ['q','all']
+                for node in master_entries:
+                    allowed_values.append(node['hostname'])
+                user_input = user_io.read_kbd("\nSelect Master Node to Attach ('all' to attach all master nodes):", allowed_values, '', True, True)
+
+                # invoke express-cli
+                express_config = build_express_config(du,CONFIG_DIR)
+                if express_config:
+                    try:
+                        shutil.copyfile(express_config, PF9_EXPRESS_CONFIG_PATH)
+                    except:
+                        sys.stdout.write("ERROR: failed to update {}\n".format(PF9_EXPRESS_CONFIG_PATH))
+                        return()
+
+        user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'n', True, True)
+        if user_input == "y":
+            worker_entries = datamodel.get_unattached_workers(selected_cluster,HOST_FILE)
+            if worker_entries:
+                reports.report_host_info(worker_entries,HOST_FILE,CONFIG_FILE)
+                allowed_values = ['q','all']
+                for node in worker_entries:
+                    allowed_values.append(node['hostname'])
+                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all master nodes):", allowed_values, '', True, True)
 
 
 def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH):

@@ -120,6 +120,40 @@ def get_host_record(du_url,hostname,HOST_FILE):
     return(host_metadata)
 
 
+def get_unattached_masters(cluster,HOST_FILE):
+    masters = []
+    if os.path.isfile(HOST_FILE):
+        with open(HOST_FILE) as json_file:
+            host_configs = json.load(json_file)
+        for host in host_configs:
+            if host['du_url'] != cluster['du_url']:
+                continue
+            if host['cluster_name'] != cluster['name']:
+                continue
+            if host['node_type'] != "master":
+                continue
+            if host['cluster_attach_status'] != "Attached":
+                masters.append(host)
+    return(masters)
+
+
+def get_unattached_workers(cluster,HOST_FILE):
+    workers = []
+    if os.path.isfile(HOST_FILE):
+        with open(HOST_FILE) as json_file:
+            host_configs = json.load(json_file)
+        for host in host_configs:
+            if host['du_url'] != cluster['du_url']:
+                continue
+            if host['cluster_name'] != cluster['name']:
+                continue
+            if host['node_type'] != "worker":
+                continue
+            if host['cluster_attach_status'] != "Attached":
+                workers.append(host)
+    return(workers)
+
+
 def get_clusters(du_url,CLUSTER_FILE):
     du_clusters = []
     if os.path.isfile(CLUSTER_FILE):

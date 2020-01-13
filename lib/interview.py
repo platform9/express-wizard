@@ -413,6 +413,30 @@ def select_du(CONFIG_DIR,CONFIG_FILE):
         return({})
 
 
+def select_cluster(CLUSTER_FILE, du_url):
+    if not os.path.isfile(CLUSTER_FILE):
+        sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
+    else:
+        current_clusters = datamodel.get_clusters(du_url, CLUSTER_FILE)
+        if len(current_clusters) == 0:
+            sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
+        else:
+            cnt = 1
+            allowed_values = ['q']
+            sys.stdout.write("\n")
+            for cluster in current_clusters:
+                sys.stdout.write("{}. {}\n".format(cnt,cluster['name']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            user_input = user_io.read_kbd("Select Cluster", allowed_values, '', True, True)
+            if user_input == "q":
+                return({})
+            else:
+                idx = int(user_input) - 1
+                return(current_clusters[idx])
+        return({})
+
+
 def add_cluster(du,CONFIG_DIR,CLUSTER_FILE):
     sys.stdout.write("\nAdding Cluster to Region: {}\n".format(du['url']))
     project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])

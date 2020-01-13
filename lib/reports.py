@@ -73,7 +73,6 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
     du_table.align["UUID"] = "l"
 
     for cluster in cluster_entries:
-        print(cluster)
         print("--------------------------------------")
         table_row = [
             cluster['name'],
@@ -92,12 +91,13 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
 def report_host_info(host_entries,HOST_FILE,CONFIG_FILE):
     from prettytable import PrettyTable
 
-    sys.stdout.write("\n------ Hosts ------\n")
     if not os.path.isfile(HOST_FILE):
+        sys.stdout.write("\n------ Hosts ------\n")
         sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
 
     if len(host_entries) == 0:
+        sys.stdout.write("\n------ Hosts ------\n")
         sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
     

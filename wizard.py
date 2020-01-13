@@ -1,6 +1,8 @@
 ####################################################################################################
 ## PF9-Wizard | Onboarding Tool for Platform9 
 ## Copyright(c) 2019 Platform9 Systems, Inc.
+##
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py)
 ####################################################################################################
 import os
 import sys
@@ -251,8 +253,21 @@ def menu_level0():
             selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
             if selected_du:
                 if selected_du != "q":
-                    host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    express_utils.run_express(selected_du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH)
+                    if selected_du['du_type'] == "Kubernetes":
+                        sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
+                        express_utils.run_express_cli(selected_du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE)
+                    elif selected_du['du_type'] == "KVM":
+                        sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
+                        host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
+                        express_utils.run_express(selected_du,
+                            host_entries,
+                            EXPRESS_INSTALL_DIR,
+                            EXPRESS_REPO,
+                            CONFIG_DIR,
+                            PF9_EXPRESS,
+                            CLUSTER_FILE,
+                            PF9_EXPRESS_CONFIG_PATH
+                        )
         elif user_input == '6':
             menu_level1()
         elif user_input in ['q','Q']:
@@ -395,7 +410,8 @@ for repo in required_repos:
             fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
-sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
+#sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
+sys.path.append("lib")
 
 # perform import (from modules within dependent repos)
 try:
