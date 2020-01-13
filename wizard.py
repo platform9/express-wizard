@@ -252,7 +252,7 @@ def menu_level0():
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    express_utils.run_express(selected_du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE)
+                    express_utils.run_express(selected_du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH)
         elif user_input == '6':
             menu_level1()
         elif user_input in ['q','Q']:
@@ -312,6 +312,7 @@ CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
 EXPRESS_LOG_DIR = "{}/.pf9-wizard/pf9-express/log".format(expanduser("~"))
 PF9_EXPRESS = "{}/.pf9-wizard/express/pf9-express".format(expanduser("~"))
+PF9_EXPRESS_CONFIG_PATH = "{}/.pf9-wizard/express/pf9-express.conf".format(expanduser("~"))
 EXPRESS_INSTALL_DIR = "{}/express".format(CONFIG_DIR)
 EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
 EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)

@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import time
 import user_io
 import ssh_utils
@@ -247,7 +248,7 @@ def tail_log(p):
         last_line = current_line
 
 
-def invoke_express(PF9_EXPRESS, express_config, express_inventory, target_inventory, role_flag):
+def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, target_inventory, role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
     user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 'n', True, True)
     if user_input == 'q':
@@ -265,8 +266,25 @@ def invoke_express(PF9_EXPRESS, express_config, express_inventory, target_invent
         return()
     if role_flag == 1:
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: {} -a -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            # invoke express-cli (new way)
+            try:
+                shutil.copyfile(express_config, PF9_EXPRESS_CONFIG_PATH)
+            except:
+                sys.stdout.write("ERROR: failed to update {}\n".format(PF9_EXPRESS_CONFIG_PATH))
+                return()
+
+            # if cluster not created, create it
+
+            # attach master nodes
+
+            # attach worker nodes
+
+            sys.stdout.write("Running: express cluster attach-node \n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            # p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+            # invoke pf9-express (Old way)
+            # sys.stdout.write("Running: {} -a -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            # p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
             sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
             p = subprocess.Popen([PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -286,7 +304,7 @@ def invoke_express(PF9_EXPRESS, express_config, express_inventory, target_invent
         wait_for_job(p)
 
 
-def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE):
+def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH):
     sys.stdout.write("\nPF9-Express Inventory (region type = {})\n".format(du['du_type']))
     if du['du_type'] == "Kubernetes":
         express_inventories = [
@@ -349,6 +367,6 @@ def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_
         if express_config:
             express_inventory = build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE)
             if express_inventory:
-                invoke_express(PF9_EXPRESS, express_config, express_inventory, target_inventory, role_flag)
+                invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, target_inventory, role_flag)
     
 
