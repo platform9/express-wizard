@@ -255,7 +255,7 @@ def menu_level0():
                 if selected_du != "q":
                     if selected_du['du_type'] == "Kubernetes":
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
-                        express_utils.run_express_cli(selected_du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE)
+                        express_utils.run_express_cli(selected_du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE,EXPRESS_CLI_CONFIG_DIR,EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,EXPRESS_INSTALL_DIR,EXPRESS_REPO,PF9_EXPRESS,PF9_EXPRESS_CONFIG_PATH)
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
@@ -323,6 +323,8 @@ args = _parse_args()
 CONFIG_DIR = "{}/.pf9-wizard".format(expanduser("~"))
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
+WIZARD_VENV = "{}/.pf9-wizard/wizard-venv/bin/activate".format(expanduser("~"))
+WIZARD_PYTHON = "{}/.pf9-wizard/wizard-venv/bin/python".format(expanduser("~"))
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
 EXPRESS_LOG_DIR = "{}/.pf9-wizard/pf9-express/log".format(expanduser("~"))
@@ -330,6 +332,8 @@ PF9_EXPRESS = "{}/.pf9-wizard/express/pf9-express".format(expanduser("~"))
 PF9_EXPRESS_CONFIG_PATH = "{}/.pf9-wizard/express/pf9-express.conf".format(expanduser("~"))
 EXPRESS_INSTALL_DIR = "{}/express".format(CONFIG_DIR)
 EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
+EXPRESS_CLI_CONFIG_DIR = "{}/pf9/pf9-express/config/express.conf".format(expanduser("~"))
+EXPRESS_CLI = "{}/.pf9-wizard/wizard-venv/bin/express".format(expanduser("~"))
 EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
 
 # perform initialization (if invoked with '--init')

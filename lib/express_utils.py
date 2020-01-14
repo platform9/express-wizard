@@ -245,7 +245,7 @@ def tail_log(p):
             sys.stdout.write(str(current_line))
         if p.poll() != None:
             if current_line == last_line:
-                sys.stdout.write("-------------------- PROCESS COMPETE --------------------\n")
+                sys.stdout.write("-------------------------------- Process Complete -------------------------------\n")
                 break
         last_line = current_line
 
@@ -289,8 +289,35 @@ def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express
         wait_for_job(p)
 
 
-def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
-    selected_cluster = interview.select_cluster(CLUSTER_FILE,du['url'])
+def invoke_express_cli(EXPRESS_CLI, WIZARD_VENV, WIZARD_PYTHON, nodes, cluster_name, node_type):
+    sys.stdout.write("\nRunning PF9-Express CLI\n")
+    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'n', True, True)
+    if user_input == 'q':
+        return()
+
+    # build command args
+    command_args = ['.',WIZARD_VENV,'&&',WIZARD_PYTHON,EXPRESS_CLI,'cluster','attach-node']
+    for node in nodes:
+        command_args.append("-m")
+        command_args.append(node['ip'])
+    command_args.append(cluster_name)
+    cmd = ""
+    for c in command_args:
+        cmd = "{} {}".format(cmd,c)
+    sys.stdout.write("Running: {}\n".format(cmd))
+    c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+    if user_input == 'y':
+        sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
+        tail_log(c)
+    else:
+        wait_for_job(c)
+
+
+
+
+def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE,EXPRESS_CLI_CONFIG_DIR,EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,EXPRESS_INSTALL_DIR,EXPRESS_REPO,PF9_EXPRESS,PF9_EXPRESS_CONFIG_PATH):
+    selected_cluster = interview.select_target_cluster(CLUSTER_FILE,du['url'])
     if selected_cluster:
         user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'n', True, True)
         if user_input == "y":
@@ -300,16 +327,36 @@ def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
                 allowed_values = ['q','all']
                 for node in master_entries:
                     allowed_values.append(node['hostname'])
-                user_input = user_io.read_kbd("\nSelect Master Node to Attach ('all' to attach all master nodes):", allowed_values, '', True, True)
+                user_input = user_io.read_kbd("\nSelect Master Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True)
+                if user_input == "all":
+                    targets = master_entries
+                else:
+                    idx = int(user_input) - 1
+                    targets = master_entries[idx]
+
+                flag_installed = install_express(du,EXPRESS_INSTALL_DIR,EXPRESS_REPO)
+                if flag_installed == True:
+                    express_config = build_express_config(du,CONFIG_DIR)
+                    if express_config:
+                        express_inventory = build_express_inventory(du,master_entries,CONFIG_DIR,CLUSTER_FILE)
+                        if express_inventory:
+                            try:
+                                shutil.copyfile(express_config, EXPRESS_CLI_CONFIG_DIR)
+                            except:
+                                sys.stdout.write("ERROR: failed to update {}\n".format(EXPRESS_CLI_CONFIG_DIR))
+                                return()
+                            invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, "k8s_master", 0)
+                            #invoke_express_cli(EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,targets,selected_cluster['name'],"master")
 
                 # invoke express-cli
-                express_config = build_express_config(du,CONFIG_DIR)
-                if express_config:
-                    try:
-                        shutil.copyfile(express_config, PF9_EXPRESS_CONFIG_PATH)
-                    except:
-                        sys.stdout.write("ERROR: failed to update {}\n".format(PF9_EXPRESS_CONFIG_PATH))
-                        return()
+                #express_config = build_express_config(du,CONFIG_DIR)
+                #if express_config:
+                #    try:
+                #        shutil.copyfile(express_config, EXPRESS_CLI_CONFIG_DIR)
+                #    except:
+                #        sys.stdout.write("ERROR: failed to update {}\n".format(EXPRESS_CLI_CONFIG_DIR))
+                #        return()
+                #    invoke_express_cli(EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,targets,selected_cluster['name'],"master")
 
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'n', True, True)
         if user_input == "y":
@@ -319,7 +366,7 @@ def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
                 allowed_values = ['q','all']
                 for node in worker_entries:
                     allowed_values.append(node['hostname'])
-                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all master nodes):", allowed_values, '', True, True)
+                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True)
 
 
 def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH):

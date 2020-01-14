@@ -413,7 +413,7 @@ def select_du(CONFIG_DIR,CONFIG_FILE):
         return({})
 
 
-def select_cluster(CLUSTER_FILE, du_url):
+def select_target_cluster(CLUSTER_FILE, du_url):
     if not os.path.isfile(CLUSTER_FILE):
         sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
     else:
