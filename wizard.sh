@@ -31,7 +31,7 @@ init_venv_python2() {
             echo "ERROR: missing package: pip (attempting to install using get-pip.py)"
             curl -s -o ${pip_path} ${pip_url}
             if [ ! -r ${pip_path} ]; then assert "failed to download get-pip.py (from ${pip_url})"; fi
-            python ${pip_path} > /dev/null 2>&1
+            python ${pip_path}
             if [ $? -ne 0 ]; then
                 echo "ERROR: failed to install package: pip (attempting to install via 'sudo get-pip.py')"
                 sudo python ${pip_path} > /dev/null 2>&1
