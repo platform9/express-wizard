@@ -294,7 +294,7 @@ def checkout_git_branch(branch_name,install_dir):
     cmd = "cd {} && git checkout {}".format(install_dir, branch_name)
     exit_status, stdout = run_cmd(cmd)
 
-    current_branch = get_express_branch(branch_name,install_dir)
+    current_branch = get_branch(branch_name,install_dir)
     if current_branch != branch_name:
         return(False)
 

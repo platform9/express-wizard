@@ -4,7 +4,9 @@ wizard_basedir=~/.pf9-wizard
 wizard_venv=${wizard_basedir}/wizard-venv
 venv_python="${wizard_venv}/bin/python"
 venv_activate="${wizard_venv}/bin/activate"
-wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/master/wizard.py
+#wizard_branch="master"
+wizard_branch="tomchris/add-region-validate"
+wizard_url="https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py"
 wizard_tmp_script=/tmp/pf9-wizard.py
 
 # functions
@@ -40,8 +42,20 @@ init_venv_python2() {
 
 init_venv_python3() {
     echo "Initializing Virtual Environment (Python 3)"
+    which virtualenv > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "ERROR: missing python package: virtualenv (attempting to install via 'pip3 install virtualenv')"
+        pip3 install virtualenv > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "ERROR: failed to install python package (attempting to install via 'sudo pip3 install virtualenv')"
+            sudo pip3 install virtualenv > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                assert "Please install the 'virtualenv' module using 'pip3 install virtualenv'"
+            fi
+        fi
+    fi
     cd ${wizard_basedir}
-    python -m venv ${wizard_venv} > /dev/null 2>&1
+    python3 -m venv ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
@@ -74,13 +88,21 @@ which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
 # configure python virtual environment
-if [ ! -f ${wizard_venv} ]; then
-    python_version=$(python <<< "import sys; print(sys.version_info[0])")
+if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
+    {
+        [ -x "$(which python3)" ] &&
+        python_version="$(python3 <<< 'import sys; print(sys.version_info[0])')"
+    } || {
+        python_version="$(python <<< "import sys; print(sys.version_info[0])")"
+    }
+    echo "python_version: ${python_version}"    
     case ${python_version} in
     2)
+        echo "DEBUGGING -- init_venv_python2"
         init_venv_python2
         ;;
     3)
+        echo "DEBUGGING -- init_venv_python3"
         init_venv_python3
         ;;
     *)
@@ -97,8 +119,8 @@ if [ -f ${wizard_tmp_script} ]; then
 fi
 
 # download pf9-wizard
-curl -s -o ${wizard_tmp_script} ${wizard_url}
-if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
+if [ "$(curl -s --fail -o ${wizard_tmp_script} ${wizard_url}; echo $?)" -ne 0 ]; then
+    assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
 
 # upgrade pip
 (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
