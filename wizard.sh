@@ -95,14 +95,11 @@ if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
     } || {
         python_version="$(python <<< "import sys; print(sys.version_info[0])")"
     }
-    echo "python_version: ${python_version}"    
     case ${python_version} in
     2)
-        echo "DEBUGGING -- init_venv_python2"
         init_venv_python2
         ;;
     3)
-        echo "DEBUGGING -- init_venv_python3"
         init_venv_python3
         ;;
     *)
