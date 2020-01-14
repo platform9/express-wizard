@@ -9,7 +9,7 @@ wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/master
 wizard_tmp_script=/tmp/pf9-wizard.py
 wizard_tmp_lib=/tmp/globals.py
 pip_url=https://bootstrap.pypa.io/get-pip.py
-pip_path/tmp/get_pip.py
+pip_path=/tmp/get_pip.py
 
 # functions
 usage() {
