@@ -273,20 +273,22 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     if user_input == 'q':
         return()
     if role_flag == 1:
-        if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: . {} && {} -a -b --pmk -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        else:
-            sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # pmo
+        sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+        cmd_args = ['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
+        p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     else:
         # install pf9-hostagent (skip role assignment)
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("x.Running: {} -b --pmk -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([globals.PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            # pmk
+            sys.stdout.write("Running: {} -b --pmk -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            cmd_args = [globals.PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory]
+            p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
+            # pmo
             sys.stdout.write("Running: . {} && {} -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            cmd_args = ['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory]
+            p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     if user_input == 'y':
         sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
@@ -302,7 +304,6 @@ def invoke_express_cli(nodes, cluster_name, node_type):
         return()
 
     # build command args
-    #command_args = ['.',globals.WIZARD_VENV,'&&',globals.WIZARD_PYTHON,globals.EXPRESS_CLI,'cluster','attach-node']
     command_args = [globals.EXPRESS_CLI,'cluster','attach-node']
     for node in nodes:
         command_args.append("-m")
@@ -352,14 +353,9 @@ def run_express_cli(du):
                             except:
                                 sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                                 return()
-                            sys.stdout.write("INFO: invoking pf9-express for node prep (system/pip packages)\n")
+                            sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_master",0)
-                            sys.stdout.write("INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-#   File "lib/express_utils.py", line 357, in run_express_cli
-#    invoke_express_cli(globals.EXPRESS_CLI,globals.WIZARD_VENV,globals.WIZARD_PYTHON,targets,selected_cluster['name'],"master")
-#TypeError: invoke_express_cli() takes exactly 3 arguments (6 given)
-
-
+                            sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                             invoke_express_cli(targets,selected_cluster['name'],"master")
 
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True)

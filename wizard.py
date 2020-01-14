@@ -20,12 +20,11 @@ if not sys.version_info[0] in (2,3):
 # include globals.py - handle case where it lives in /tmp (e.g. wizard.sh)
 if os.path.isfile("/tmp/globals.py"):
     sys.path.append("/tmp")
-import globals
 
 ####################################################################################################
 # module imports
 try:
-    import argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import globals,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
@@ -263,9 +262,7 @@ def menu_level0():
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
-                        express_utils.run_express(selected_du,
-                            host_entries
-                        )
+                        express_utils.run_express(selected_du, host_entries)
         elif user_input == '6':
             menu_level1()
         elif user_input in ['q','Q']:

@@ -402,10 +402,11 @@ def select_du(du_type_filter=None):
             allowed_values = ['q']
             sys.stdout.write("\n")
             for du in current_config:
-                if du_type_filter and du['du_type'] in du_type_filter:
-                    sys.stdout.write("{}. {}\n".format(cnt,du['url']))
-                    allowed_values.append(str(cnt))
-                    cnt += 1
+                if du_type_filter and not du['du_type'] in du_type_filter:
+                    continue
+                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
+                allowed_values.append(str(cnt))
+                cnt += 1
             user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
             if user_input == "q":
                 return({})
