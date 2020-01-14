@@ -343,7 +343,7 @@ required_repos = [
         "repo_url": "https://github.com/platform9/express-wizard.git",
         "repo_name": "Express Wizard",
         "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
-        "branch": "dwright-cluster-attach"
+        "branch": "master"
     }
 ]
 
