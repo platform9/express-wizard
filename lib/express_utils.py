@@ -157,7 +157,7 @@ def build_express_inventory(du,host_entries):
 
 
 def checkout_branch(git_branch):
-    cmd = "cd {} && git checkout {}".format(EXPRESS_INSTALL_DIR, git_branch)
+    cmd = "cd {} && git checkout {}".format(globals.EXPRESS_INSTALL_DIR, git_branch)
     exit_status, stdout = ssh_utils.run_cmd(cmd)
 
     current_branch = get_express_branch(git_branch)
@@ -168,10 +168,10 @@ def checkout_branch(git_branch):
 
 
 def get_express_branch(git_branch):
-    if not os.path.isdir(EXPRESS_INSTALL_DIR):
+    if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
         return(None)
 
-    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(EXPRESS_INSTALL_DIR)
+    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(globals.EXPRESS_INSTALL_DIR)
     exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         return(None)
@@ -181,16 +181,16 @@ def get_express_branch(git_branch):
 
 def install_express(du):
     sys.stdout.write("\nInstalling PF9-Express (branch = {})\n".format(du['git_branch']))
-    if not os.path.isdir(EXPRESS_INSTALL_DIR):
-        cmd = "git clone {} {}".format(EXPRESS_REPO, EXPRESS_INSTALL_DIR)
+    if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
+        cmd = "git clone {} {}".format(EXPRESS_REPO, globals.EXPRESS_INSTALL_DIR)
         sys.stdout.write("--> cloning repository ({})\n".format(cmd))
         exit_status, stdout = ssh_utils.run_cmd(cmd)
-        if not os.path.isdir(EXPRESS_INSTALL_DIR):
+        if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
             sys.stdout.write("ERROR: failed to clone PF9-Express Repository\n")
             return(False)
 
     sys.stdout.write("--> refreshing repository (git fetch -a)\n")
-    cmd = "cd {}; git fetch -a".format(EXPRESS_INSTALL_DIR)
+    cmd = "cd {}; git fetch -a".format(globals.EXPRESS_INSTALL_DIR)
     exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         sys.stdout.write("ERROR: failed to fetch branches (git fetch -)\n")
@@ -204,7 +204,7 @@ def install_express(du):
             sys.stdout.write("ERROR: failed to checkout git branch: {}\n".format(du['git_branch']))
             return(False)
 
-    cmd = "cd {}; git pull origin {}".format(EXPRESS_INSTALL_DIR,du['git_branch'])
+    cmd = "cd {}; git pull origin {}".format(globals.EXPRESS_INSTALL_DIR,du['git_branch'])
     sys.stdout.write("--> pulling latest code (git pull origin {})\n".format(du['git_branch']))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
@@ -253,11 +253,16 @@ def tail_log(p):
 
 def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
-    user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)",
+        ['q','y','n','s'], 
+        'n', 
+        True, 
+        True
+    )
     if user_input == 'q':
         return()
     if user_input in ['y','n']:
-        p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if user_input == 'y':
             sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
             tail_log(p)
@@ -269,19 +274,19 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
         return()
     if role_flag == 1:
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: . {} && {} -a -b --pmk -c {} -v {} {}\n".format(globals.WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -a -b --pmk -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
-            sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     else:
         # install pf9-hostagent (skip role assignment)
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: . {} && {} -b --pmk -c {} -v {} {}\n".format(globals.WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("x.Running: {} -b --pmk -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen([globals.PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
-            sys.stdout.write("Running: . {} && {} -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     if user_input == 'y':
         sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
@@ -297,7 +302,8 @@ def invoke_express_cli(nodes, cluster_name, node_type):
         return()
 
     # build command args
-    command_args = ['.',globals.WIZARD_VENV,'&&',WIZARD_PYTHON,EXPRESS_CLI,'cluster','attach-node']
+    #command_args = ['.',globals.WIZARD_VENV,'&&',globals.WIZARD_PYTHON,globals.EXPRESS_CLI,'cluster','attach-node']
+    command_args = [globals.EXPRESS_CLI,'cluster','attach-node']
     for node in nodes:
         command_args.append("-m")
         command_args.append(node['ip'])
@@ -320,7 +326,7 @@ def invoke_express_cli(nodes, cluster_name, node_type):
 def run_express_cli(du):
     selected_cluster = interview.select_target_cluster(du['url'])
     if selected_cluster:
-        user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'n', True, True)
+        user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             master_entries = datamodel.get_unattached_masters(selected_cluster)
             if master_entries:
@@ -342,23 +348,21 @@ def run_express_cli(du):
                         express_inventory = build_express_inventory(du,master_entries)
                         if express_inventory:
                             try:
-                                shutil.copyfile(express_config, EXPRESS_CLI_CONFIG_DIR)
+                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
                             except:
-                                sys.stdout.write("ERROR: failed to update {}\n".format(EXPRESS_CLI_CONFIG_DIR))
+                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                                 return()
+                            sys.stdout.write("INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_master",0)
+                            sys.stdout.write("INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+#   File "lib/express_utils.py", line 357, in run_express_cli
+#    invoke_express_cli(globals.EXPRESS_CLI,globals.WIZARD_VENV,globals.WIZARD_PYTHON,targets,selected_cluster['name'],"master")
+#TypeError: invoke_express_cli() takes exactly 3 arguments (6 given)
 
-                # invoke express-cli
-                #express_config = build_express_config(du)
-                #if express_config:
-                #    try:
-                #        shutil.copyfile(express_config, EXPRESS_CLI_CONFIG_DIR)
-                #    except:
-                #        sys.stdout.write("ERROR: failed to update {}\n".format(EXPRESS_CLI_CONFIG_DIR))
-                #        return()
-                #    invoke_express_cli(EXPRESS_CLI,globals.WIZARD_VENV,WIZARD_PYTHON,targets,selected_cluster['name'],"master")
 
-        user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'n', True, True)
+                            invoke_express_cli(targets,selected_cluster['name'],"master")
+
+        user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if worker_entries:
