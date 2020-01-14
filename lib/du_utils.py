@@ -100,5 +100,3 @@ def get_du_type(du_url, project_id, token):
         else:
             region_type = "VMware"
     return(region_type)
-
-

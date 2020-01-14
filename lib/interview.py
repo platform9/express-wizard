@@ -215,12 +215,13 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
         user_url = user_io.read_kbd("--> Region URL", [], '', True, True)
         if user_url == 'q':
             return({})
-        if user_url.startswith('http://'):
-            user_url = user_url.replace('http://','https://')
-        if not user_url.startswith('https://'):
-            user_url = "https://{}".format(user_url)
     else:
         user_url = existing_du_url
+    
+    if user_url.startswith('http://'):
+        user_url = user_url.replace('http://','https://')
+    if not user_url.startswith('https://'):
+        user_url = "https://{}".format(user_url)
 
     du_metadata['du_url'] = user_url
     du_settings = datamodel.get_du_metadata(du_metadata['du_url'],CONFIG_FILE)
@@ -233,7 +234,7 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
         'VMware'
     ]
 
-    if du_settings:
+    try:
         selected_du_type = du_settings['du_type']
         du_user = du_settings['username']
         du_password = du_settings['password']
@@ -249,7 +250,7 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
         region_bond_if_name = du_settings['bond_ifname']
         region_bond_mode = du_settings['bond_mode']
         region_bond_mtu = du_settings['bond_mtu']
-    else:
+    except:
         selected_du_type = ""
         #du_user = "admin@platform9.net"
         #du_tenant = "service"
@@ -279,7 +280,13 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
     if user_input == 'q':
         return({})
     else:
-        selected_du_type = du_types[int(user_input) - 1] 
+        if type(user_input) is int or user_input.isdigit():
+            if int(user_input) > 0 and int(user_input) -1 in range(-len(du_types), len(du_types)):
+                selected_du_type = du_types[int(user_input) - 1]
+        else:
+            for du in du_types:
+                if user_input.upper() == du.upper():
+                    selected_du_type = du
 
     # set du type
     du_metadata['du_type'] = selected_du_type

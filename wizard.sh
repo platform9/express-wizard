@@ -20,42 +20,26 @@ assert() {
     exit 1
 }
 
-init_venv_python2() {
-    echo "Initializing Virtual Environment (Python 2)"
-    which virtualenv > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
+init_venv_python() {
+    if [ ${python_version} == 2 ]; then
+	pyver="";
+    else 
+	pyver="3";
+    fi
+    echo "Initializing Virtual Environment Python ${python_version}"
+    if [ "$(virtualenv --version -p python${pyver} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
         echo "ERROR: missing python package: virtualenv (attempting to install via 'pip install virtualenv')"
-        pip install virtualenv > /dev/null 2>&1
+        pip${pyver} install virtualenv > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             echo "ERROR: failed to install python package (attempting to install via 'sudo pip install virtualenv')"
-            sudo pip install virtualenv > /dev/null 2>&1
+            sudo pip${pyver} install virtualenv > /dev/null 2>&1
             if [ $? -ne 0 ]; then
                 assert "Please install the 'virtualenv' module using 'pip install virtualenv'"
             fi
         fi
     fi
-
     cd ${wizard_basedir}
-    virtualenv ${wizard_venv} > /dev/null 2>&1
-    if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
-}
-
-init_venv_python3() {
-    echo "Initializing Virtual Environment (Python 3)"
-    which virtualenv > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "ERROR: missing python package: virtualenv (attempting to install via 'pip3 install virtualenv')"
-        pip3 install virtualenv > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "ERROR: failed to install python package (attempting to install via 'sudo pip3 install virtualenv')"
-            sudo pip3 install virtualenv > /dev/null 2>&1
-            if [ $? -ne 0 ]; then
-                assert "Please install the 'virtualenv' module using 'pip3 install virtualenv'"
-            fi
-        fi
-    fi
-    cd ${wizard_basedir}
-    python3 -m venv ${wizard_venv} > /dev/null 2>&1
+    virtualenv -p python${pyver} ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
 }
 
@@ -89,22 +73,13 @@ if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
 # configure python virtual environment
 if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
-    {
-        [ -x "$(which python3)" ] &&
-        python_version="$(python3 <<< 'import sys; print(sys.version_info[0])')"
-    } || {
-        python_version="$(python <<< "import sys; print(sys.version_info[0])")"
-    }
-    case ${python_version} in
-    2)
-        init_venv_python2
-        ;;
-    3)
-        init_venv_python3
-        ;;
-    *)
-        assert "unsupported python version"
-    esac
+    for ver in {3,2}; do #ensure python3 is first
+        if [ -x "$(which python${ver})" ]; then
+	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
+	    break
+        fi
+    done
+    init_venv_python
 else
     echo "INFO: using exising virtual environment"
 fi
