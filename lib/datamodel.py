@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import globals
 
 
 def create_du_entry():
@@ -68,10 +69,10 @@ def create_cluster_entry():
     return(cluster_record)
 
 
-def get_du_metadata(du_url,CONFIG_FILE):
+def get_du_metadata(du_url):
     du_config = {}
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE) as json_file:
+    if os.path.isfile(globals.CONFIG_FILE):
+        with open(globals.CONFIG_FILE) as json_file:
             du_configs = json.load(json_file)
         for du in du_configs:
             if du['url'] == du_url:
@@ -81,11 +82,11 @@ def get_du_metadata(du_url,CONFIG_FILE):
     return(du_config)
 
 
-def get_defined_hosts(du_url,HOST_FILE):
+def get_defined_hosts(du_url):
     num_discovered_hosts = 0
 
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
             host_configs = json.load(json_file)
         for host in host_configs:
             if host['du_url'] == du_url:
@@ -94,10 +95,10 @@ def get_defined_hosts(du_url,HOST_FILE):
     return(num_discovered_hosts)
 
 
-def get_cluster_record(du_url,cluster_name,CLUSTER_FILE):
+def get_cluster_record(du_url,cluster_name):
     cluster_metadata = {}
-    if os.path.isfile(CLUSTER_FILE):
-        with open(CLUSTER_FILE) as json_file:
+    if os.path.isfile(globals.CLUSTER_FILE):
+        with open(globals.CLUSTER_FILE) as json_file:
             cluster_configs = json.load(json_file)
         for cluster in cluster_configs:
             if cluster['du_url'] == du_url and cluster['name'] == cluster_name:
@@ -107,10 +108,10 @@ def get_cluster_record(du_url,cluster_name,CLUSTER_FILE):
     return(cluster_metadata)
 
 
-def get_host_record(du_url,hostname,HOST_FILE):
+def get_host_record(du_url,hostname):
     host_metadata = {}
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
             host_configs = json.load(json_file)
         for host in host_configs:
             if host['du_url'] == du_url and host['hostname'] == hostname:
@@ -120,10 +121,10 @@ def get_host_record(du_url,hostname,HOST_FILE):
     return(host_metadata)
 
 
-def get_unattached_masters(cluster,HOST_FILE):
+def get_unattached_masters(cluster):
     masters = []
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
             host_configs = json.load(json_file)
         for host in host_configs:
             if host['du_url'] != cluster['du_url']:
@@ -137,10 +138,10 @@ def get_unattached_masters(cluster,HOST_FILE):
     return(masters)
 
 
-def get_unattached_workers(cluster,HOST_FILE):
+def get_unattached_workers(cluster):
     workers = []
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
             host_configs = json.load(json_file)
         for host in host_configs:
             if host['du_url'] != cluster['du_url']:
@@ -154,10 +155,10 @@ def get_unattached_workers(cluster,HOST_FILE):
     return(workers)
 
 
-def get_clusters(du_url,CLUSTER_FILE):
+def get_clusters(du_url):
     du_clusters = []
-    if os.path.isfile(CLUSTER_FILE):
-        with open(CLUSTER_FILE) as json_file:
+    if os.path.isfile(globals.CLUSTER_FILE):
+        with open(globals.CLUSTER_FILE) as json_file:
             du_clusters = json.load(json_file)
 
     if du_url == None:
@@ -171,10 +172,10 @@ def get_clusters(du_url,CLUSTER_FILE):
     return(filtered_clusters)
 
 
-def get_configs(CONFIG_FILE,du_url=None):
+def get_configs(du_url=None):
     du_configs = []
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE) as json_file:
+    if os.path.isfile(globals.CONFIG_FILE):
+        with open(globals.CONFIG_FILE) as json_file:
             du_configs = json.load(json_file)
 
     if not du_url:
@@ -187,10 +188,10 @@ def get_configs(CONFIG_FILE,du_url=None):
         return(filtered_du_configs)
 
 
-def delete_du(target_du,CONFIG_FILE):
+def delete_du(target_du):
     new_du_list = []
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE) as json_file:
+    if os.path.isfile(globals.CONFIG_FILE):
+        with open(globals.CONFIG_FILE) as json_file:
             du_configs = json.load(json_file)
         for du in du_configs:
             if du['url'] == target_du['url']:
@@ -198,20 +199,20 @@ def delete_du(target_du,CONFIG_FILE):
             else:
                 new_du_list.append(du)
     else:
-        sys.stdout.write("\nERROR: failed to open Region database: {}".format(CONFIG_FILE))
+        sys.stdout.write("\nERROR: failed to open Region database: {}".format(globals.CONFIG_FILE))
 
     # update DU database
     try:
-        with open(CONFIG_FILE, 'w') as outfile:
+        with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(new_du_list, outfile)
     except:
-        sys.stdout.write("\nERROR: failed to update Region database: {}".format(CONFIG_FILE))
+        sys.stdout.write("\nERROR: failed to update Region database: {}".format(globals.CONFIG_FILE))
 
 
-def get_hosts(du_url,HOST_FILE):
+def get_hosts(du_url):
     du_hosts = []
-    if os.path.isfile(HOST_FILE):
-        with open(HOST_FILE) as json_file:
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
             du_hosts = json.load(json_file)
 
     if du_url == None:
@@ -225,17 +226,17 @@ def get_hosts(du_url,HOST_FILE):
     return(filtered_hosts)
 
 
-def write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE):
-    if not os.path.isdir(CONFIG_DIR):
+def write_cluster(cluster):
+    if not os.path.isdir(globals.CONFIG_DIR):
         try:
-            os.mkdir(CONFIG_DIR)
+            os.mkdir(globals.CONFIG_DIR)
         except:
-            fail("failed to create directory: {}".format(CONFIG_DIR))
+            fail("failed to create directory: {}".format(globals.CONFIG_DIR))
 
-    current_clusters = get_clusters(None,CLUSTER_FILE)
+    current_clusters = get_clusters(None)
     if len(current_clusters) == 0:
         current_clusters.append(cluster)
-        with open(CLUSTER_FILE, 'w') as outfile:
+        with open(globals.CLUSTER_FILE, 'w') as outfile:
             json.dump(current_clusters, outfile)
     else:
         update_clusters = []
@@ -248,22 +249,22 @@ def write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE):
                 update_clusters.append(c)
         if not flag_found:
             update_clusters.append(cluster)
-        with open(CLUSTER_FILE, 'w') as outfile:
+        with open(globals.CLUSTER_FILE, 'w') as outfile:
             json.dump(update_clusters, outfile)
 
 
-def write_host(host,CONFIG_DIR,HOST_FILE):
-    if not os.path.isdir(CONFIG_DIR):
+def write_host(host):
+    if not os.path.isdir(globals.CONFIG_DIR):
         try:
-            os.mkdir(CONFIG_DIR)
+            os.mkdir(globals.CONFIG_DIR)
         except:
-            fail("failed to create directory: {}".format(CONFIG_DIR))
+            fail("failed to create directory: {}".format(globals.CONFIG_DIR))
 
     # get all hosts
-    current_hosts = get_hosts(None,HOST_FILE)
+    current_hosts = get_hosts(None)
     if len(current_hosts) == 0:
         current_hosts.append(host)
-        with open(HOST_FILE, 'w') as outfile:
+        with open(globals.HOST_FILE, 'w') as outfile:
             json.dump(current_hosts, outfile)
     else:
         update_hosts = []
@@ -276,21 +277,21 @@ def write_host(host,CONFIG_DIR,HOST_FILE):
                 update_hosts.append(h)
         if not flag_found:
             update_hosts.append(host)
-        with open(HOST_FILE, 'w') as outfile:
+        with open(globals.HOST_FILE, 'w') as outfile:
             json.dump(update_hosts, outfile)
 
 
-def write_config(du,CONFIG_DIR,CONFIG_FILE):
-    if not os.path.isdir(CONFIG_DIR):
+def write_config(du):
+    if not os.path.isdir(globals.CONFIG_DIR):
         try:
-            os.mkdir(CONFIG_DIR)
+            os.mkdir(globals.CONFIG_DIR)
         except:
-            fail("failed to create directory: {}".format(CONFIG_DIR))
+            fail("failed to create directory: {}".format(globals.CONFIG_DIR))
 
-    current_config = get_configs(CONFIG_FILE)
+    current_config = get_configs()
     if len(current_config) == 0:
         current_config.append(du)
-        with open(CONFIG_FILE, 'w') as outfile:
+        with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(current_config, outfile)
     else:
         update_config = []
@@ -303,7 +304,7 @@ def write_config(du,CONFIG_DIR,CONFIG_FILE):
                 update_config.append(config)
         if not flag_found:
             update_config.append(du)
-        with open(CONFIG_FILE, 'w') as outfile:
+        with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
 
 
@@ -314,8 +315,8 @@ def cluster_in_array(target_url,target_name,target_clusters):
     return(False)
 
 
-def get_cluster_uuid(du_url, cluster_name,CLUSTER_FILE):
-    cluster_settings = get_cluster_record(du_url, cluster_name, CLUSTER_FILE)
+def get_cluster_uuid(du_url, cluster_name):
+    cluster_settings = get_cluster_record(du_url, cluster_name)
     if cluster_settings:
         return(cluster_settings['uuid'])
     return(None)

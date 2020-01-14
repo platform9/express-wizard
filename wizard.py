@@ -6,7 +6,6 @@
 ####################################################################################################
 import os
 import sys
-from os.path import expanduser
 
 ####################################################################################################
 # early globals/functions
@@ -17,6 +16,11 @@ def fail(m=None):
 # validate python version
 if not sys.version_info[0] in (2,3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
+
+# include globals.py - handle case where it lives in /tmp (e.g. wizard.sh)
+if os.path.isfile("/tmp/globals.py"):
+    sys.path.append("/tmp")
+import globals
 
 ####################################################################################################
 # module imports
@@ -102,16 +106,16 @@ def get_logs():
     return(log_files)
 
 
-def view_inventory(du, host_entries, CONFIG_DIR):
-    express_inventory = express_utils.build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE)
+def view_inventory(du, host_entries):
+    express_inventory = express_utils.build_express_inventory(du,host_entries)
     if express_inventory:
         dump_text_file(express_inventory)
     else:
         sys.stdout.write("ERROR: failed to build inventory file: {}".format(express_inventory))
 
 
-def view_config(du,CONFIG_DIR):
-    express_config = express_utils.build_express_config(du,CONFIG_DIR)
+def view_config(du):
+    express_config = express_utils.build_express_config(du)
     if express_config:
         dump_text_file(express_config)
     else:
@@ -166,27 +170,27 @@ def menu_level1():
         display_menu1()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    datamodel.delete_du(selected_du,CONFIG_FILE)
+                    datamodel.delete_du(selected_du)
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
-            dump_database(CONFIG_FILE)
+            dump_database()
         elif user_input == '4':
-            dump_database(HOST_FILE)
+            dump_database()
         elif user_input == '5':
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    new_host = view_config(selected_du,CONFIG_DIR)
+                    new_host = view_config(selected_du)
         elif user_input == '6':
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    new_host = view_inventory(selected_du, host_entries, CONFIG_DIR)
+                    host_entries = datamodel.get_hosts(selected_du['url'])
+                    new_host = view_inventory(selected_du, host_entries)
         elif user_input == '7':
             log_files = get_logs()
             if len(log_files) == 0:
@@ -208,80 +212,59 @@ def menu_level0():
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
             action_header("MANAGE REGIONS")
-            selected_du = interview.add_edit_du(CONFIG_DIR, CONFIG_FILE)
+            selected_du = interview.add_edit_du()
             if selected_du != None:
                 if selected_du == "define-new-du":
                     target_du = None
                 else:
                     target_du = selected_du
-                new_du_list = interview.add_region(target_du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE)
+                new_du_list = interview.add_region(target_du)
                 if new_du_list:
-                    reports.report_du_info(new_du_list,CONFIG_FILE,HOST_FILE)
+                    reports.report_du_info(new_du_list)
         elif user_input == '2':
             action_header("MANAGE HOSTS")
             sys.stdout.write("\nSelect Region to add Host to:")
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     flag_more_hosts = True
                     while flag_more_hosts:
-                        new_host = interview.add_host(selected_du,HOST_FILE,CONFIG_DIR,CONFIG_FILE,CLUSTER_FILE)
+                        new_host = interview.add_host(selected_du)
                         user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'n', True, True)
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '3':
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    new_cluster = interview.add_cluster(selected_du,CONFIG_DIR,CLUSTER_FILE)
+                    new_cluster = interview.add_cluster(selected_du)
         elif user_input == '4':
             action_header("SHOW REGION")
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    du_entries = datamodel.get_configs(CONFIG_FILE,selected_du['url'])
-                    reports.report_du_info(du_entries,CONFIG_FILE,HOST_FILE)
-                    host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
-                    reports.report_host_info(host_entries,HOST_FILE,CONFIG_FILE)
+                    du_entries = datamodel.get_configs(selected_du['url'])
+                    reports.report_du_info(du_entries)
+                    host_entries = datamodel.get_hosts(selected_du['url'])
+                    reports.report_host_info(host_entries)
                     if selected_du['du_type'] in ['Kubernetes','KVM/Kubernetes']:
-                        cluster_entries = datamodel.get_clusters(selected_du['url'],CLUSTER_FILE)
-                        reports.report_cluster_info(cluster_entries,CLUSTER_FILE)
+                        cluster_entries = datamodel.get_clusters(selected_du['url'])
+                        reports.report_cluster_info(cluster_entries)
         elif user_input == '5':
             action_header("ONBOARD HOSTS")
-            selected_du = interview.select_du(CONFIG_DIR,CONFIG_FILE)
+            selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     if selected_du['du_type'] == "Kubernetes":
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
-                        express_utils.run_express_cli(selected_du,
-                            CONFIG_DIR,
-                            CONFIG_FILE,
-                            HOST_FILE,
-                            CLUSTER_FILE,
-                            EXPRESS_CLI_CONFIG_DIR,
-                            EXPRESS_CLI,
-                            WIZARD_VENV,
-                            WIZARD_PYTHON,
-                            EXPRESS_INSTALL_DIR,
-                            EXPRESS_REPO,
-                            PF9_EXPRESS,
-                            PF9_EXPRESS_CONFIG_PATH
-                        )
+                        express_utils.run_express_cli(selected_du)
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
-                        host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
+                        host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du,
-                            host_entries,
-                            EXPRESS_INSTALL_DIR,
-                            EXPRESS_REPO,
-                            CONFIG_DIR,
-                            PF9_EXPRESS,
-                            CLUSTER_FILE,
-                            PF9_EXPRESS_CONFIG_PATH,
-                            WIZARD_VENV,
-                            WIZARD_PYTHON
+                            host_entries
                         )
         elif user_input == '6':
             menu_level1()
@@ -334,51 +317,34 @@ def checkout_git_branch(branch_name,install_dir):
 ## main
 args = _parse_args()
 
-# globals
-CONFIG_DIR = "{}/.pf9-wizard".format(expanduser("~"))
-CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
-HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
-WIZARD_VENV = "{}/.pf9-wizard/wizard-venv/bin/activate".format(expanduser("~"))
-WIZARD_PYTHON = "{}/.pf9-wizard/wizard-venv/bin/python".format(expanduser("~"))
-CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
-EXPRESS_REPO = "https://github.com/platform9/express.git"
-EXPRESS_LOG_DIR = "{}/.pf9-wizard/pf9-express/log".format(expanduser("~"))
-PF9_EXPRESS = "{}/.pf9-wizard/express/pf9-express".format(expanduser("~"))
-PF9_EXPRESS_CONFIG_PATH = "{}/.pf9-wizard/express/pf9-express.conf".format(expanduser("~"))
-EXPRESS_INSTALL_DIR = "{}/express".format(CONFIG_DIR)
-EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
-EXPRESS_CLI_CONFIG_DIR = "{}/pf9/pf9-express/config/express.conf".format(expanduser("~"))
-EXPRESS_CLI = "{}/.pf9-wizard/wizard-venv/bin/express".format(expanduser("~"))
-EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
-
 # perform initialization (if invoked with '--init')
 if args.init:
     sys.stdout.write("INFO: initializing configuration\n")
-    if os.path.isfile(HOST_FILE):
-        os.remove(HOST_FILE)
-    if os.path.isfile(CONFIG_FILE):
-        os.remove(CONFIG_FILE)
-    if os.path.isfile(CLUSTER_FILE):
-        os.remove(CLUSTER_FILE)
+    if os.path.isfile(globals.HOST_FILE):
+        os.remove(globals.HOST_FILE)
+    if os.path.isfile(globals.CONFIG_FILE):
+        os.remove(globals.CONFIG_FILE)
+    if os.path.isfile(globals.CLUSTER_FILE):
+        os.remove(globals.CLUSTER_FILE)
 
 # define dependent repositories
 required_repos = [
     {
         "repo_url": "https://github.com/platform9/express.git",
         "repo_name": "Express",
-        "install_dir": EXPRESS_INSTALL_DIR,
+        "install_dir": globals.EXPRESS_INSTALL_DIR,
         "branch": "master"
     },
     {
         "repo_url": "https://github.com/platform9/express-cli.git",
         "repo_name": "Express CLI",
-        "install_dir": EXPRESS_CLI_INSTALL_DIR,
+        "install_dir": globals.EXPRESS_CLI_INSTALL_DIR,
         "branch": "master"
     },
     {
         "repo_url": "https://github.com/platform9/express-wizard.git",
         "repo_name": "Express Wizard",
-        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
+        "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
         "branch": "dwright-cluster-attach"
     }
 ]

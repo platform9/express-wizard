@@ -1,4 +1,5 @@
 import os
+import globals
 
 def run_cmd(cmd):
     cmd_stdout = ""

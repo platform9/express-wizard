@@ -1,5 +1,6 @@
 import sys
 import os
+import globals
 import io
 import user_io
 import datamodel
@@ -11,7 +12,7 @@ import pmk_utils
 import datamodel
 
 
-def get_cluster_metadata(du, project_id, token, CLUSTER_FILE):
+def get_cluster_metadata(du, project_id, token):
     if du['du_type'] in ['KVM','VMware']:
         sys.stdout.write("Invalid region type for adding cluster ({})\n".format(du['du_type']))
         return({})
@@ -25,7 +26,7 @@ def get_cluster_metadata(du, project_id, token, CLUSTER_FILE):
         return({})
 
     # get current cluster settings (if already defined)
-    cluster_settings = datamodel.get_cluster_record(du['url'], cluster_metadata['name'], CLUSTER_FILE)
+    cluster_settings = datamodel.get_cluster_record(du['url'], cluster_metadata['name'])
     if cluster_settings:
         name = cluster_settings['name']
         containers_cidr = cluster_settings['containers_cidr']
@@ -74,7 +75,7 @@ def get_cluster_metadata(du, project_id, token, CLUSTER_FILE):
     return(cluster_metadata)
 
 
-def get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE):
+def get_host_metadata(du, project_id, token):
     if du['du_type'] == "KVM":
         du_host_type = "kvm"
     elif du['du_type'] == "Kubernetes":
@@ -95,7 +96,7 @@ def get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE
         return({})
 
     # get current host settings (if already defined)
-    host_settings = datamodel.get_host_record(du['url'], host_metadata['hostname'],HOST_FILE)
+    host_settings = datamodel.get_host_record(du['url'], host_metadata['hostname'])
     if host_settings:
         host_ip = host_settings['ip']
         host_ip_interfaces = host_settings['ip_interfaces']
@@ -154,7 +155,7 @@ def get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE
         host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]", ['master','worker'], host_node_type, True, True)
         if host_metadata['node_type'] == "q":
             return({})
-        host_metadata['cluster_name'] = interview.select_cluster(du['url'], host_cluster_name, CONFIG_DIR, CLUSTER_FILE)
+        host_metadata['cluster_name'] = interview.select_cluster(du['url'], host_cluster_name)
         if host_metadata['cluster_name'] == "q":
             return({})
     elif du_host_type == "vmware":
@@ -163,14 +164,14 @@ def get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE
     return(host_metadata)
 
 
-def select_cluster(du_url, current_assigned_cluster, CONFIG_DIR, CLUSTER_FILE):
+def select_cluster(du_url, current_assigned_cluster):
     selected_cluster = "Unassigned"
-    if not os.path.isdir(CONFIG_DIR):
+    if not os.path.isdir(globals.CONFIG_DIR):
         return(selected_cluster)
-    elif not os.path.isfile(CLUSTER_FILE):
+    elif not os.path.isfile(globals.CLUSTER_FILE):
         return(selected_cluster)
     else:
-        defined_clusters = datamodel.get_clusters(du_url,CLUSTER_FILE)
+        defined_clusters = datamodel.get_clusters(du_url)
         if len(defined_clusters) == 0:
             return(selected_cluster)
         else:
@@ -207,7 +208,7 @@ def select_cluster(du_url, current_assigned_cluster, CONFIG_DIR, CLUSTER_FILE):
         return(selected_cluster)
 
 
-def get_du_creds(existing_du_url,CONFIG_FILE):
+def get_du_creds(existing_du_url):
     # initialize du data structure
     du_metadata = datamodel.create_du_entry()
 
@@ -223,7 +224,7 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
         user_url = existing_du_url
 
     du_metadata['du_url'] = user_url
-    du_settings = datamodel.get_du_metadata(du_metadata['du_url'],CONFIG_FILE)
+    du_settings = datamodel.get_du_metadata(du_metadata['du_url'])
 
     # define du types
     du_types = [
@@ -358,13 +359,13 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
     return(du_metadata)
 
 
-def add_edit_du(CONFIG_DIR, CONFIG_FILE):
-    if not os.path.isdir(CONFIG_DIR):
+def add_edit_du():
+    if not os.path.isdir(globals.CONFIG_DIR):
         return(None)
-    elif not os.path.isfile(CONFIG_FILE):
+    elif not os.path.isfile(globals.CONFIG_FILE):
         return("define-new-du")
     else:
-        current_config = datamodel.get_configs(CONFIG_FILE)
+        current_config = datamodel.get_configs()
         if len(current_config) == 0:
             return(None)
         else:
@@ -387,13 +388,13 @@ def add_edit_du(CONFIG_DIR, CONFIG_FILE):
         return(None)
 
 
-def select_du(CONFIG_DIR,CONFIG_FILE):
-    if not os.path.isdir(CONFIG_DIR):
+def select_du():
+    if not os.path.isdir(globals.CONFIG_DIR):
         sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
-    elif not os.path.isfile(CONFIG_FILE):
+    elif not os.path.isfile(globals.CONFIG_FILE):
         sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
     else:
-        current_config = datamodel.get_configs(CONFIG_FILE)
+        current_config = datamodel.get_configs()
         if len(current_config) == 0:
             sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
         else:
@@ -413,11 +414,11 @@ def select_du(CONFIG_DIR,CONFIG_FILE):
         return({})
 
 
-def select_target_cluster(CLUSTER_FILE, du_url):
-    if not os.path.isfile(CLUSTER_FILE):
+def select_target_cluster(du_url):
+    if not os.path.isfile(globals.CLUSTER_FILE):
         sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
     else:
-        current_clusters = datamodel.get_clusters(du_url, CLUSTER_FILE)
+        current_clusters = datamodel.get_clusters(du_url)
         if len(current_clusters) == 0:
             sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
         else:
@@ -437,13 +438,13 @@ def select_target_cluster(CLUSTER_FILE, du_url):
         return({})
 
 
-def add_cluster(du,CONFIG_DIR,CLUSTER_FILE):
+def add_cluster(du):
     sys.stdout.write("\nAdding Cluster to Region: {}\n".format(du['url']))
     project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
-        cluster_metadata = interview.get_cluster_metadata(du, project_id, token, CLUSTER_FILE)
+        cluster_metadata = interview.get_cluster_metadata(du, project_id, token)
         if cluster_metadata:
             cluster = datamodel.create_cluster_entry()
             cluster['du_url'] = cluster_metadata['du_url']
@@ -459,16 +460,16 @@ def add_cluster(du,CONFIG_DIR,CLUSTER_FILE):
             cluster['allow_workloads_on_master'] = cluster_metadata['allow_workloads_on_master']
 
             # persist configurtion
-            datamodel.write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE)
+            datamodel.write_cluster(cluster)
 
 
-def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
+def add_host(du):
     sys.stdout.write("\nAdding Host to Region: {}\n".format(du['url']))
     project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
-        host_metadata = interview.get_host_metadata(du, project_id, token, HOST_FILE, CONFIG_DIR, CLUSTER_FILE)
+        host_metadata = interview.get_host_metadata(du, project_id, token)
         if host_metadata:
             host = datamodel.create_host_entry()
             host['du_url'] = du['url']
@@ -493,7 +494,7 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
             else:
                 user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts", ['q','y','n'], 'n', True, True)
                 if user_input == "y":
-                    du_metadata = datamodel.get_du_metadata(du['url'],CONFIG_FILE)
+                    du_metadata = datamodel.get_du_metadata(du['url'])
                     if du_metadata:
                         ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
                         if ssh_status == True:
@@ -507,17 +508,17 @@ def add_host(du,HOST_FILE, CONFIG_DIR, CONFIG_FILE, CLUSTER_FILE):
             host['ssh_status'] = ssh_status
 
             # persist configurtion
-            datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
+            datamodel.write_host(host)
 
 
-def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
+def add_region(existing_du_url):
     if existing_du_url == None:
         sys.stdout.write("\nAdding a Region:\n")
     else:
         sys.stdout.write("\nUpdate Region:\n")
 
     # du_metadata is created by create_du_entry() - and initialized or populated from existing du record
-    du_metadata = interview.get_du_creds(existing_du_url,CONFIG_FILE)
+    du_metadata = interview.get_du_creds(existing_du_url)
     if not du_metadata:
         return(du_metadata)
     else:
@@ -602,7 +603,7 @@ def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
             else:
                 confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
             discover_target['du_type'] = confirmed_region_type
-        datamodel.write_config(discover_target,CONFIG_DIR,CONFIG_FILE)
+        datamodel.write_config(discover_target)
 
     # perform host discovery
     sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
@@ -618,9 +619,9 @@ def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
         sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
         project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
         if project_id:
-            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, CONFIG_FILE, flag_ssh)
+            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, flag_ssh)
             for host in discovered_hosts:
-                datamodel.write_host(host,CONFIG_DIR,HOST_FILE)
+                datamodel.write_host(host)
                 num_hosts += 1
         sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
 
@@ -636,7 +637,7 @@ def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
                 discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
 
                 # get existing/user-defined clusters for region
-                defined_clusters = datamodel.get_clusters(discover_target['url'],CLUSTER_FILE)
+                defined_clusters = datamodel.get_clusters(discover_target['url'])
 
                 # create any missing clusters
                 for cluster in defined_clusters:
@@ -646,7 +647,7 @@ def add_region(existing_du_url,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE):
                     num_clusters += 1
 
                 for cluster in discovered_clusters:
-                    datamodel.write_cluster(cluster,CONFIG_DIR,CLUSTER_FILE)
+                    datamodel.write_cluster(cluster)
             sys.stdout.write("    # of clusters discovered: {}\n".format(num_clusters))
 
     # return

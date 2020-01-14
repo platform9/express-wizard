@@ -5,7 +5,9 @@ wizard_venv=${wizard_basedir}/wizard-venv
 venv_python="${wizard_venv}/bin/python"
 venv_activate="${wizard_venv}/bin/activate"
 wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/master/wizard.py
+wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/master/globals.py
 wizard_tmp_script=/tmp/pf9-wizard.py
+wizard_tmp_lib=/tmp/globals.py
 
 # functions
 usage() {
@@ -90,15 +92,21 @@ else
     echo "INFO: using exising virtual environment"
 fi
 
-# remove cached version of pf9-wizard.py
+# remove cached files
 if [ -f ${wizard_tmp_script} ]; then
     rm -f ${wizard_tmp_script}
-    if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file"; fi
+    if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file: ${wizard_tmp_script}"; fi
+fi
+if [ -f ${wizard_tmp_lib} ]; then
+    rm -f ${wizard_tmp_lib}
+    if [ -f ${wizard_tmp_lib} ]; then assert "failed to remove cached file: ${wizard_tmp_lib}"; fi
 fi
 
-# download pf9-wizard
+# download files
 curl -s -o ${wizard_tmp_script} ${wizard_url}
 if [ ! -r ${wizard_tmp_script} ]; then assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
+curl -s -o ${wizard_tmp_lib} ${wizard_url_lib}
+if [ ! -r ${wizard_tmp_lib} ]; then assert "failed to download Platform9 Express Wizard Globals (from ${wizard_url_lib})"; fi
 
 # upgrade pip
 (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
