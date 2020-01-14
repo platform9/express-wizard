@@ -392,8 +392,8 @@ for repo in required_repos:
             fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
-#sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
-sys.path.append("lib")
+sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
+#sys.path.append("lib")
 
 # perform import (from modules within dependent repos)
 try:
