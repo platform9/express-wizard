@@ -8,6 +8,8 @@ wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/master/wiz
 wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/master/globals.py
 wizard_tmp_script=/tmp/pf9-wizard.py
 wizard_tmp_lib=/tmp/globals.py
+pip_url=https://bootstrap.pypa.io/get-pip.py
+pip_path/tmp/get_pip.py
 
 # functions
 usage() {
@@ -24,6 +26,21 @@ init_venv_python2() {
     echo "Initializing Virtual Environment (Python 2)"
     which virtualenv > /dev/null 2>&1
     if [ $? -ne 0 ]; then
+        which pip > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "ERROR: missing package: pip (attempting to install using get-pip.py)"
+            curl -s -o ${pip_path} ${pip_url}
+            if [ ! -r ${pip_path} ]; then assert "failed to download get-pip.py (from ${pip_url})"; fi
+            python ${pip_path} > /dev/null 2>&1
+            if [ $? -ne 0 ]; then
+                echo "ERROR: failed to install package: pip (attempting to install via 'sudo get-pip.py')"
+                sudo python ${pip_path} > /dev/null 2>&1
+                if [ $? -ne 0 ]; then
+                    assert "Please install package: pip"
+                fi
+            fi
+        fi
+
         echo "ERROR: missing python package: virtualenv (attempting to install via 'pip install virtualenv')"
         pip install virtualenv > /dev/null 2>&1
         if [ $? -ne 0 ]; then
