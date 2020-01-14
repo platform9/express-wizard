@@ -388,7 +388,7 @@ def add_edit_du():
         return(None)
 
 
-def select_du():
+def select_du(du_type_filter=None):
     if not os.path.isdir(globals.CONFIG_DIR):
         sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
     elif not os.path.isfile(globals.CONFIG_FILE):
@@ -402,9 +402,10 @@ def select_du():
             allowed_values = ['q']
             sys.stdout.write("\n")
             for du in current_config:
-                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
-                allowed_values.append(str(cnt))
-                cnt += 1
+                if du_type_filter and du['du_type'] in du_type_filter:
+                    sys.stdout.write("{}. {}\n".format(cnt,du['url']))
+                    allowed_values.append(str(cnt))
+                    cnt += 1
             user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
             if user_input == "q":
                 return({})

@@ -88,16 +88,16 @@ def view_log(log_files):
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
-        target_log_path = "{}/{}".format(EXPRESS_LOG_DIR,target_log)
+        target_log_path = "{}/{}".format(globals.EXPRESS_LOG_DIR,target_log)
         dump_text_file(target_log_path)
 
 
 def get_logs():
     log_files = []
-    if not os.path.isdir(EXPRESS_LOG_DIR):
+    if not os.path.isdir(globals.EXPRESS_LOG_DIR):
         return(log_files)
 
-    for r, d, f in os.walk(EXPRESS_LOG_DIR):
+    for r, d, f in os.walk(globals.EXPRESS_LOG_DIR):
         for file in f:
             if file == ".keep":
                 continue
@@ -177,9 +177,9 @@ def menu_level1():
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
-            dump_database()
+            dump_database(globals.CONFIG_FILE)
         elif user_input == '4':
-            dump_database()
+            dump_database(globals.HOST_FILE)
         elif user_input == '5':
             selected_du = interview.select_du()
             if selected_du:
@@ -236,7 +236,7 @@ def menu_level0():
         elif user_input == '3':
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
-            selected_du = interview.select_du()
+            selected_du = interview.select_du(['Kubernetes','KVM/Kubernetes'])
             if selected_du:
                 if selected_du != "q":
                     new_cluster = interview.add_cluster(selected_du)
