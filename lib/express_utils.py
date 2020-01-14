@@ -274,8 +274,8 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
         return()
     if role_flag == 1:
         # pmo
-        sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(globals.WIZARD_VENV,globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-        cmd_args = ['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
+        sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+        cmd_args = [globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
         p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     else:
         # install pf9-hostagent (skip role assignment)

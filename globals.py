@@ -1,6 +1,7 @@
 from os.path import expanduser
 
 # globals
+HOME_DIR = "{}".format(expanduser("~"))
 CONFIG_DIR = "{}/.pf9-wizard".format(expanduser("~"))
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)

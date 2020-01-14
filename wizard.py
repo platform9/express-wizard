@@ -38,6 +38,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def _parse_args():
     ap = argparse.ArgumentParser(sys.argv[0],formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("--init", "-i", help="Initialize Configuration (delete all regions/hosts)", action="store_true")
+    ap.add_argument("--local", "-l", help="Use local libraries (for development only)", action="store_true")
     return ap.parse_args()
 
 
@@ -304,7 +305,7 @@ def checkout_git_branch(branch_name,install_dir):
     cmd = "cd {} && git checkout {}".format(install_dir, branch_name)
     exit_status, stdout = run_cmd(cmd)
 
-    current_branch = get_express_branch(branch_name,install_dir)
+    current_branch = get_branch(install_dir)
     if current_branch != branch_name:
         return(False)
 
@@ -392,8 +393,13 @@ for repo in required_repos:
             fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
-sys.path.append("{}/lib".format(EXPRESS_WIZARD_INSTALL_DIR))
-#sys.path.append("lib")
+if args.local:
+    local_lib_path = "{}/pf9-wizard/lib".format(globals.HOME_DIR)
+    sys.stdout.write("WARNING: using local libraries (located in {})".format(local_lib_path))
+    #sys.path.append("lib")
+    sys.path.append(local_lib_path)
+else:
+    sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
 
 # perform import (from modules within dependent repos)
 try:
