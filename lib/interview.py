@@ -279,17 +279,7 @@ def get_du_creds(existing_du_url,CONFIG_FILE):
     if user_input == 'q':
         return({})
     else:
-        if sys.version_info[0] == 2:
-            if type(user_input) is unicode:
-                idx = du_types.index(selected_du_type)
-            else:
-                idx = int(user_input) - 1
-        else:
-            if type(user_input) == str:
-                idx = du_types.index(selected_du_type)
-            else:
-                idx = int(user_input) - 1
-        selected_du_type = du_types[idx]
+        selected_du_type = du_types[int(user_input) - 1] 
 
     # set du type
     du_metadata['du_type'] = selected_du_type
