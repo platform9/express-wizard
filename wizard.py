@@ -255,7 +255,20 @@ def menu_level0():
                 if selected_du != "q":
                     if selected_du['du_type'] == "Kubernetes":
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
-                        express_utils.run_express_cli(selected_du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE,EXPRESS_CLI_CONFIG_DIR,EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,EXPRESS_INSTALL_DIR,EXPRESS_REPO,PF9_EXPRESS,PF9_EXPRESS_CONFIG_PATH)
+                        express_utils.run_express_cli(selected_du,
+                            CONFIG_DIR,
+                            CONFIG_FILE,
+                            HOST_FILE,
+                            CLUSTER_FILE,
+                            EXPRESS_CLI_CONFIG_DIR,
+                            EXPRESS_CLI,
+                            WIZARD_VENV,
+                            WIZARD_PYTHON,
+                            EXPRESS_INSTALL_DIR,
+                            EXPRESS_REPO,
+                            PF9_EXPRESS,
+                            PF9_EXPRESS_CONFIG_PATH
+                        )
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'],HOST_FILE)
@@ -266,7 +279,9 @@ def menu_level0():
                             CONFIG_DIR,
                             PF9_EXPRESS,
                             CLUSTER_FILE,
-                            PF9_EXPRESS_CONFIG_PATH
+                            PF9_EXPRESS_CONFIG_PATH,
+                            WIZARD_VENV,
+                            WIZARD_PYTHON
                         )
         elif user_input == '6':
             menu_level1()

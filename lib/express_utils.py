@@ -250,13 +250,13 @@ def tail_log(p):
         last_line = current_line
 
 
-def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, target_inventory, role_flag):
+def invoke_express(PF9_EXPRESS,PF9_EXPRESS_CONFIG_PATH,express_config,express_inventory,target_inventory,role_flag,WIZARD_VENV):
     sys.stdout.write("\nRunning PF9-Express\n")
     user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 'n', True, True)
     if user_input == 'q':
         return()
     if user_input in ['y','n']:
-        p = subprocess.Popen([PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p = subprocess.Popen(['.',WIZARD_VENV,'&&',PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if user_input == 'y':
             sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
             tail_log(p)
@@ -268,19 +268,19 @@ def invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express
         return()
     if role_flag == 1:
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: {} -a -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -a -b --pmk -c {} -v {} {}\n".format(WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',WIZARD_VENV,'&&',PF9_EXPRESS,'-a','-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
-            sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -a -b -c {} -v {} {}\n".format(WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',WIZARD_VENV,'&&',PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     else:
         # install pf9-hostagent (skip role assignment)
         if target_inventory in ['k8s_master','ks8_worker']:
-            sys.stdout.write("Running: {} -b --pmk -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -b --pmk -c {} -v {} {}\n".format(WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',WIZARD_VENV,'&&',PF9_EXPRESS,'-b','--pmk','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         else:
-            sys.stdout.write("Running: {} -b -c {} -v {} {}\n".format(PF9_EXPRESS,express_config,express_inventory,target_inventory))
-            p = subprocess.Popen([PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("Running: . {} && {} -b -c {} -v {} {}\n".format(WIZARD_VENV,PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            p = subprocess.Popen(['.',WIZARD_VENV,'&&',PF9_EXPRESS,'-b','-c',express_config,'-v',express_inventory,target_inventory],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     if user_input == 'y':
         sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
@@ -345,7 +345,7 @@ def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE,EXPRESS_CLI
                             except:
                                 sys.stdout.write("ERROR: failed to update {}\n".format(EXPRESS_CLI_CONFIG_DIR))
                                 return()
-                            invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, "k8s_master", 0)
+                            invoke_express(PF9_EXPRESS,PF9_EXPRESS_CONFIG_PATH,express_config,express_inventory,"k8s_master",0,WIZARD_VENV)
                             #invoke_express_cli(EXPRESS_CLI,WIZARD_VENV,WIZARD_PYTHON,targets,selected_cluster['name'],"master")
 
                 # invoke express-cli
@@ -369,7 +369,7 @@ def run_express_cli(du,CONFIG_DIR,CONFIG_FILE,HOST_FILE,CLUSTER_FILE,EXPRESS_CLI
                 user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True)
 
 
-def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH):
+def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_EXPRESS,CLUSTER_FILE,PF9_EXPRESS_CONFIG_PATH,WIZARD_VENV,WIZARD_PYTHON):
     sys.stdout.write("\nPF9-Express Inventory (region type = {})\n".format(du['du_type']))
     if du['du_type'] == "Kubernetes":
         express_inventories = [
@@ -432,6 +432,6 @@ def run_express(du,host_entries,EXPRESS_INSTALL_DIR,EXPRESS_REPO,CONFIG_DIR,PF9_
         if express_config:
             express_inventory = build_express_inventory(du,host_entries,CONFIG_DIR,CLUSTER_FILE)
             if express_inventory:
-                invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, target_inventory, role_flag)
+                invoke_express(PF9_EXPRESS, PF9_EXPRESS_CONFIG_PATH, express_config, express_inventory, target_inventory, role_flag, WIZARD_VENV)
     
 
