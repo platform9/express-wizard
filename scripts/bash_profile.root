@@ -1,0 +1,48 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+PATH=$PATH:$HOME/bin
+
+export PATH
+
+### added by pf9-wizard
+wizard_userdir=/home/centos
+wizard_basedir=/root/.pf9-wizard
+python_venv=${wizard_basedir}/wizard-venv
+flag_validate_basedir=1
+flag_validate_symlink=1
+if [ ! -r ${wizard_basedir} ]; then
+	echo "creating directory: ${wizard_basedir}"
+	mkdir -p ${wizard_basedir}
+	if [ ! -d ${wizard_basedir} ]; then
+		echo "ERROR: failed to create directory: ${wizard_basedir}"
+		flag_validate_basedir=0
+	fi
+fi
+if [ ${flag_validate_basedir} -eq 1 ]; then
+	if [ ! -r ${wizard_userdir} ]; then
+		echo "ERROR: pf9-wizard user directory not found: ${wizard_userdir}"
+	else
+		if [ ! -r ${python_venv} ]; then
+			echo "creating symlink:  ${wizard_basedir}/wizard-venv"
+			ln -s ${wizard_userdir}/.pf9-wizard/wizard-venv ${wizard_basedir}/wizard-venv
+			if [ $? -ne 0 ]; then
+				echo "ERROR: failed to create symlink: ${wizard_basedir}/wizard-venv"
+				flag_validate_symlink=0
+			fi
+		fi
+		if [ ${flag_validate_symlink} -eq 1 ]; then
+			if [ ! -r ~/.pf9-wizard/wizard-venv/bin/activate ]; then
+				echo "ERROR: python init script not found: ~/.pf9-wizard/wizard-venv/bin/activate"
+			else
+				. ~/.pf9-wizard/wizard-venv/bin/activate
+			fi
+		fi
+	fi
+fi

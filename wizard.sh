@@ -133,6 +133,8 @@ reqs=https://raw.githubusercontent.com/platform9/support-locker/master/openstack
 constraints=http://raw.githubusercontent.com/openstack/requirements/stable/pike/upper-constraints.txt
 (. ${venv_activate} && pip install --upgrade --requirement ${reqs} --constraint ${constraints} > /dev/null 2>&1)
 
+# install Openstack SDK
+(. ${venv_activate} && pip install openstacksdk==0.12 > /dev/null 2>&1)
 
 # start pf9-wizard in virtual environment
 flag_started=0

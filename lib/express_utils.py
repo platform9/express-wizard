@@ -55,6 +55,7 @@ def build_express_inventory(du,host_entries):
             express_inventory_fh.write("ansible_ssh_pass={}\n".format(du['auth_password']))
         if du['auth_type'] == "sshkey":
             express_inventory_fh.write("ansible_ssh_private_key_file={}\n".format(du['auth_ssh_key']))
+        express_inventory_fh.write("custom_py_interpreter={}\n".format(globals.WIZARD_PYTHON))
         express_inventory_fh.write("manage_network=True\n")
         express_inventory_fh.write("bond_ifname={}\n".format(du['bond_ifname']))
         express_inventory_fh.write("bond_mode={}\n".format(du['bond_mode']))
@@ -253,6 +254,22 @@ def tail_log(p):
 
 def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
+
+    sys.stdout.write("Python Stack:\n")
+    exit_status, stdout = ssh_utils.run_cmd("which python")
+    for l in stdout:
+        sys.stdout.write("{}".format(l))
+
+    sys.stdout.write("Python Version:\n")
+    exit_status, stdout = ssh_utils.run_cmd("python --version")
+    for l in stdout:
+        sys.stdout.write("{}".format(l))
+
+    sys.stdout.write("User ID:\n")
+    exit_status, stdout = ssh_utils.run_cmd("id")
+    for l in stdout:
+        sys.stdout.write("{}".format(l))
+
     user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)",
         ['q','y','n','s'], 
         'n', 

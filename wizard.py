@@ -2,7 +2,7 @@
 ## PF9-Wizard | Onboarding Tool for Platform9 
 ## Copyright(c) 2019 Platform9 Systems, Inc.
 ##
-## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py)
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l)
 ####################################################################################################
 import os
 import sys
