@@ -343,7 +343,7 @@ required_repos = [
         "repo_url": "https://github.com/platform9/express-wizard.git",
         "repo_name": "Express Wizard",
         "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
-        "branch": "tomchris/add-region-validate"
+        "branch": "testmerge"
     }
 ]
 
@@ -396,7 +396,6 @@ for repo in required_repos:
 if args.local:
     local_lib_path = "{}/pf9-wizard/lib".format(globals.HOME_DIR)
     sys.stdout.write("WARNING: using local libraries (located in {})".format(local_lib_path))
-    #sys.path.append("lib")
     sys.path.append(local_lib_path)
 else:
     sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
