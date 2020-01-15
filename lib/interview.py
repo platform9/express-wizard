@@ -473,7 +473,7 @@ def add_cluster(du):
             datamodel.write_cluster(cluster)
 
             # create cluster (using express-cli)
-            express_utils.create_pmk_cluster(du,cluster)
+            # express_utils.create_pmk_cluster(du,cluster)
 
 
 def add_host(du):
@@ -661,9 +661,13 @@ def add_region(existing_du_url):
                         num_clusters_created += 1
                     num_clusters_discovered += 1
 
+                if num_clusters_created > 0:
+                    discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
                 for cluster in discovered_clusters:
                     datamodel.write_cluster(cluster)
-            sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered,num_clusters_created))
+                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered,num_clusters_created))
+
 
     # return
     return(discover_targets)

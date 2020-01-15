@@ -274,22 +274,6 @@ def create_pmk_cluster(du, cluster):
 
 def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
-
-    sys.stdout.write("Python Stack:\n")
-    exit_status, stdout = ssh_utils.run_cmd("which python")
-    for l in stdout:
-        sys.stdout.write("{}".format(l))
-
-    sys.stdout.write("Python Version:\n")
-    exit_status, stdout = ssh_utils.run_cmd("python --version")
-    for l in stdout:
-        sys.stdout.write("{}".format(l))
-
-    sys.stdout.write("User ID:\n")
-    exit_status, stdout = ssh_utils.run_cmd("id")
-    for l in stdout:
-        sys.stdout.write("{}".format(l))
-
     user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)",
         ['q','y','n','s'], 
         'n', 

@@ -237,7 +237,6 @@ def menu_level0():
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
             selected_du = interview.select_du(['Kubernetes','KVM/Kubernetes'])
-            print("selected_du = {}".format(selected_du))
             if selected_du:
                 if selected_du != "q":
                     new_cluster = interview.add_cluster(selected_du)
