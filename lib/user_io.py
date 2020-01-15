@@ -1,4 +1,5 @@
 import sys
+import globals
 import getpass
 
 def read_kbd(user_prompt, allowed_values, default_value, flag_echo=True, disallow_null=True):

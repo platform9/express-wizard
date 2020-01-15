@@ -1,4 +1,5 @@
 import sys
+import globals
 import requests
 import json
 import datamodel

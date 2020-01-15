@@ -1,11 +1,12 @@
 import requests
+import globals
 import json
 import pmk_utils
 import datamodel
 import ssh_utils
 
 
-def discover_du_hosts(du_url, du_type, project_id, token, CONFIG_FILE, flag_validate_ssh):
+def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
     discovered_hosts = []
     try:
         api_endpoint = "resmgr/v1/hosts"
@@ -87,7 +88,7 @@ def discover_du_hosts(du_url, du_type, project_id, token, CONFIG_FILE, flag_vali
         if host_primary_ip == "":
             ssh_status = "No Primary IP"
         else:
-            du_metadata = datamodel.get_du_metadata(du_url,CONFIG_FILE)
+            du_metadata = datamodel.get_du_metadata(du_url)
             if du_metadata:
                 if flag_validate_ssh:
                     ssh_status = ssh_utils.ssh_validate_login(du_metadata, host_primary_ip)

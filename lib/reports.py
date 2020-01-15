@@ -1,5 +1,6 @@
 import os
 import sys
+import globals
 import du_utils
 import datamodel
 
@@ -13,11 +14,11 @@ def map_yn(map_key):
         return("failed-to-map")
 
 
-def report_du_info(du_entries,CONFIG_FILE,HOST_FILE):
+def report_du_info(du_entries):
     from prettytable import PrettyTable
 
     sys.stdout.write("\n------ Region(s) ------\n")
-    if not os.path.isfile(CONFIG_FILE):
+    if not os.path.isfile(globals.CONFIG_FILE):
         sys.stdout.write("No regions have been defined yet (run 'Discover/Add Region')\n")
         return()
 
@@ -45,18 +46,18 @@ def report_du_info(du_entries,CONFIG_FILE,HOST_FILE):
                 ssh_keypass = du['auth_ssh_key']
             else:
                 ssh_keypass = "********"
-            num_hosts = datamodel.get_defined_hosts(du['url'],HOST_FILE)
+            num_hosts = datamodel.get_defined_hosts(du['url'])
 
         du_table.add_row([du['url'], auth_status, du['du_type'], du['region'], du['tenant'], du['auth_type'], du['auth_username'], num_hosts])
 
     print(du_table)
 
 
-def report_cluster_info(cluster_entries,CLUSTER_FILE):
+def report_cluster_info(cluster_entries):
     from prettytable import PrettyTable
 
     sys.stdout.write("\n------ Kubernetes Clusters ------\n")
-    if not os.path.isfile(CLUSTER_FILE):
+    if not os.path.isfile(globals.CLUSTER_FILE):
         sys.stdout.write("No clusters have been defined yet (run 'Discover/Add Cluster')\n")
         return()
 
@@ -73,7 +74,6 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
     du_table.align["UUID"] = "l"
 
     for cluster in cluster_entries:
-        print(cluster)
         print("--------------------------------------")
         table_row = [
             cluster['name'],
@@ -89,19 +89,20 @@ def report_cluster_info(cluster_entries,CLUSTER_FILE):
     print(du_table)
 
 
-def report_host_info(host_entries,HOST_FILE,CONFIG_FILE):
+def report_host_info(host_entries):
     from prettytable import PrettyTable
 
-    sys.stdout.write("\n------ Hosts ------\n")
-    if not os.path.isfile(HOST_FILE):
+    if not os.path.isfile(globals.HOST_FILE):
+        sys.stdout.write("\n------ Hosts ------\n")
         sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
 
     if len(host_entries) == 0:
+        sys.stdout.write("\n------ Hosts ------\n")
         sys.stdout.write("No hosts have been defined yet (run 'Discover/Add Hosts')\n")
         return()
     
-    du_metadata = datamodel.get_du_metadata(host_entries[0]['du_url'],CONFIG_FILE)
+    du_metadata = datamodel.get_du_metadata(host_entries[0]['du_url'])
 
     # display KVM hosts
     if du_metadata['du_type'] == "KVM":

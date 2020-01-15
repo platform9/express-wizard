@@ -2,12 +2,15 @@
 
 wizard_basedir=~/.pf9-wizard
 wizard_venv=${wizard_basedir}/wizard-venv
-venv_python="${wizard_venv}/bin/python"
-venv_activate="${wizard_venv}/bin/activate"
-#wizard_branch="master"
-wizard_branch="tomchris/add-region-validate"
-wizard_url="https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py"
+venv_python=${wizard_venv}/bin/python
+venv_activate=${wizard_venv}/bin/activate
+wizard_branch=tomchris/add-region-validate
+wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py
+wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/globals.py
 wizard_tmp_script=/tmp/pf9-wizard.py
+wizard_tmp_lib=/tmp/globals.py
+pip_url=https://bootstrap.pypa.io/get-pip.py
+pip_path=/tmp/get_pip.py
 
 # functions
 usage() {
@@ -28,6 +31,21 @@ init_venv_python() {
     fi
     echo "Initializing Virtual Environment Python ${python_version}"
     if [ "$(virtualenv --version -p python${pyver} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
+        which pip > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+            echo "ERROR: missing package: pip (attempting to install using get-pip.py)"
+            curl -s -o ${pip_path} ${pip_url}
+            if [ ! -r ${pip_path} ]; then assert "failed to download get-pip.py (from ${pip_url})"; fi
+            python${pyver} ${pip_path}
+            if [ $? -ne 0 ]; then
+                echo "ERROR: failed to install package: pip (attempting to install via 'sudo get-pip.py')"
+                sudo pythoni${pyver} ${pip_path} > /dev/null 2>&1
+                if [ $? -ne 0 ]; then
+                    assert "Please install package: pip"
+                fi
+            fi
+        fi
+
         echo "ERROR: missing python package: virtualenv (attempting to install via 'pip install virtualenv')"
         pip${pyver} install virtualenv > /dev/null 2>&1
         if [ $? -ne 0 ]; then
@@ -84,15 +102,21 @@ else
     echo "INFO: using exising virtual environment"
 fi
 
-# remove cached version of pf9-wizard.py
+# remove cached files
 if [ -f ${wizard_tmp_script} ]; then
     rm -f ${wizard_tmp_script}
-    if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file"; fi
+    if [ -f ${wizard_tmp_script} ]; then assert "failed to remove cached file: ${wizard_tmp_script}"; fi
+fi
+if [ -f ${wizard_tmp_lib} ]; then
+    rm -f ${wizard_tmp_lib}
+    if [ -f ${wizard_tmp_lib} ]; then assert "failed to remove cached file: ${wizard_tmp_lib}"; fi
 fi
 
-# download pf9-wizard
+# download files
 if [ "$(curl -s --fail -o ${wizard_tmp_script} ${wizard_url}; echo $?)" -ne 0 ]; then
     assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
+if [ "$(curl -s --fail -o ${wizard_tmp_lib} ${wizard_url_lib}; echo $?)" -ne 0 ]; then
+    assert "failed to download Platform9 Express Wizard Gobals(from ${wizard_tmp_lib})"; fi
 
 # upgrade pip
 (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)

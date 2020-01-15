@@ -1,5 +1,6 @@
 import requests
 import json
+import globals
 import pmk_utils
 
 
