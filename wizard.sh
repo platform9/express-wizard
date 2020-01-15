@@ -25,14 +25,14 @@ assert() {
 
 init_venv_python() {
     if [ ${python_version} == 2 ]; then
-	pyver="";
+        pyver="";
     else 
-	pyver="3";
+        pyver="3";
     fi
     echo "Initializing Virtual Environment Python ${python_version}"
     if [ "$(virtualenv --version -p python${pyver} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
         which pip > /dev/null 2>&1
-	if [ $? -ne 0 ]; then
+        if [ $? -ne 0 ]; then
             echo "ERROR: missing package: pip (attempting to install using get-pip.py)"
             curl -s -o ${pip_path} ${pip_url}
             if [ ! -r ${pip_path} ]; then assert "failed to download get-pip.py (from ${pip_url})"; fi

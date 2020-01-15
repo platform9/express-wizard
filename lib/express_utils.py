@@ -56,6 +56,7 @@ def build_express_inventory(du,host_entries):
         if du['auth_type'] == "sshkey":
             express_inventory_fh.write("ansible_ssh_private_key_file={}\n".format(du['auth_ssh_key']))
         express_inventory_fh.write("custom_py_interpreter={}\n".format(globals.WIZARD_PYTHON))
+        express_inventory_fh.write("ansible_ssh_common_args='-o StrictHostKeyChecking=no'\n".format(globals.WIZARD_PYTHON))
         express_inventory_fh.write("manage_network=True\n")
         express_inventory_fh.write("bond_ifname={}\n".format(du['bond_ifname']))
         express_inventory_fh.write("bond_mode={}\n".format(du['bond_mode']))

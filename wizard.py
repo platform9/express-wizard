@@ -230,7 +230,7 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'n', True, True)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True)
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '3':
