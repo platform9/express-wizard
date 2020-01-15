@@ -124,9 +124,14 @@ def view_config(du):
 
 def dump_database(db_file):
     if os.path.isfile(db_file):
-        with open(db_file) as json_file:
-            db_json = json.load(json_file)
-        pprint.pprint(db_json)
+        exit_status, stdout = run_cmd("cat {} | jq '.'".format(db_file))
+        if exit_status == 0:
+            for line in stdout:
+                sys.stdout.write(line)
+        else:
+            with open(db_file) as json_file:
+                db_json = json.load(json_file)
+            pprint.pprint(db_json)
 
 
 def action_header(title):
@@ -144,9 +149,10 @@ def display_menu1():
     sys.stdout.write("2. Delete Host\n")
     sys.stdout.write("3. Display Region Database\n")
     sys.stdout.write("4. Display Host Database\n")
-    sys.stdout.write("5. View Configuration File\n")
-    sys.stdout.write("6. View Inventory File\n")
-    sys.stdout.write("7. View Logs\n")
+    sys.stdout.write("5. Display Cluster Database\n")
+    sys.stdout.write("6. View Configuration File\n")
+    sys.stdout.write("7. View Inventory File\n")
+    sys.stdout.write("8. View Logs\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -181,17 +187,19 @@ def menu_level1():
         elif user_input == '4':
             dump_database(globals.HOST_FILE)
         elif user_input == '5':
+            dump_database(globals.CLUSTER_FILE)
+        elif user_input == '6':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     new_host = view_config(selected_du)
-        elif user_input == '6':
+        elif user_input == '7':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'])
                     new_host = view_inventory(selected_du, host_entries)
-        elif user_input == '7':
+        elif user_input == '8':
             log_files = get_logs()
             if len(log_files) == 0:
                 sys.stdout.write("\nNo Logs Found")
