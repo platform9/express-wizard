@@ -116,33 +116,13 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("[k8s_master]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "master":
-                if host['cluster_name'] == "Unassigned":
-                    express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
-                else:
-                    cluster_uuid = datamodel.get_cluster_uuid(du['url'],host['cluster_name'])
-                    if cluster_uuid == None:
-                        sys.stdout.write("ERROR: failed to lookup cluster UUID for {}\n".format(host['cluster_name']))
-                        return(None)
-                    if cluster_uuid == "":
-                        express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip'],cluster_uuid))
-                    else:
-                        express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
 
         # manage K8s_worker stanza
         express_inventory_fh.write("[k8s_worker]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "worker":
-                if host['cluster_name'] == "Unassigned":
-                    express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
-                else:
-                    cluster_uuid = datamodel.get_cluster_uuid(du['url'],host['cluster_name'])
-                    if cluster_uuid == None:
-                        sys.stdout.write("ERROR: failed to lookup cluster UUID for {}\n".format(host['cluster_name']))
-                        return(None)
-                    if cluster_uuid == "":
-                        express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip'],cluster_uuid))
-                    else:
-                        express_inventory_fh.write("{} ansible_host={} cluster_uuid={}\n".format(host['hostname'],host['ip'],cluster_uuid))
+                express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
   
         # close inventory file
         express_inventory_fh.close()
@@ -290,12 +270,19 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     if user_input == 'q':
         return()
     if role_flag == 1:
-        # pmo
-        sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
-        cmd_args = [globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
-        p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        # install pf9-hostagent / assign roles
+        if target_inventory in ['k8s_master','ks8_worker']:
+            # pmk
+            sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            cmd_args = [globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
+            p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        else:
+            # pmo
+            sys.stdout.write("Running: {} -a -b -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
+            cmd_args = [globals.PF9_EXPRESS,'-a','-b','-c',express_config,'-v',express_inventory,target_inventory]
+            p = subprocess.Popen(cmd_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     else:
-        # install pf9-hostagent (skip role assignment)
+        # install pf9-hostagent / skip role assignment
         if target_inventory in ['k8s_master','ks8_worker']:
             # pmk
             sys.stdout.write("Running: {} -b --pmk -c {} -v {} {}\n".format(globals.PF9_EXPRESS,express_config,express_inventory,target_inventory))
@@ -371,7 +358,7 @@ def run_express_cli(du):
                                 sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                                 return()
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
-                            invoke_express(express_config,express_inventory,"k8s_master",0)
+                            invoke_express(express_config,express_inventory,"k8s_master",1)
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                             invoke_express_cli(targets,selected_cluster['name'],"master")
 
