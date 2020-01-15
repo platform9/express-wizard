@@ -342,7 +342,7 @@ required_repos = [
     {
         "repo_url": "https://github.com/platform9/express-wizard.git",
         "repo_name": "Express Wizard",
-        "install_dir": EXPRESS_WIZARD_INSTALL_DIR,
+        "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
         "branch": "tomchris/add-region-validate"
     }
 ]

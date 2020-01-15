@@ -320,5 +320,3 @@ def get_cluster_uuid(du_url, cluster_name):
     if cluster_settings:
         return(cluster_settings['uuid'])
     return(None)
-
-
