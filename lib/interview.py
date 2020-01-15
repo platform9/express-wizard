@@ -8,6 +8,7 @@ import interview
 import du_utils
 import ssh_utils
 import resmgr_utils
+import express_utils
 import pmk_utils
 import datamodel
 
@@ -398,12 +399,19 @@ def select_du(du_type_filter=None):
         if len(current_config) == 0:
             sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
         else:
+            # apply du filter
+            if not du_type_filter:
+                du_list = current_config
+            else:
+                du_list = []
+                for du in current_config:
+                    if du['du_type'] in du_type_filter:
+                        du_list.append(du)
+
             cnt = 1
             allowed_values = ['q']
             sys.stdout.write("\n")
-            for du in current_config:
-                if du_type_filter and not du['du_type'] in du_type_filter:
-                    continue
+            for du in du_list:
                 sys.stdout.write("{}. {}\n".format(cnt,du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
@@ -412,7 +420,7 @@ def select_du(du_type_filter=None):
                 return({})
             else:
                 idx = int(user_input) - 1
-                return(current_config[idx])
+                return(du_list[idx])
         return({})
 
 
@@ -463,6 +471,9 @@ def add_cluster(du):
 
             # persist configurtion
             datamodel.write_cluster(cluster)
+
+            # create cluster (using express-cli)
+            express_utils.create_pmk_cluster(du,cluster)
 
 
 def add_host(du):
@@ -630,7 +641,8 @@ def add_region(existing_du_url):
     # perform cluster discovery
     sys.stdout.write("\nPerforming Cluster Discovery (and provisioning for user-defined clusters)\n")
     for discover_target in discover_targets:
-        num_clusters = 0
+        num_clusters_discovered = 0
+        num_clusters_created = 0
         if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
             sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
             project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
@@ -646,11 +658,12 @@ def add_region(existing_du_url):
                     cluster_flag = datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters)
                     if not datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters):
                         pmk_utils.create_cluster(discover_target['url'],project_id,token,cluster)
-                    num_clusters += 1
+                        num_clusters_created += 1
+                    num_clusters_discovered += 1
 
                 for cluster in discovered_clusters:
                     datamodel.write_cluster(cluster)
-            sys.stdout.write("    # of clusters discovered: {}\n".format(num_clusters))
+            sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered,num_clusters_created))
 
     # return
     return(discover_targets)

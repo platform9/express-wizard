@@ -221,6 +221,8 @@ def tail_log(p):
     last_line = None
     while True:
         current_line = p.stdout.readline()
+        if not current_line:
+            current_line = p.stderr.readline()
         if sys.version_info[0] == 2:
             sys.stdout.write(current_line)
         else:
@@ -230,6 +232,44 @@ def tail_log(p):
                 sys.stdout.write("-------------------------------- Process Complete -------------------------------\n")
                 break
         last_line = current_line
+
+
+def create_pmk_cluster(du, cluster):
+    sys.stdout.write("\nCreating Cluster (using express-cli)\n")
+    express_cmd = "cluster create"
+    express_cmd += " --masterVip {}".format(cluster['master_vip_ipv4'])
+    express_cmd += " --masterVipIf {}".format(cluster['master_vip_iface'])
+    express_cmd += " --metallbIpRange {}".format(cluster['metallb_cidr'])
+    express_cmd += " --containersCidr {}".format(cluster['containers_cidr'])
+    express_cmd += " --servicesCidr {}".format(cluster['services_cidr'])
+    express_cmd += " --privileged {}".format(cluster['privileged'])
+    express_cmd += " --appCatalogEnabled {}".format(cluster['app_catalog_enabled'])
+    express_cmd += " --allowWorkloadsOnMaster {}".format(cluster['allow_workloads_on_master'])
+    express_cmd += " --networkPlugin flannel"
+
+    flag_installed = install_express(du)
+    if flag_installed == True:
+        express_config = build_express_config(du)
+        if express_config:
+            try:
+                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+            except:
+                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                return()
+
+            # build command args
+            command_args = [globals.EXPRESS_CLI]
+            for c in express_cmd.split(' '):
+                command_args.append(c)
+            command_args.append(cluster['name'])
+
+            cmd = ""
+            for c in command_args:
+                cmd += "{} ".format(c)
+            sys.stdout.write("Running: {}\n".format(cmd))
+            c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
+            tail_log(c)
 
 
 def invoke_express(express_config,express_inventory,target_inventory,role_flag):
@@ -310,7 +350,10 @@ def invoke_express_cli(nodes, cluster_name, node_type):
     # build command args
     command_args = [globals.EXPRESS_CLI,'cluster','attach-node']
     for node in nodes:
-        command_args.append("-m")
+        if node_type == "master":
+            command_args.append("-m")
+        else:
+            command_args.append("-w")
         command_args.append(node['ip'])
     command_args.append(cluster_name)
     cmd = ""
@@ -324,8 +367,6 @@ def invoke_express_cli(nodes, cluster_name, node_type):
         tail_log(c)
     else:
         wait_for_job(c)
-
-
 
 
 def run_express_cli(du):
@@ -370,7 +411,28 @@ def run_express_cli(du):
                 allowed_values = ['q','all']
                 for node in worker_entries:
                     allowed_values.append(node['hostname'])
-                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True)
+                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all worker nodes):", allowed_values, 'all', True, True)
+                if user_input == "all":
+                    targets = worker_entries
+                else:
+                    idx = int(user_input) - 1
+                    targets = worker_entries[idx]
+
+                flag_installed = install_express(du)
+                if flag_installed == True:
+                    express_config = build_express_config(du)
+                    if express_config:
+                        express_inventory = build_express_inventory(du,worker_entries)
+                        if express_inventory:
+                            try:
+                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                            except:
+                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                return()
+                            sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
+                            invoke_express(express_config,express_inventory,"k8s_worker",1)
+                            sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                            invoke_express_cli(targets,selected_cluster['name'],"worker")
 
 
 def run_express(du,host_entries):
