@@ -417,7 +417,6 @@ except:
     module_name = except_str.split(' ')[-1]
     fail("Failed to import module: {}".format(sys.exc_info()[1],module_name))
 
-print(args)
 # invoke commandline options
 if args.export:
     datamodel.export_region(args.export)
