@@ -3,6 +3,7 @@
 ## Copyright(c) 2019 Platform9 Systems, Inc.
 ##
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l)
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -e <du-url>)
 ####################################################################################################
 import os
 import sys
