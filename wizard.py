@@ -39,6 +39,7 @@ def _parse_args():
     ap = argparse.ArgumentParser(sys.argv[0],formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument("--init", "-i", help="Initialize Configuration (delete all regions/hosts)", action="store_true")
     ap.add_argument("--local", "-l", help="Use local libraries (for development only)", action="store_true")
+    ap.add_argument('--export', "-e", help="Name of region to export", required=False)
     return ap.parse_args()
 
 
@@ -415,6 +416,12 @@ except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
     fail("Failed to import module: {}".format(sys.exc_info()[1],module_name))
+
+print(args)
+# invoke commandline options
+if args.export:
+    datamodel.export_region(args.export)
+    sys.exit(0)
 
 # main menu loop
 menu_level0()

@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import globals
 import io
 import user_io
@@ -468,6 +469,17 @@ def add_cluster(du):
 
             # persist configurtion
             datamodel.write_cluster(cluster)
+
+            # create cluster (using qbert API)
+            sys.stdout.write("\nCreating Cluster:\n")
+            cluster_uuid = pmk_utils.create_cluster(du['url'],project_id,token,cluster)
+            if cluster_uuid:
+                sys.stdout.write("--> cluster created (uuid={})".format(cluster_uuid))
+                discovered_clusters = pmk_utils.discover_du_clusters(du['url'], du['du_type'], project_id, token)
+                for c in discovered_clusters:
+                    datamodel.write_cluster(c)
+            else:
+                sys.stdout.write("ERROR: failed to create cluster\n")
 
             # create cluster (using express-cli)
             # express_utils.create_pmk_cluster(du,cluster)

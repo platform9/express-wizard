@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import globals
+import ssh_utils
 
 
 def create_du_entry():
@@ -67,6 +68,47 @@ def create_cluster_entry():
         'allow_workloads_on_master': ""
     }
     return(cluster_record)
+
+
+def export_region(du_url):
+    if not du_url.startswith('https://'):
+        target_du = "https://{}".format(du_url)
+    else:
+        target_du = du_url
+
+    # get region
+    du = get_du_metadata(target_du)
+    if not du:
+        sys.stdout.write("--> ERROR: region not found\n")
+        return(None)
+
+    # get hosts and clusters
+    du_hosts = get_hosts(target_du)
+    du_clusters = get_clusters(target_du)
+
+    # create export
+    region_export = {}
+    region_export['region'] = {}
+    region_export['region']['config'] = du
+    region_export['region']['hosts'] = []
+    region_export['region']['clusters'] = []
+    for h in du_hosts:
+        region_export['region']['hosts'].append(h)
+    for c in du_clusters:
+        region_export['region']['clusters'].append(c)
+
+    export_file = "/tmp/{}.json".format(du_url.replace('https://',''))
+    try:
+        with open(export_file, 'w') as outfile:
+            json.dump(region_export, outfile)
+    except:
+        sys.stdout.write("ERROR: failed to write export file: {}".format(export_file))
+        return(None)
+    
+    exit_status, stdout = ssh_utils.run_cmd("cat {} | jq '.'".format(export_file))
+    if exit_status == 0:
+        for line in stdout:
+            sys.stdout.write(line)
 
 
 def get_du_metadata(du_url):
