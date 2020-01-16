@@ -404,7 +404,7 @@ for repo in required_repos:
 # update path for module imports
 if args.local:
     local_lib_path = "{}/pf9-wizard/lib".format(globals.HOME_DIR)
-    sys.stdout.write("WARNING: using local libraries (located in {})".format(local_lib_path))
+    sys.stdout.write("WARNING: using local libraries (located in {})\n".format(local_lib_path))
     sys.path.append(local_lib_path)
 else:
     sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))

@@ -87,6 +87,7 @@ def export_region(du_url):
     du_clusters = get_clusters(target_du)
 
     # create export
+    exports = []
     region_export = {}
     region_export['region'] = {}
     region_export['region']['config'] = du
@@ -96,11 +97,12 @@ def export_region(du_url):
         region_export['region']['hosts'].append(h)
     for c in du_clusters:
         region_export['region']['clusters'].append(c)
+    exports.append(region_export)
 
     export_file = "/tmp/{}.json".format(du_url.replace('https://',''))
     try:
         with open(export_file, 'w') as outfile:
-            json.dump(region_export, outfile)
+            json.dump(exports, outfile)
     except:
         sys.stdout.write("ERROR: failed to write export file: {}".format(export_file))
         return(None)
