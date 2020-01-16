@@ -273,6 +273,9 @@ def write_host(host):
             if h['hostname'] == host['hostname'] and h['uuid'] == host['uuid']:
                 update_hosts.append(host)
                 flag_found = True
+            elif h['hostname'] == host['hostname'] and h['ip'] == host['ip'] and h['du_url'] == host['du_url']:
+                update_hosts.append(host)
+                flag_found = True
             else:
                 update_hosts.append(h)
         if not flag_found:
