@@ -14,19 +14,27 @@ scl enable rh-python36 bash
 /opt/rh/rh-python36/root/usr/bin/python
 ```
 
-# Travis CI:
-* implement tests
-
-# To-Do's:
-* Add SSH-based discovery:
-** ip interfaces
-** metadata for bond configuration
-* Add top-level menu: Express CLI
+# For Monday:
 * Remove defaults for username
 * Set default for tenant: service
-* Username for Remote Host Access
-* Install Host Agent and Authorize ???
+* Change Region Interview text: "Username for Remote Host Access'
 * Select Inventory (to run PF9-Express against) [all]
-* Auto-start express-cli cluster attach-node after 10 seconds
-* Ideas:
+  - auto-start after 30 seconds (with 'all')
+* Auto-start pf9-express/express-cli after N seconds
+* Add top-level menu: Express CLI
+
+# For MVP-1 | Feb 3 | Internal Beta
+* Obfuscate (base64 encode) passwords in data model
+* Add SSH-based discovery:
+- IP interfaces
+- Metadata for bond configuration
+* Implement Tests
+* Travis CI
+
+# For MVP-2 | Feb 24 | External Beta
 * Host Profiles (select in host interview)
+* PyPI
+
+# GA | Mar 30:
+* Encrypted passwords in data model
+* Data Model convergence (Wizard & CLI)
