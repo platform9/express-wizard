@@ -577,7 +577,11 @@ def add_region(existing_du_url):
 
     # check for sub-regions
     sub_regions, du_name_list = du_utils.get_sub_dus(du)
-    
+    if not sub_regions:
+        sys.stdout.write("\nERROR: failed to login to Region\n")
+        datamodel.write_config(du)
+        return(None)
+
     if len(sub_regions) <2 and du['url'].replace('https://','') in sub_regions:
         sys.stdout.write("\nINFO: No Sub-Regions Have Been Detected\n\n")
         discover_targets.append(du)
