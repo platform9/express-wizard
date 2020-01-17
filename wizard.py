@@ -1,11 +1,13 @@
 ####################################################################################################
-## PF9-Wizard | Onboarding Tool for Platform9 
+## PF9-Wizard | Onboarding Tool for Platform9
 ## Copyright(c) 2019 Platform9 Systems, Inc.
 ##
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l)
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -e <du-url>)
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch you/your_branch --test --local --debug 2)
 ####################################################################################################
 import os
+from os.path import dirname, abspath
 import sys
 
 ####################################################################################################
@@ -15,7 +17,7 @@ def fail(m=None):
     sys.exit(1)
 
 # validate python version
-if not sys.version_info[0] in (2,3):
+if not sys.version_info[0] in (2, 3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 
 # include globals.py - handle case where it lives in /tmp (e.g. wizard.sh)
@@ -25,7 +27,7 @@ if os.path.isfile("/tmp/globals.py"):
 ####################################################################################################
 # module imports
 try:
-    import globals,argparse,requests,urllib3,json,prettytable,signal,getpass,argparse,subprocess,time,pprint
+    import globals, argparse, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
@@ -37,10 +39,16 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ####################################################################################################
 # functions
 def _parse_args():
-    ap = argparse.ArgumentParser(sys.argv[0],formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ap.add_argument("--init", "-i", help="Initialize Configuration (delete all regions/hosts)", action="store_true")
-    ap.add_argument("--local", "-l", help="Use local libraries (for development only)", action="store_true")
-    ap.add_argument('--export', "-e", help="Name of region to export", required=False)
+    ap = argparse.ArgumentParser(sys.argv[0], formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    ap.add_argument("--init", "-i",  help = "Initialize Configuration (delete all regions/hosts)", action="store_true")
+    ap.add_argument("--local", "-l", help = "Use local libraries (for development only)", action="store_true")
+    ap.add_argument("--test", "-t", help = "Test Express-Wizard Build and Install", action = "store_true")
+    ap.add_argument("--export", "-e", help = "Name of region to export", required = False, nargs = 1)
+    ap.add_argument("--debug", "-d", help = "Debug Mode", action = "store", nargs = 1)
+    ap.add_argument("--config", "-c", help = "DataModel to import into Express-Wizard", action = "store", nargs = 1)
+    ap.add_argument("--branch", help = "Specify the branch to use for Express-Wizard", action = "store", nargs = 1)
+    ap.add_argument("--branch-express", help = "Specify the branch to use for Express", action = "store", nargs = 1)
+    ap.add_argument("--branch-cli", help = "Specify the branch to use for Express-CLI", action = "store", nargs = 1)
     return ap.parse_args()
 
 
@@ -53,7 +61,7 @@ def dump_var(target_var):
 def run_cmd(cmd):
     cmd_stdout = ""
     tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
-    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd,tmpfile))
+    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd, tmpfile))
 
     # read output of command
     if os.path.isfile(tmpfile):
@@ -70,8 +78,8 @@ def run_cmd(cmd):
 def dump_text_file(target_file):
     BAR = "======================================================================================================"
     try:
-        target_fh = open(target_file,mode='r')
-        sys.stdout.write('\n========== {0:^80} ==========\n'.format(target_file))
+        target_fh = open(target_file, mode, 'r')
+        sys.stdout.write('========== {0:^80} ==========\n'.format(target_file))
         sys.stdout.write(target_fh.read())
         sys.stdout.write('{}\n'.format(BAR))
         target_fh.close()
@@ -83,21 +91,21 @@ def view_log(log_files):
     cnt = 1
     allowed_values = ['q']
     for log_file in log_files:
-        sys.stdout.write("{}. {}\n".format(cnt,log_file))
+        sys.stdout.write("{}. {}\n".format(cnt, log_file))
         allowed_values.append(str(cnt))
         cnt += 1
     user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True)
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
-        target_log_path = "{}/{}".format(globals.EXPRESS_LOG_DIR,target_log)
+        target_log_path = "{}/{}".format(globals.EXPRESS_LOG_DIR, target_log)
         dump_text_file(target_log_path)
 
 
 def get_logs():
     log_files = []
     if not os.path.isdir(globals.EXPRESS_LOG_DIR):
-        return(log_files)
+        return log_files
 
     for r, d, f in os.walk(globals.EXPRESS_LOG_DIR):
         for file in f:
@@ -105,11 +113,11 @@ def get_logs():
                 continue
             log_files.append(file)
 
-    return(log_files)
+    return log_files
 
 
 def view_inventory(du, host_entries):
-    express_inventory = express_utils.build_express_inventory(du,host_entries)
+    express_inventory = express_utils.build_express_inventory(du, host_entries)
     if express_inventory:
         dump_text_file(express_inventory)
     else:
@@ -139,7 +147,7 @@ def dump_database(db_file):
 def action_header(title):
     MAX_WIDTH = 132
     title = "  {}  ".format(title)
-    sys.stdout.write("\n{}".format(title.center(MAX_WIDTH,'*')))
+    sys.stdout.write("\n{}".format(title.center(MAX_WIDTH, '*')))
 
 
 def display_menu1():
@@ -174,7 +182,7 @@ def display_menu0():
 
 def menu_level1():
     user_input = ""
-    while not user_input in ['q','Q']:
+    while not user_input in ['q', 'Q']:
         display_menu1()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
@@ -207,7 +215,7 @@ def menu_level1():
                 sys.stdout.write("\nNo Logs Found")
             else:
                 view_log(log_files)
-        elif user_input in ['q','Q']:
+        elif user_input in ['q', 'Q']:
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
@@ -217,7 +225,7 @@ def menu_level1():
 def menu_level0():
     user_input = ""
     sys.stdout.write("\n")
-    while not user_input in ['q','Q']:
+    while not user_input in ['q', 'Q']:
         display_menu0()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
@@ -240,13 +248,13 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '3':
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
-            selected_du = interview.select_du(['Kubernetes','KVM/Kubernetes'])
+            selected_du = interview.select_du(['Kubernetes', 'KVM/Kubernetes'])
             if selected_du:
                 if selected_du != "q":
                     new_cluster = interview.add_cluster(selected_du)
@@ -259,7 +267,7 @@ def menu_level0():
                     reports.report_du_info(du_entries)
                     host_entries = datamodel.get_hosts(selected_du['url'])
                     reports.report_host_info(host_entries)
-                    if selected_du['du_type'] in ['Kubernetes','KVM/Kubernetes']:
+                    if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
                         cluster_entries = datamodel.get_clusters(selected_du['url'])
                         reports.report_cluster_info(cluster_entries)
         elif user_input == '5':
@@ -276,7 +284,7 @@ def menu_level0():
                         express_utils.run_express(selected_du, host_entries)
         elif user_input == '6':
             menu_level1()
-        elif user_input in ['q','Q']:
+        elif user_input in ['q', 'Q']:
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
@@ -287,43 +295,48 @@ def menu_level0():
 
 def ssh_validate_login(du_metadata, host_ip):
     if du_metadata['auth_type'] == "simple":
-        return(False)
+        return False
     elif du_metadata['auth_type'] == "sshkey":
-        cmd = "ssh -o StrictHostKeyChecking=no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
+        cmd = "ssh -o StrictHostKeyChecking, no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
         exit_status, stdout = run_cmd(cmd)
         if exit_status == 0:
-            return(True)
+            return True
         else:
-            return(False)
+            return False
 
-    return(False)
+    return False
 
 
 def get_branch(install_dir):
     if not os.path.isdir(install_dir):
-        return(None)
+        return None
 
     cmd = "cd {} && git symbolic-ref --short -q HEAD".format(install_dir)
     exit_status, stdout = run_cmd(cmd)
     if exit_status != 0:
-        return(None)
+        return None
 
-    return(stdout[0].strip())
-    
+    return stdout[0].strip()
 
-def checkout_git_branch(branch_name,install_dir):
+
+def checkout_git_branch(branch_name, install_dir):
     cmd = "cd {} && git checkout {}".format(install_dir, branch_name)
     exit_status, stdout = run_cmd(cmd)
 
     current_branch = get_branch(install_dir)
     if current_branch != branch_name:
-        return(False)
+        return False
 
-    return(True)
+    return True
 
 
 ## main
 args = _parse_args()
+
+# IF args.local was passed change CONFIG_DIR to 
+#    parent dir of directory wizard.py was launched from
+if args.local:
+    globals.CONFIG_DIR = dirname(dirname(abspath(__file__)))
 
 # perform initialization (if invoked with '--init')
 if args.init:
@@ -336,24 +349,31 @@ if args.init:
         os.remove(globals.CLUSTER_FILE)
 
 # define dependent repositories
+if args.branch:
+    globals.EXPRESS_WIZARD_BRANCH = args.branch[0]
+if args.branch_express:
+    globals.EXPRESS_BRANCH = args.branch_express[0]
+if args.branch_cli:
+    globals.EXPRESS_CLI_BRANCH = args.branch_cli[0]
+
 required_repos = [
     {
-        "repo_url": "https://github.com/platform9/express.git",
+        "repo_url": globals.EXPRESS_REPO,
         "repo_name": "Express",
         "install_dir": globals.EXPRESS_INSTALL_DIR,
-        "branch": "master"
+        "branch": globals.EXPRESS_BRANCH
     },
     {
         "repo_url": "https://github.com/platform9/express-cli.git",
         "repo_name": "Express CLI",
         "install_dir": globals.EXPRESS_CLI_INSTALL_DIR,
-        "branch": "master"
+        "branch": globals.EXPRESS_CLI_BRANCH
     },
     {
         "repo_url": "https://github.com/platform9/express-wizard.git",
         "repo_name": "Express Wizard",
         "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
-        "branch": "master"
+        "branch": globals.EXPRESS_WIZARD_BRANCH
     }
 ]
 
@@ -378,21 +398,21 @@ for repo in required_repos:
     current_branch = get_branch(repo['install_dir'])
     if current_branch != repo['branch']:
         sys.stdout.write("--> switching branches: {}\n".format(repo['branch']))
-        if (checkout_git_branch(repo['branch'],repo['install_dir'])) == False:
+        if (checkout_git_branch(repo['branch'], repo['install_dir'])) == False:
             fail("ERROR: failed to checkout git branch: {}".format(repo['branch']))
 
-    cmd = "cd {}; git pull origin {}".format(repo['install_dir'],repo['branch'])
+    cmd = "cd {}; git pull origin {}".format(repo['install_dir'], repo['branch'])
     exit_status, stdout = run_cmd(cmd)
     if exit_status != 0:
         cmd = "cd {}; git stash".format(repo['install_dir'])
         exit_status, stdout = run_cmd(cmd)
         if exit_status != 0:
             fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
-        cmd = "cd {}; git pull origin {}".format(repo['install_dir'],repo['branch'])
+        cmd = "cd {}; git pull origin {}".format(repo['install_dir'], repo['branch'])
         exit_status, stdout = run_cmd(cmd)
         if exit_status != 0:
             fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
- 
+
     if flag_init_cli:
         sys.stdout.write("INFO: Initializing EXPRESS CLI\n")
         cmd = "cd {}; pip install -e .[test]".format(repo['install_dir'])
@@ -403,24 +423,24 @@ for repo in required_repos:
             fail("INFO: {}: installation failed".format(repo['repo_name']))
 
 # update path for module imports
-if args.local:
-    local_lib_path = "{}/pf9-wizard/lib".format(globals.HOME_DIR)
-    sys.stdout.write("WARNING: using local libraries (located in {})\n".format(local_lib_path))
-    sys.path.append(local_lib_path)
-else:
-    sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
+sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
 
-# perform import (from modules within dependent repos)
+# import modules from within dependent repos
 try:
-    import du_utils,pmk_utils,resmgr_utils,reports,datamodel,user_io,interview,express_utils
+    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, user_io, interview, express_utils
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
-    fail("Failed to import module: {}".format(sys.exc_info()[1],module_name))
+    fail("Failed to import module: {}".format(sys.exc_info()[1], module_name))
 
-# invoke commandline options
+# export datamodel
 if args.export:
     datamodel.export_region(args.export)
+    sys.exit(0)
+
+# If test is passed exit before menu_level0()
+# This is a temporary to enable the testing infrastructure
+if args.test:
     sys.exit(0)
 
 # main menu loop

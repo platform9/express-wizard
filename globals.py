@@ -1,3 +1,4 @@
+"""Global Variable Defaults"""
 from os.path import expanduser
 
 # globals
@@ -17,4 +18,6 @@ EXPRESS_CLI_INSTALL_DIR = "{}/express-cli".format(CONFIG_DIR)
 EXPRESS_CLI_CONFIG_DIR = "{}/pf9/pf9-express/config/express.conf".format(expanduser("~"))
 EXPRESS_CLI = "{}/.pf9-wizard/wizard-venv/bin/express".format(expanduser("~"))
 EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
-
+EXPRESS_CLI_BRANCH = "tomchris/restructure"
+EXPRESS_WIZARD_BRANCH = "master"
+EXPRESS_BRANCH = "master"
