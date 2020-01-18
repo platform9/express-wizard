@@ -70,6 +70,35 @@ def create_cluster_entry():
     return(cluster_record)
 
 
+def import_region(import_file_path):
+    sys.stdout.write("Importing Region (existing data will be over-written) from import file: {}\n".format(import_file_path))
+
+    if not os.path.isfile(import_file_path):
+        sys.stdout.write("--> failed to open import file: {}\n".format(import_file_path))
+        return(None)
+
+    with open(import_file_path) as json_file:
+        region_config = json.load(json_file)
+
+    required_keys = ['region','hosts','clusters']
+    for k in required_keys:
+        if not k in region_config:
+            sys.stdout.write("--> export data missing dictionary key: {}\n".format(k))
+
+    sys.stdout.write("--> importing region configuration\n")
+    write_config(region_config['region'])
+
+    sys.stdout.write("--> importing hosts\n")
+    for h in region_config['hosts']:
+        sys.stdout.write("    {}\n".format(h['hostname']))
+        write_host(h)
+
+    sys.stdout.write("--> importing clusters\n")
+    for c in region_config['clusters']:
+        sys.stdout.write("    {}\n".format(c['name']))
+        write_cluster(c)
+
+
 def export_region(du_url):
     if not du_url.startswith('https://'):
         target_du = "https://{}".format(du_url)
@@ -87,30 +116,24 @@ def export_region(du_url):
     du_clusters = get_clusters(target_du)
 
     # create export
-    exports = []
     region_export = {}
-    region_export['region'] = {}
-    region_export['region']['config'] = du
-    region_export['region']['hosts'] = []
-    region_export['region']['clusters'] = []
+    region_export['region'] = du
+    region_export['hosts'] = []
+    region_export['clusters'] = []
     for h in du_hosts:
-        region_export['region']['hosts'].append(h)
+        region_export['hosts'].append(h)
     for c in du_clusters:
-        region_export['region']['clusters'].append(c)
-    exports.append(region_export)
+        region_export['clusters'].append(c)
 
     export_file = "/tmp/{}.json".format(du_url.replace('https://',''))
     try:
         with open(export_file, 'w') as outfile:
-            json.dump(exports, outfile)
+            json.dump(region_export, outfile)
     except:
         sys.stdout.write("ERROR: failed to write export file: {}".format(export_file))
         return(None)
     
-    exit_status, stdout = ssh_utils.run_cmd("cat {} | jq '.'".format(export_file))
-    if exit_status == 0:
-        for line in stdout:
-            sys.stdout.write(line)
+    sys.stdout.write("Export complete: {}\n".format(export_file))
 
 
 def get_du_metadata(du_url):

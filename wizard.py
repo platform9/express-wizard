@@ -4,6 +4,7 @@
 ##
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l)
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -e <du-url>)
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -j <export-file>)
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch you/your_branch --test --local --debug 2)
 ####################################################################################################
 import os
@@ -43,6 +44,7 @@ def _parse_args():
     ap.add_argument("--init", "-i",  help = "Initialize Configuration (delete all regions/hosts)", action="store_true")
     ap.add_argument("--local", "-l", help = "Use local libraries (for development only)", action="store_true")
     ap.add_argument("--test", "-t", help = "Test Express-Wizard Build and Install", action = "store_true")
+    ap.add_argument('--jsonImport', "-j", help="Path to import file (JSON format, see '--export' function)", required=False)
     ap.add_argument("--export", "-e", help = "Name of region to export", required = False, nargs = 1)
     ap.add_argument("--debug", "-d", help = "Debug Mode", action = "store", nargs = 1)
     ap.add_argument("--config", "-c", help = "DataModel to import into Express-Wizard", action = "store", nargs = 1)
@@ -436,6 +438,9 @@ except:
 # export datamodel
 if args.export:
     datamodel.export_region(args.export)
+    sys.exit(0)
+if args.jsonImport:
+    datamodel.import_region(args.jsonImport)
     sys.exit(0)
 
 # If test is passed exit before menu_level0()
