@@ -27,8 +27,9 @@ if os.path.isfile("/tmp/globals.py"):
 
 ####################################################################################################
 # module imports
+
 try:
-    import globals, argparse, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint
+    import globals, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
@@ -428,12 +429,17 @@ for repo in required_repos:
 sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
 
 # import modules from within dependent repos
+
 try:
-    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, user_io, interview, express_utils
+    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
+except ImportError:
+    except_str = str(sys.exc_info()[1])
+    module_name = except_str.split(' ')[-1]
+    subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
 except:
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
-    fail("Failed to import module: {}".format(sys.exc_info()[1], module_name))
+    fail("Failed to import python module: {}".format(module_name))
 
 # export datamodel
 if args.export:

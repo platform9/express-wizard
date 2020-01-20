@@ -255,10 +255,8 @@ def get_du_creds(existing_du_url):
         region_bond_mtu = du_settings['bond_mtu']
     except:
         selected_du_type = ""
-        #du_user = "admin@platform9.net"
-        #du_tenant = "service"
-        du_user = "pf9-kubeheat"
-        du_tenant = "svc-pmo"
+        du_user = ""
+        du_tenant = "service"
         du_password = ""
         git_branch = "master"
         region_name = ""
@@ -314,18 +312,18 @@ def get_du_creds(existing_du_url):
     du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple','sshkey']", ['simple','sshkey'], region_auth_type, True, True)
     if du_metadata['region_auth_type'] == 'q':
         return({})
-    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Access", [], auth_username, True, True)
+    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True)
     if du_metadata['auth_username'] == 'q':
         return({})
     if du_metadata['region_auth_type'] == "simple":
-        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Access", [], auth_password, False, True)
+        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True)
         if du_metadata['auth_password'] == 'q':
             return({})
     else:
         du_metadata['auth_password'] = ""
   
     if du_metadata['region_auth_type'] == "sshkey":
-        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Access", [], auth_ssh_key, True, True)
+        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True)
         if du_metadata['auth_ssh_key'] == 'q':
             return({})
     else:

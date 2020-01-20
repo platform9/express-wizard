@@ -14,16 +14,15 @@ scl enable rh-python36 bash
 /opt/rh/rh-python36/root/usr/bin/python
 ```
 
-# For Monday:
-* Remove defaults for username
-* Set default for tenant: service
-* Change Region Interview text: "Username for Remote Host Access'
-* Select Inventory (to run PF9-Express against) [all]
-  - auto-start after 30 seconds (with 'all')
-* Auto-start pf9-express/express-cli after N seconds
-* Add top-level menu: Express CLI
+# MVP-0 (For Monday, Jan 20):
+* [done] Remove defaults for username
+* [done] Set default for tenant: service
+* [done] Change Region Interview text: "Username for Remote Host Access'
+* [done] Select Inventory (to run PF9-Express against) [all]
+* [done] Auto-start pf9-express/express-cli after 15 seconds
+* [blocked-on-tom] Add top-level menu: Express CLI
 
-# For MVP-1 | Feb 3 | Internal Beta
+# For MVP-1 (Feb 3 - Internal Beta)
 * Obfuscate (base64 encode) passwords in data model
 * Add SSH-based discovery:
 - IP interfaces
@@ -31,7 +30,7 @@ scl enable rh-python36 bash
 * Implement Tests
 * Travis CI
 
-# For MVP-2 | Feb 24 | External Beta
+# For MVP-2 (Feb 24 - External Beta)
 * Host Profiles (select in host interview)
 * PyPI
 

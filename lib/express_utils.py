@@ -277,14 +277,14 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
     sys.stdout.write("\nRunning PF9-Express\n")
     user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)",
         ['q','y','n','s'], 
-        'n', 
+        's', 
         True, 
         True
     )
     if user_input == 'q':
         return()
     if user_input in ['y','n']:
-        p = subprocess.Popen(['.',globals.WIZARD_VENV,'&&',globals.PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p = subprocess.Popen([globals.PF9_EXPRESS,'-i','-c',express_config],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if user_input == 'y':
             sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
             tail_log(p)
@@ -328,7 +328,7 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
 
 def invoke_express_cli(nodes, cluster_name, node_type):
     sys.stdout.write("\nRunning PF9-Express CLI\n")
-    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, True)
     if user_input == 'q':
         return()
 
@@ -455,7 +455,7 @@ def run_express(du,host_entries):
     custom_idx = cnt
     sys.stdout.write("    {}. custom inventory\n".format(cnt))
     allowed_values.append(str(cnt))
-    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '1', True, True)
     if user_input == "q":
         return()
     if int(user_input) != custom_idx:
@@ -468,7 +468,7 @@ def run_express(du,host_entries):
     sys.stdout.write("\nPF9-Express Role Assignment\n")
     sys.stdout.write("    1. Install Hostagent\n")
     sys.stdout.write("    2. Install Hostagent and Assign Roles\n")
-    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '1', True, True)
+    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '2', True, True)
     if assign_roles == "q":
         return()
     else:

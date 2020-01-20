@@ -189,8 +189,10 @@ if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 debugging "Configuring virtualenv"
 if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
     for ver in {3,2}; do #ensure python3 is first
-        if [ -x "$(which python${ver} > /dev/null 2>&1)" ]; then
+	debugging "Checking Python${ver}: $(which python${ver})"
+        if [ "$(which python${ver})" ]; then
 	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
+	    debugging "Python Version Selected: ${python_version}"
 	    break
         fi
     done
@@ -224,15 +226,7 @@ fi
 debugging "Upgrade pip"
 # upgrade pip
 (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
-
-# install Openstack CLI
-debugging "Installing Openstack CLI"
-reqs=https://raw.githubusercontent.com/platform9/support-locker/master/openstack-clients/requirements.txt
-constraints=https://raw.githubusercontent.com/openstack/requirements/stable/pike/upper-constraints.txt
-(. ${venv_activate} && pip install --upgrade --requirement ${reqs} --constraint ${constraints} > /dev/null 2>&1)
-
-# install Openstack SDK
-debugging "Install OpenstackSDK"
+debugging "Installing Addition Dependancies"
 (. ${venv_activate} && pip install openstacksdk==0.12 > /dev/null 2>&1)
 
 launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
@@ -245,19 +239,17 @@ while [ ${flag_started} -eq 0 ]; do
     if [ $? -eq 0 ]; then
         flag_started=1
     else
-        stdout=$(eval ${launch_wizard})
-        echo "${stdout}" | grep "ASSERT: Failed to import python module:" > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-    	module_name=$(echo "${stdout}" | cut -d : -f3 | awk -F ' ' '{print $1}' | sed -e "s/'//g")
-    	echo "--> attempting to installing missing module: [${module_name}]"
-    	if [ "${python_version}" == "2" ]; then
-    	    (. ${venv_activate}; pip install ${module_name} > /dev/null 2>&1)
-    	elif [ "${python_version}" == "3" ]; then
-    	    (. ${venv_activate}; pip3 install ${module_name} > /dev/null 2>&1)
-    	fi
-    	if [ $? -ne 0 ]; then assert "failed to install missing module"; fi
+	stdout="$(eval ${launch_wizard} 2>&1 | grep 'Failed to import python module:')"
+	module_regex=".*Failed to import python module.*"
+	if [[ "${stdout}" =~ ${module_regex} ]]; then
+	    module_name=$(echo "${stdout}" | cut -d : -f3 | awk -F ' ' '{print $1}' | sed -e "s/'//g")
+	    echo "--> attempting to installing missing module: [${module_name}]"
+	    eval "(. ${venv_activate}; pip install ${module_name} > /dev/null 2>&1)"
+    	    if [ $? -ne 0 ]; then
+		assert "failed to install missing module: ${module_name}"
+	    fi
         else
-    	assert "${stdout}"
+	    assert "${stdout}"
         fi
     fi
 done
