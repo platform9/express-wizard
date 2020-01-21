@@ -1,0 +1,3 @@
+[console_scripts]
+wizard = wizard:main
+

@@ -27,26 +27,10 @@ if not sys.version_info[0] in (2, 3):
 if os.path.isfile("/tmp/globals.py"):
     sys.path.append("/tmp")
 
-PACKAGE_PARENT = '..'
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
-debug("SCRIPT_DIR: {}".format(SCRIPT_DIR))
-debug("PACKAGE_PARENT: {}".format(PACKAGE_PARENT))
-
 ####################################################################################################
 # module imports
-debug("sys.path: {}".format(os.path.join(sys.path[0])))
-#    sys.path.append(os.path.join(sys.path[0],'lib'))
-#   except ImportError:
-#       except_str = str(sys.exc_info()[1])
-#       module_name = except_str.split(' ')[-1]
-#       subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
-#   except:
-#       except_str = str(sys.exc_info()[1])
-#       module_name = except_str.split(' ')[-1]
-#       fail("Failed to import python module: {}".format(module_name))
-
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
 
 try:
     import globals, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint

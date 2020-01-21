@@ -1,0 +1,7 @@
+argparse
+express-cli@ git+git://github.com/platform9/express-cli.git@master
+openstacksdk==0.12.0
+pprint
+prettytable
+requests
+urllib3

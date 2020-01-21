@@ -133,47 +133,73 @@ init_venv_python() {
     # upgrade pip
     (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
 }
-v
 ## main
 
 if [ -z ${wizard_branch} ]; then wizard_branch=master; fi
-if [ -z ${run_local} ]; then
-    pf9_repo_dir=~/.pf9-wizard
-    wizard_script=/tmp/pf9-wizard.py
-    wizard_lib=/tmp/globals.py
-else
-    debugging "Using Local Install skipping Downloads"
-    pf9_repo_dir="$(dirname "$(readlink -fm "$0")")"
-    wizard_script=${pf9_repo_dir}/wizard.py
-    wizard_lib=${pf9_repo_dir}/globals.py
-fi
-
 wizard_basedir=~/.pf9-wizard
-wizard_venv=${wizard_basedir}/wizard-venv
 venv_python=${wizard_venv}/bin/python
 venv_activate=${wizard_venv}/bin/activate
 wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py
-wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/globals.py
 pip_url=https://bootstrap.pypa.io/get-pip.py
 pip_path=/tmp/get_pip.py
 
+
 # initialize installation directory
-if [[ -n ${init_flag} ]]; then
-    debugging "DELETEING wizard_basedir: ${wizard_basedir}"
-    if [ -d ${wizard_basedir} ]; then
-        rm -rf ${wizard_basedir}
-        if [ -d ${wizard_basedir} ]; then assert "failed to remove ${wizard_basedir}"; fi
+
+if [ -n ${run_local} ];then
+    wizard_basedir=$(pwd)
+
+else
+    if [[ -n ${init_flag} ]]; then
+	debugging "DELETEING wizard_basedir: ${wizard_basedir}"
+	if [ -d ${wizard_basedir} ]; then
+	    rm -rf ${wizard_basedir}
+	    if [ -d ${wizard_basedir} ]; then assert "failed to remove ${wizard_basedir}"; fi
+	fi
     fi
-fi
-if [ ! -d ${wizard_basedir} ]; then
-    mkdir -p ${wizard_basedir}
-    if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
+    if [ ! -d ${wizard_basedir} ]; then
+	mkdir -p ${wizard_basedir}
+	if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
+    fi
 fi
 
 # validate python stack
 which python > /dev/null 2>&1
 if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
+# Merge runtime arguments
+if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
+if [[ -n ${test_wizard} ]]; then args+=" ${test_wizard}";fi
+if [[ -n ${run_local} ]]; then args+=" ${run_local}";fi
+if [[ -n ${config_file} ]]; then args+=" --config ${config_file}";fi
+if [[ -n ${debug_flag} ]]; then 
+    if [[ ${debug_flag} == "-d" || ${debug_flag} == "--debug"  ]]; then
+	args+=" --debug 1"
+    else
+	args+=" --debug ${debug_flag}"
+    fi
+fi
+
+# NEED TO SET THIS ENV VARIABLE SO IT WILL CREATE THE venv in the project
+#                 PIPENV_VENV_IN_PROJECT
+pip install --user pipenv
+mkdir -p ${wizard_basedir} 
+cd ${wizard_basedir}
+pipenv install -e git+git://github.com/platform9/express-wizard.git@${wizard_branch}
+# Enter a subshell in the virtualenv
+pipenv run wizard
+exit(0)
+eval pipenv shell
+wizard_venv=$(eval "pipenv --venv")
+debugging(${wizard_venv})
+launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
+
+#pipenv run  # Run a command in the virtualenv
+
+
+
+
+exit(0)
 # configure python virtual environment
 debugging "Configuring virtualenv"
 if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
@@ -191,29 +217,6 @@ if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
 else
     echo "INFO: using exising virtual environment"
 fi
-
-# Merge runtime arguments
-if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
-if [[ -n ${test_wizard} ]]; then args+=" ${test_wizard}";fi
-if [[ -n ${run_local} ]]; then args+=" ${run_local}";fi
-if [[ -n ${config_file} ]]; then args+=" --config ${config_file}";fi
-if [[ -n ${debug_flag} ]]; then 
-    if [[ ${debug_flag} == "-d" || ${debug_flag} == "--debug"  ]]; then
-	args+=" --debug 1"
-    else
-	args+=" --debug ${debug_flag}"
-    fi
-fi
-
-pip install --user pipenv
-mkdir -p ~/.pf9
-cd ~/.pf9
-pipenv install -e git+git://github.com/platform9/express-wizard.git
-pipenv shell # Enter a subshell in the virtualenv
-pipenv run  # Run a command in the virtualenv
-pipenv --venv # Outputs only the path of the virtual env
-
-
 
 launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
 debugging "Wizard launch command: ${launch_wizard}"
