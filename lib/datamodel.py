@@ -390,3 +390,53 @@ def get_cluster_uuid(du_url, cluster_name):
     if cluster_settings:
         return(cluster_settings['uuid'])
     return(None)
+
+
+def write_encryption_key(key):
+    if not os.path.isfile(ENCRYPTION_KEY_STORE):
+        return(None)
+
+    try:
+        keystore_fh = open(ENCRYPTION_KEY_STORE, "w")
+        keystore_fh.write("{}".format(key))
+        keystore_fh.close()
+        return(True)
+    except:
+        sys.stdout.write("ERROR: failed to update key store: {}\n".format(ENCRYPTION_KEY_STORE))
+        return(None)
+
+
+def get_encryption_key():
+    if not os.path.isfile(ENCRYPTION_KEY_STORE):
+        return(None)
+
+    try:
+        keystore_fh = open(ENCRYPTION_KEY_STORE, "r")
+        key = keystore_fh.read()
+        keystore_fh.close()
+        return(key)
+    except:
+        sys.stdout.write("ERROR: failed to read key store: {}\n".format(ENCRYPTION_KEY_STORE))
+        return(None)
+        
+
+def encrypt_password(unencrypted_string):
+    from cryptography.fernet import Fernet
+
+    # manage encryption key
+    if not os.path.isfile(ENCRYPTION_KEY_STORE):
+        try:
+            key = Fernet.generate_key()
+            write_encryption_key(key)
+        except:
+            return(None)
+    else:
+        key = get_encryption_key()
+        if not key:
+            return(None)
+
+    cipher_suite = Fernet(key)
+    encrypted_string = cipher_suite.encrypt(b"{}".format(unencrypted_string))
+    return(encrypted_string)
+
+

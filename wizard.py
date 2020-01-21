@@ -454,6 +454,12 @@ if args.jsonImport:
 if args.test:
     sys.exit(0)
 
+# debug
+s = "fred"
+e = datamodel.encrypt_password(s)
+print("e = {}".format(e))
+sys.exit(0)
+
 # main menu loop
 menu_level0()
 
