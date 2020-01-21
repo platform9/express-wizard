@@ -128,8 +128,12 @@ init_venv_python() {
     cd ${wizard_basedir}
     virtualenv -p python${pyver} ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
-}
 
+    debugging "Upgrade pip"
+    # upgrade pip
+    (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
+}
+v
 ## main
 
 if [ -z ${wizard_branch} ]; then wizard_branch=master; fi
@@ -153,21 +157,6 @@ wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/${wiza
 pip_url=https://bootstrap.pypa.io/get-pip.py
 pip_path=/tmp/get_pip.py
 
-# Merge runtime arguments
-if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
-if [[ -n ${test_wizard} ]]; then args+=" ${test_wizard}";fi
-if [[ -n ${run_local} ]]; then args+=" ${run_local}";fi
-if [[ -n ${config_file} ]]; then args+=" --config ${config_file}";fi
-if [[ -n ${debug_flag} ]]; then 
-    if [[ ${debug_flag} == "-d" || ${debug_flag} == "--debug"  ]]; then
-	args+=" --debug 1"
-    else
-	args+=" --debug ${debug_flag}"
-    fi
-fi
-debugging "CLFs that will be passed to wizard.py:${args}"
-
-
 # initialize installation directory
 if [[ -n ${init_flag} ]]; then
     debugging "DELETEING wizard_basedir: ${wizard_basedir}"
@@ -190,10 +179,12 @@ debugging "Configuring virtualenv"
 if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
     for ver in {3,2}; do #ensure python3 is first
 	debugging "Checking Python${ver}: $(which python${ver})"
-        if [ "$(which python${ver})" ]; then
+        if [ "$(which python${ver} > /dev/null 2>&1)" ]; then
 	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
 	    debugging "Python Version Selected: ${python_version}"
 	    break
+        #else
+	python_version=$(python -V) #Grep or split version from here and validate it is [2,3]
         fi
     done
     init_venv_python
@@ -201,33 +192,28 @@ else
     echo "INFO: using exising virtual environment"
 fi
 
-if [ -z ${run_local} ]; then
-    # remove cached files
-    if [ -f ${wizard_script} ]; then
-	debugging "Removing Temp file: ${wizard_script}"
-	rm -f ${wizard_script}
-	if [ -f ${wizard_script} ]; then assert "failed to remove cached file: ${wizard_tmp_script}"; fi
+# Merge runtime arguments
+if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
+if [[ -n ${test_wizard} ]]; then args+=" ${test_wizard}";fi
+if [[ -n ${run_local} ]]; then args+=" ${run_local}";fi
+if [[ -n ${config_file} ]]; then args+=" --config ${config_file}";fi
+if [[ -n ${debug_flag} ]]; then 
+    if [[ ${debug_flag} == "-d" || ${debug_flag} == "--debug"  ]]; then
+	args+=" --debug 1"
+    else
+	args+=" --debug ${debug_flag}"
     fi
-    if [ -f ${wizard_lib} ]; then
-        debugging "Removing Temp file: ${wizard_lib}"
-	rm -f ${wizard_lib}
-	if [ -f ${wizard_lib} ]; then assert "failed to remove cached file: ${wizard_tmp_lib}"; fi
-    fi
-
-    # download files
-    debugging "Download ${wizard_script} from: ${wizard_url}"
-    if [ "$(curl -s --fail -o ${wizard_script} ${wizard_url}; echo $?)" -ne 0 ]; then
-	assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
-    debugging "Download ${wizard_lib} from: ${wizard_url_lib}"
-    if [ "$(curl -s --fail -o ${wizard_lib} ${wizard_url_lib}; echo $?)" -ne 0 ]; then
-	assert "failed to download Platform9 Express Wizard Gobals(from ${wizard_url_lib})"; fi
 fi
 
-debugging "Upgrade pip"
-# upgrade pip
-(. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
-debugging "Installing Addition Dependancies"
-(. ${venv_activate} && pip install openstacksdk==0.12 > /dev/null 2>&1)
+pip install --user pipenv
+mkdir -p ~/.pf9
+cd ~/.pf9
+pipenv install -e git+git://github.com/platform9/express-wizard.git
+pipenv shell # Enter a subshell in the virtualenv
+pipenv run  # Run a command in the virtualenv
+pipenv --venv # Outputs only the path of the virtual env
+
+
 
 launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
 debugging "Wizard launch command: ${launch_wizard}"
