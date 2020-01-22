@@ -13,8 +13,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 # TODO: Write IF statement to determine if install is dev (local) or prod (pulling repos until pipy)
 #       Set only one value below based on [remote or local] and [master or branch]
-#       master 'express-cli @ git+git://github.com/platform9/express-cli.git@master#egg=express-cli',
+#express_cli_source = ('express-cli @ git+git://github.com/platform9/express-cli.git@master#egg=express-cli')
 express_cli_source = ('express-cli @ git+git://github.com/platform9/express-cli.git@tomchris/restructure#egg=express-cli')
+#express_cli_source = ('express-cli @ git+file://home/tomchris/Development/express-cli#egg=express-cli')
 
 setup(
     # $ pip install express-wizard
@@ -47,7 +48,7 @@ setup(
         'argparse',
         'pprint',
         'openstacksdk==0.12.0',
-        'express-cli @ git+file://home/tomchris/Development/express-cli#egg=express-cli',
+        express_cli_source,
         ],
     entry_points = {
         'console_scripts': [
