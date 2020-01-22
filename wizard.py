@@ -8,9 +8,7 @@
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch you/your_branch --test --local --debug 2)
 ####################################################################################################
 import os
-from os.path import dirname, abspath
 import sys
-
 ####################################################################################################
 # early globals/functions
 def fail(m=None):
@@ -23,19 +21,14 @@ def debug(m=None):
 if not sys.version_info[0] in (2, 3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 
-# include globals.py - handle case where it lives in /tmp (e.g. wizard.sh)
-if os.path.isfile("/tmp/globals.py"):
-    sys.path.append("/tmp")
-
 ####################################################################################################
 # module imports
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
 
 try:
-    import globals, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint
-    import du_utils
-    import pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
+    import globals, urllib3, requests, json, prettytable, signal, getpass, argparse, subprocess, time
+    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
 except:
     debug("EXCEPT: {}".format(sys.exc_info()))
     except_str = str(sys.exc_info()[1])
@@ -151,7 +144,7 @@ def dump_database(db_file):
         else:
             with open(db_file) as json_file:
                 db_json = json.load(json_file)
-            pprint.pprint(db_json)
+            pprint(db_json)
 
 
 def action_header(title):
@@ -324,9 +317,8 @@ def main():
     # IF args.local was passed change CONFIG_DIR to 
     #    parent dir of directory wizard.py was launched from
     if args.local:
-        globals.CONFIG_DIR = dirname(dirname(abspath(__file__)))
-    
-
+        globals.CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        debug("CONFIG_DIR: {}".format(globals.CONFIG_DIR)) 
     # perform initialization (if invoked with '--init')
     if args.init:
         sys.stdout.write("INFO: initializing configuration\n")
@@ -336,7 +328,6 @@ def main():
             os.remove(globals.CONFIG_FILE)
         if os.path.isfile(globals.CLUSTER_FILE):
             os.remove(globals.CLUSTER_FILE)
-    # import modules from within dependent repos
 
     # export datamodel
     if args.export:
@@ -346,8 +337,7 @@ def main():
         datamodel.import_region(args.jsonImport)
         sys.exit(0)
 
-    # If test is passed exit before menu_level0()
-    # This is a temporary to enable the testing infrastructure
+    # If test is passed exit before menu_level0() temp until unittest
     if args.test:
         sys.exit(0)
 
