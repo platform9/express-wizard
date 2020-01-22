@@ -185,6 +185,7 @@ fi
 pip install --user pipenv
 mkdir -p ${wizard_basedir} 
 cd ${wizard_basedir}
+#pipenv install -e git+git://github.com/platform9/express-wizard.git@tomchris/setuptools#egg=express-wizard
 pipenv install -e git+git://github.com/platform9/express-wizard.git@${wizard_branch}
 # Enter a subshell in the virtualenv
 pipenv run wizard

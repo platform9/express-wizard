@@ -34,6 +34,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     #packages=find_packages() + find_packages(where='./lib'),  # Required
     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4',
+    dependency_links=['http://github.com/platform9/express-cli/tarball/master#egg=express-cli']
     install_requires=[
         'requests',
         'urllib3',
@@ -41,7 +42,7 @@ setup(
         'argparse',
         'pprint',
         'openstacksdk==0.12.0',
-        'express-cli @ git+git://github.com/platform9/express-cli.git@master',
+        #'express-cli @ git+git://github.com/platform9/express-cli.git@master',
         ],
     entry_points = {
         'console_scripts': [
