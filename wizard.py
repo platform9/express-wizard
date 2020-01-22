@@ -81,7 +81,7 @@ def run_cmd(cmd):
 def dump_text_file(target_file):
     BAR = "======================================================================================================"
     try:
-        target_fh = open(target_file, mode, 'r')
+        target_fh = open(target_file, 'r')
         sys.stdout.write('========== {0:^80} ==========\n'.format(target_file))
         sys.stdout.write(target_fh.read())
         sys.stdout.write('{}\n'.format(BAR))
@@ -205,13 +205,13 @@ def menu_level1():
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    new_host = view_config(selected_du)
+                    view_config(selected_du)
         elif user_input == '7':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'])
-                    new_host = view_inventory(selected_du, host_entries)
+                    view_inventory(selected_du, host_entries)
         elif user_input == '8':
             log_files = get_logs()
             if len(log_files) == 0:
