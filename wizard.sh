@@ -128,30 +128,44 @@ init_venv_python() {
     cd ${wizard_basedir}
     virtualenv -p python${pyver} ${wizard_venv} > /dev/null 2>&1
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
-}
 
+    debugging "Upgrade pip"
+    # upgrade pip
+    (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
+}
 ## main
 
 if [ -z ${wizard_branch} ]; then wizard_branch=master; fi
-if [ -z ${run_local} ]; then
-    pf9_repo_dir=~/.pf9-wizard
-    wizard_script=/tmp/pf9-wizard.py
-    wizard_lib=/tmp/globals.py
-else
-    debugging "Using Local Install skipping Downloads"
-    pf9_repo_dir="$(dirname "$(readlink -fm "$0")")"
-    wizard_script=${pf9_repo_dir}/wizard.py
-    wizard_lib=${pf9_repo_dir}/globals.py
-fi
-
 wizard_basedir=~/.pf9-wizard
-wizard_venv=${wizard_basedir}/wizard-venv
 venv_python=${wizard_venv}/bin/python
 venv_activate=${wizard_venv}/bin/activate
 wizard_url=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py
-wizard_url_lib=https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/globals.py
 pip_url=https://bootstrap.pypa.io/get-pip.py
 pip_path=/tmp/get_pip.py
+
+
+# initialize installation directory
+
+if [ -n ${run_local} ];then
+    wizard_basedir=$(pwd)
+
+else
+    if [[ -n ${init_flag} ]]; then
+	debugging "DELETEING wizard_basedir: ${wizard_basedir}"
+	if [ -d ${wizard_basedir} ]; then
+	    rm -rf ${wizard_basedir}
+	    if [ -d ${wizard_basedir} ]; then assert "failed to remove ${wizard_basedir}"; fi
+	fi
+    fi
+    if [ ! -d ${wizard_basedir} ]; then
+	mkdir -p ${wizard_basedir}
+	if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
+    fi
+fi
+
+# validate python stack
+which python > /dev/null 2>&1
+if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
 # Merge runtime arguments
 if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
@@ -165,69 +179,45 @@ if [[ -n ${debug_flag} ]]; then
 	args+=" --debug ${debug_flag}"
     fi
 fi
-debugging "CLFs that will be passed to wizard.py:${args}"
+
+# NEED TO SET THIS ENV VARIABLE SO IT WILL CREATE THE venv in the project
+#                 PIPENV_VENV_IN_PROJECT
+pip install --user pipenv
+mkdir -p ${wizard_basedir} 
+cd ${wizard_basedir}
+#pipenv install -e git+git://github.com/platform9/express-wizard.git@tomchris/setuptools#egg=express-wizard
+pipenv install -e git+git://github.com/platform9/express-wizard.git@${wizard_branch}
+# Enter a subshell in the virtualenv
+pipenv run wizard
+exit(0)
+eval pipenv shell
+wizard_venv=$(eval "pipenv --venv")
+debugging(${wizard_venv})
+launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
+
+#pipenv run  # Run a command in the virtualenv
 
 
-# initialize installation directory
-if [[ -n ${init_flag} ]]; then
-    debugging "DELETEING wizard_basedir: ${wizard_basedir}"
-    if [ -d ${wizard_basedir} ]; then
-        rm -rf ${wizard_basedir}
-        if [ -d ${wizard_basedir} ]; then assert "failed to remove ${wizard_basedir}"; fi
-    fi
-fi
-if [ ! -d ${wizard_basedir} ]; then
-    mkdir -p ${wizard_basedir}
-    if [ ! -d ${wizard_basedir} ]; then assert "failed to create directory: ${wizard_basedir}"; fi
-fi
 
-# validate python stack
-which python > /dev/null 2>&1
-if [ $? -ne 0 ]; then assert "Python stack missing"; fi
 
+exit(0)
 # configure python virtual environment
 debugging "Configuring virtualenv"
 if [ "$(ls -A ${wizard_venv} > /dev/null 2>&1; echo $?)" -ne 0 ]; then
     for ver in {3,2}; do #ensure python3 is first
 	debugging "Checking Python${ver}: $(which python${ver})"
-        if [ "$(which python${ver})" ]; then
+        if [ "$(which python${ver} > /dev/null 2>&1)" ]; then
 	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
 	    debugging "Python Version Selected: ${python_version}"
 	    break
+        #else
+	python_version=$(python -V) #Grep or split version from here and validate it is [2,3]
         fi
     done
     init_venv_python
 else
     echo "INFO: using exising virtual environment"
 fi
-
-if [ -z ${run_local} ]; then
-    # remove cached files
-    if [ -f ${wizard_script} ]; then
-	debugging "Removing Temp file: ${wizard_script}"
-	rm -f ${wizard_script}
-	if [ -f ${wizard_script} ]; then assert "failed to remove cached file: ${wizard_tmp_script}"; fi
-    fi
-    if [ -f ${wizard_lib} ]; then
-        debugging "Removing Temp file: ${wizard_lib}"
-	rm -f ${wizard_lib}
-	if [ -f ${wizard_lib} ]; then assert "failed to remove cached file: ${wizard_tmp_lib}"; fi
-    fi
-
-    # download files
-    debugging "Download ${wizard_script} from: ${wizard_url}"
-    if [ "$(curl -s --fail -o ${wizard_script} ${wizard_url}; echo $?)" -ne 0 ]; then
-	assert "failed to download Platform9 Express Wizard (from ${wizard_url})"; fi
-    debugging "Download ${wizard_lib} from: ${wizard_url_lib}"
-    if [ "$(curl -s --fail -o ${wizard_lib} ${wizard_url_lib}; echo $?)" -ne 0 ]; then
-	assert "failed to download Platform9 Express Wizard Gobals(from ${wizard_url_lib})"; fi
-fi
-
-debugging "Upgrade pip"
-# upgrade pip
-(. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
-debugging "Installing Addition Dependancies"
-(. ${venv_activate} && pip install openstacksdk==0.12 > /dev/null 2>&1)
 
 launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
 debugging "Wizard launch command: ${launch_wizard}"

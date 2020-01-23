@@ -21,3 +21,4 @@ EXPRESS_WIZARD_INSTALL_DIR = "{}/express-wizard".format(CONFIG_DIR)
 EXPRESS_CLI_BRANCH = "tomchris/restructure"
 EXPRESS_WIZARD_BRANCH = "master"
 EXPRESS_BRANCH = "master"
+ENCRYPTION_KEY_STORE = "{}/.pf9-wizard/.keyfile".format(expanduser("~"))

@@ -4,9 +4,7 @@ python:
   - "3.7"
 
 install:
-    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash ./wizard.sh --test --branch=$TRAVIS_PULL_REQUEST_BRANCH --debug; fi'
-    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./wizard.sh --test --branch=$TRAVIS_BRANCH --debug; fi'
-    - echo "$WIZARD_LAUNCH_SCRIPT"
+    - pip install -e . 
 script:
-    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch $TRAVIS_PULL_REQUEST_BRANCH --test --debug 2); fi'
-    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch $TRAVIS_BRANCH --test --debug 2); fi'
+    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (wizard --branch $TRAVIS_PULL_REQUEST_BRANCH --test --debug 2); fi'
+    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then (wizard --branch $TRAVIS_BRANCH --test --debug 2); fi'

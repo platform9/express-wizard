@@ -8,29 +8,29 @@
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch you/your_branch --test --local --debug 2)
 ####################################################################################################
 import os
-from os.path import dirname, abspath
 import sys
-
 ####################################################################################################
 # early globals/functions
 def fail(m=None):
     sys.stdout.write("ASSERT: {}\n".format(m))
     sys.exit(1)
 
+def debug(m=None):
+    sys.stdout.write("DEBUG: {}\n".format(m))
 # validate python version
 if not sys.version_info[0] in (2, 3):
     fail("Unsupported Python Version: {}\n".format(sys.version_info[0]))
 
-# include globals.py - handle case where it lives in /tmp (e.g. wizard.sh)
-if os.path.isfile("/tmp/globals.py"):
-    sys.path.append("/tmp")
-
 ####################################################################################################
 # module imports
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
 
 try:
-    import globals, requests, urllib3, json, prettytable, signal, getpass, argparse, subprocess, time, pprint
+    import globals, urllib3, requests, json, prettytable, signal, getpass, argparse, subprocess, time
+    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
 except:
+    debug("EXCEPT: {}".format(sys.exc_info()))
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
     fail("Failed to import python module: {}".format(module_name))
@@ -81,7 +81,7 @@ def run_cmd(cmd):
 def dump_text_file(target_file):
     BAR = "======================================================================================================"
     try:
-        target_fh = open(target_file, mode, 'r')
+        target_fh = open(target_file, 'r')
         sys.stdout.write('========== {0:^80} ==========\n'.format(target_file))
         sys.stdout.write(target_fh.read())
         sys.stdout.write('{}\n'.format(BAR))
@@ -144,7 +144,7 @@ def dump_database(db_file):
         else:
             with open(db_file) as json_file:
                 db_json = json.load(json_file)
-            pprint.pprint(db_json)
+            pprint(db_json)
 
 
 def action_header(title):
@@ -205,13 +205,13 @@ def menu_level1():
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
-                    new_host = view_config(selected_du)
+                    view_config(selected_du)
         elif user_input == '7':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'])
-                    new_host = view_inventory(selected_du, host_entries)
+                    view_inventory(selected_du, host_entries)
         elif user_input == '8':
             log_files = get_logs()
             if len(log_files) == 0:
@@ -310,152 +310,42 @@ def ssh_validate_login(du_metadata, host_ip):
     return False
 
 
-def get_branch(install_dir):
-    if not os.path.isdir(install_dir):
-        return None
-
-    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(install_dir)
-    exit_status, stdout = run_cmd(cmd)
-    if exit_status != 0:
-        return None
-
-    return stdout[0].strip()
-
-
-def checkout_git_branch(branch_name, install_dir):
-    cmd = "cd {} && git checkout {}".format(install_dir, branch_name)
-    exit_status, stdout = run_cmd(cmd)
-
-    current_branch = get_branch(install_dir)
-    if current_branch != branch_name:
-        return False
-
-    return True
-
-
 ## main
-args = _parse_args()
+def main():
+    args = _parse_args()
 
-# IF args.local was passed change CONFIG_DIR to 
-#    parent dir of directory wizard.py was launched from
-if args.local:
-    globals.CONFIG_DIR = dirname(dirname(abspath(__file__)))
+    # IF args.local was passed change CONFIG_DIR to 
+    #    parent dir of directory wizard.py was launched from
+    if args.local:
+        globals.CONFIG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        debug("CONFIG_DIR: {}".format(globals.CONFIG_DIR)) 
+    # perform initialization (if invoked with '--init')
+    if args.init:
+        sys.stdout.write("INFO: initializing configuration\n")
+        if os.path.isfile(globals.HOST_FILE):
+            os.remove(globals.HOST_FILE)
+        if os.path.isfile(globals.CONFIG_FILE):
+            os.remove(globals.CONFIG_FILE)
+        if os.path.isfile(globals.CLUSTER_FILE):
+            os.remove(globals.CLUSTER_FILE)
 
-# perform initialization (if invoked with '--init')
-if args.init:
-    sys.stdout.write("INFO: initializing configuration\n")
-    if os.path.isfile(globals.HOST_FILE):
-        os.remove(globals.HOST_FILE)
-    if os.path.isfile(globals.CONFIG_FILE):
-        os.remove(globals.CONFIG_FILE)
-    if os.path.isfile(globals.CLUSTER_FILE):
-        os.remove(globals.CLUSTER_FILE)
+    # export datamodel
+    if args.export:
+        datamodel.export_region(args.export)
+        sys.exit(0)
+    if args.jsonImport:
+        datamodel.import_region(args.jsonImport)
+        sys.exit(0)
 
-# define dependent repositories
-if args.branch:
-    globals.EXPRESS_WIZARD_BRANCH = args.branch[0]
-if args.branch_express:
-    globals.EXPRESS_BRANCH = args.branch_express[0]
-if args.branch_cli:
-    globals.EXPRESS_CLI_BRANCH = args.branch_cli[0]
+    # If test is passed exit before menu_level0() temp until unittest
+    if args.test:
+        sys.exit(0)
 
-required_repos = [
-    {
-        "repo_url": globals.EXPRESS_REPO,
-        "repo_name": "Express",
-        "install_dir": globals.EXPRESS_INSTALL_DIR,
-        "branch": globals.EXPRESS_BRANCH
-    },
-    {
-        "repo_url": "https://github.com/platform9/express-cli.git",
-        "repo_name": "Express CLI",
-        "install_dir": globals.EXPRESS_CLI_INSTALL_DIR,
-        "branch": globals.EXPRESS_CLI_BRANCH
-    },
-    {
-        "repo_url": "https://github.com/platform9/express-wizard.git",
-        "repo_name": "Express Wizard",
-        "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
-        "branch": globals.EXPRESS_WIZARD_BRANCH
-    }
-]
+    # main menu loop
+    menu_level0()
 
-# manage dependent repositories
-sys.stdout.write("Validating Dependencies\n")
-for repo in required_repos:
-    flag_init_cli = False
-    if not os.path.isdir(repo['install_dir']):
-        sys.stdout.write("--> cloning: {}\n".format(repo['repo_url']))
-        cmd = "git clone {} {}".format(repo['repo_url'], repo['install_dir'])
-        exit_status, stdout = run_cmd(cmd)
-        if not os.path.isdir(repo['install_dir']):
-            fail("ERROR: failed to clone repository")
-        if repo['repo_name'] == "Express CLI":
-            flag_init_cli = True
-
-    cmd = "cd {}; git fetch -a".format(repo['install_dir'])
-    exit_status, stdout = run_cmd(cmd)
-    if exit_status != 0:
-        fail("ERROR: failed to fetch branches (git fetch -)")
-
-    current_branch = get_branch(repo['install_dir'])
-    if current_branch != repo['branch']:
-        sys.stdout.write("--> switching branches: {}\n".format(repo['branch']))
-        if (checkout_git_branch(repo['branch'], repo['install_dir'])) == False:
-            fail("ERROR: failed to checkout git branch: {}".format(repo['branch']))
-
-    cmd = "cd {}; git pull origin {}".format(repo['install_dir'], repo['branch'])
-    exit_status, stdout = run_cmd(cmd)
-    if exit_status != 0:
-        cmd = "cd {}; git stash".format(repo['install_dir'])
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status != 0:
-            fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
-        cmd = "cd {}; git pull origin {}".format(repo['install_dir'], repo['branch'])
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status != 0:
-            fail("ERROR: failed to pull latest code (git pull origin {})\n".format(repo['branch']))
-
-    if flag_init_cli:
-        sys.stdout.write("INFO: Initializing EXPRESS CLI\n")
-        cmd = "cd {}; pip install -e .[test]".format(repo['install_dir'])
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status != 0:
-            for line in stdout:
-                sys.stdout.write("{}\n".format(line))
-            fail("INFO: {}: installation failed".format(repo['repo_name']))
-
-# update path for module imports
-sys.path.append("{}/lib".format(globals.EXPRESS_WIZARD_INSTALL_DIR))
-
-# import modules from within dependent repos
-
-try:
-    import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
-except ImportError:
-    except_str = str(sys.exc_info()[1])
-    module_name = except_str.split(' ')[-1]
-    subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
-except:
-    except_str = str(sys.exc_info()[1])
-    module_name = except_str.split(' ')[-1]
-    fail("Failed to import python module: {}".format(module_name))
-
-# export datamodel
-if args.export:
-    datamodel.export_region(args.export)
-    sys.exit(0)
-if args.jsonImport:
-    datamodel.import_region(args.jsonImport)
+    # exit cleanly
     sys.exit(0)
 
-# If test is passed exit before menu_level0()
-# This is a temporary to enable the testing infrastructure
-if args.test:
-    sys.exit(0)
-
-# main menu loop
-menu_level0()
-
-# exit cleanly
-sys.exit(0)
+if __name__ == "__main__":
+    main()
