@@ -341,6 +341,10 @@ def main():
     if args.test:
         sys.exit(0)
 
+    from datamodel import RegionConfig
+    region_config = RegionConfig()
+    sys.exit(0)
+
     # main menu loop
     menu_level0()
 

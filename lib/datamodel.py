@@ -5,6 +5,32 @@ import globals
 import ssh_utils
 from encrypt import Encryption
 
+class RegionConfig:
+
+    def refresh_data_model(self):
+        region_configs = []
+        du_list = get_configs(None)
+        for du in du_list:
+            du_hosts = get_hosts(du['url'])
+            du_clusters = get_clusters(du['url'])
+
+            region_export = {}
+            region_export['region'] = du
+            region_export['hosts'] = []
+            region_export['clusters'] = []
+            for h in du_hosts:
+                region_export['hosts'].append(h)
+            for c in du_clusters:
+                region_export['clusters'].append(c)
+            region_configs.append(region_export)
+        return(region_configs)
+
+    def __init__(self):
+        self.data_model = self.refresh_data_model()
+        print("----------- self.data_model --------------------------------------------")
+        print(self.data_model)
+
+
 def create_du_entry():
     du_record = {
         'url': "",
