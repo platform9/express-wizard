@@ -55,6 +55,7 @@ setup(
         'pprint',
         'openstacksdk==0.12.0',
         'cryptography',
+        'pathlib',
         express_cli_source,
         ],
     entry_points = {

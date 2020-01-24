@@ -2,6 +2,11 @@ import os
 import sys
 import globals
 from cryptography.fernet import Fernet
+try:
+  from pathlib import Path
+except ImportError:
+  from pathlib2 import Path
+
 
 class Encryption:
 
@@ -9,7 +14,7 @@ class Encryption:
         if not os.path.isfile(keyfile) or os.stat(keyfile).st_size == 0:
             # initialize keyfile
             try:
-                os.makedirs(os.path.dirname(keyfile), exist_ok=True)
+                Path(os.path.dirname(keyfile)).mkdir(parents=True, exist_ok=True)
                 self.key = Fernet.generate_key()
                 keystore_fh = open(keyfile, "w")
                 keystore_fh.write(self.key.decode('utf-8'))
