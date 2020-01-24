@@ -357,9 +357,9 @@ def get_du_creds(existing_du_url):
 
 
 def add_edit_du():
-    if not os.path.isdir(globals.CONFIG_DIR):
-        return(None)
-    elif not os.path.isfile(globals.CONFIG_FILE):
+   #if not os.path.isdir(globals.CONFIG_DIR):
+   #    return(None)
+    if not os.path.isfile(globals.CONFIG_FILE):
         return("define-new-du")
     else:
         current_config = datamodel.get_configs()
