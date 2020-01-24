@@ -43,8 +43,11 @@ class Encryption:
 
     def decrypt_password(self,encrypted_string):
         cipher_suite = Fernet(self.key)
+        print("type={}".format(type(encrypted_string)))
         if type(encrypted_string) == str:
             encrypted_string = encrypted_string.encode('utf-8')
+            print("in-if.type={}".format(type(encrypted_string)))
+        print("after-if: type={}".format(type(encrypted_string)))
         plain_text = cipher_suite.decrypt(encrypted_string)
         return(plain_text.decode('utf-8'))
 
