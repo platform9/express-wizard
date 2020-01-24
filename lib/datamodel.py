@@ -99,7 +99,8 @@ def import_region(import_file_path):
         write_cluster(c)
 
 
-def export_region(du_url):
+def export_region(du_urls):
+    du_url = du_urls[0]
     if not du_url.startswith('https://'):
         target_du = "https://{}".format(du_url)
     else:
@@ -137,7 +138,7 @@ def export_region(du_url):
 
 
 def get_du_metadata(du_url):
-    encryption = Encryption(globals.ENCRYPTION_KEY_STORE)
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     du_config = {}
     if os.path.isfile(globals.CONFIG_FILE):
         with open(globals.CONFIG_FILE) as json_file:
@@ -243,7 +244,7 @@ def get_clusters(du_url):
 
 
 def get_configs(du_url=None):
-    encryption = Encryption(globals.ENCRYPTION_KEY_STORE)
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     du_configs = []
     if os.path.isfile(globals.CONFIG_FILE):
         with open(globals.CONFIG_FILE) as json_file:
@@ -361,7 +362,7 @@ def write_host(host):
 
 def write_config(du):
     # encrypt passwords in du data structure
-    encryption = Encryption(globals.ENCRYPTION_KEY_STORE)
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     du['password'] = encryption.encrypt_password(du['password'])
     du['auth_password'] = encryption.encrypt_password(du['auth_password'])
 
