@@ -36,7 +36,7 @@ def report_du_info(du_entries):
 
     for du in du_entries:
         num_hosts = "-"
-        project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
+        project_id, token = du_utils.login_du(du['url'], du['username'], du['password'], du['tenant'])
         if token == None:
             auth_status = "Failed"
             region_type = ""

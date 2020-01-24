@@ -12,6 +12,7 @@ import resmgr_utils
 import express_utils
 import pmk_utils
 import datamodel
+from encrypt import Encryption
 
 
 def get_cluster_metadata(du, project_id, token):
@@ -446,7 +447,11 @@ def select_target_cluster(du_url):
 
 def add_cluster(du):
     sys.stdout.write("\nAdding Cluster to Region: {}\n".format(du['url']))
-    project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
+    # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
+    # Added call to decrypt password before du_utils.login_du
+    # We need to review all password handling and converge strategy for
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+    project_id, token = du_utils.login_du(du['url'], du['username'], encryption.decrypt_password(du['password']), du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
@@ -485,7 +490,11 @@ def add_cluster(du):
 
 def add_host(du):
     sys.stdout.write("\nAdding Host to Region: {}\n".format(du['url']))
-    project_id, token = du_utils.login_du(du['url'],du['username'],du['password'],du['tenant'])
+    # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
+    # Added call to decrypt password before du_utils.login_du
+    # We need to review all password handling and converge strategy for
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+    project_id, token = du_utils.login_du(du['url'], du['username'], encryption.decrypt_password(du['password']), du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
@@ -619,7 +628,7 @@ def add_region(existing_du_url):
     # create region (and sub-regions)
     sys.stdout.write("\nCreating Regions:\n")
     for discover_target in discover_targets:
-        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        project_id, token = du_utils.login_du(discover_target['url'], discover_target['username'], discover_target['password'], discover_target['tenant'])
         if project_id:
             sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
             region_type = du_utils.get_du_type(discover_target['url'], project_id, token)
@@ -628,6 +637,7 @@ def add_region(existing_du_url):
             else:
                 confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
             discover_target['du_type'] = confirmed_region_type
+
         datamodel.write_config(discover_target)
 
     # perform host discovery
@@ -642,7 +652,11 @@ def add_region(existing_du_url):
     for discover_target in discover_targets:
         num_hosts = 0
         sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
-        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
+        # Added call to decrypt password before du_utils.login_du
+        # We need to review all password handling and converge strategy for
+        encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],encryption.decrypt_password(discover_target['password']),discover_target['tenant'])
         if project_id:
             discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, flag_ssh)
             for host in discovered_hosts:
@@ -657,7 +671,11 @@ def add_region(existing_du_url):
         num_clusters_created = 0
         if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
             sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
-            project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+            # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
+            # Added call to decrypt password before du_utils.login_du
+            # We need to review all password handling and converge strategy for
+            encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+            project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],encryption.decrypt_password(discover_target['password']),discover_target['tenant'])
             if project_id:
                 # discover existing clusters
                 discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
