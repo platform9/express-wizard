@@ -9,12 +9,14 @@ import datamodel
 import reports
 import interview
 import globals
+from encrypt import Encryption
 
 def build_express_config(du):
+    """write config file"""
     express_config = "{}/{}.conf".format(globals.CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
     sys.stdout.write("--> Building configuration file: {}\n".format(express_config))
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
-    # write config file
     try:
         express_config_fh = open(express_config, "w")
         express_config_fh.write("manage_hostname|false\n")
@@ -24,7 +26,7 @@ def build_express_config(du):
         express_config_fh.write("os_tenant|{}\n".format(du['tenant']))
         express_config_fh.write("du_url|{}\n".format(du['url']))
         express_config_fh.write("os_username|{}\n".format(du['username']))
-        express_config_fh.write("os_password|{}\n".format(du['password']))
+        express_config_fh.write("os_password|{}\n".format(encryption.decrypt_password(du['password'])))
         express_config_fh.write("os_region|{}\n".format(du['region']))
         express_config_fh.write("proxy_url|-\n".format(du['region_proxy']))
         express_config_fh.close()
@@ -40,10 +42,10 @@ def build_express_config(du):
 
 
 def build_express_inventory(du,host_entries):
+    """write inventory file"""
     express_inventory = "{}/{}.inv".format(globals.CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
     sys.stdout.write("--> Building inventory file: {}\n".format(express_inventory))
 
-    # write inventory file
     try:
         express_inventory_fh = open(express_inventory, "w")
         express_inventory_fh.write("# Built by pf9-wizard\n")
@@ -51,8 +53,8 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("[all:vars]\n")
         express_inventory_fh.write("ansible_user={}\n".format(du['auth_username']))
         if du['auth_type'] == "simple":
-            express_inventory_fh.write("ansible_sudo_pass={}\n".format(du['auth_password']))
-            express_inventory_fh.write("ansible_ssh_pass={}\n".format(du['auth_password']))
+            express_inventory_fh.write("ansible_sudo_pass={}\n".format(encryption.decrypt_password(du['auth_password'])))
+            express_inventory_fh.write("ansible_ssh_pass={}\n".format(encryption.decrypt_password(du['auth_password'])))
         if du['auth_type'] == "sshkey":
             express_inventory_fh.write("ansible_ssh_private_key_file={}\n".format(du['auth_ssh_key']))
         express_inventory_fh.write("custom_py_interpreter={}\n".format(globals.WIZARD_PYTHON))

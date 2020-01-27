@@ -18,7 +18,7 @@ from encrypt import Encryption
 def get_cluster_metadata(du, project_id, token):
     if du['du_type'] in ['KVM','VMware']:
         sys.stdout.write("Invalid region type for adding cluster ({})\n".format(du['du_type']))
-        return({})
+        return ''
 
     # initialize cluster record
     cluster_metadata = {}
@@ -26,7 +26,7 @@ def get_cluster_metadata(du, project_id, token):
     cluster_metadata['du_url'] = du['url']
     cluster_metadata['name'] = user_io.read_kbd("--> Cluster Name", [], '', True, True)
     if cluster_metadata['name'] == "q":
-        return({})
+        return ''
 
     # get current cluster settings (if already defined)
     cluster_settings = datamodel.get_cluster_record(du['url'], cluster_metadata['name'])
@@ -52,28 +52,28 @@ def get_cluster_metadata(du, project_id, token):
 
     cluster_metadata['containers_cidr'] = user_io.read_kbd("--> Containers CIDR", [], containers_cidr, True, True)
     if cluster_metadata['containers_cidr'] == "q":
-        return({})
+        return ''
     cluster_metadata['services_cidr'] = user_io.read_kbd("--> Services CIDR", [], services_cidr, True, True)
     if cluster_metadata['services_cidr'] == "q":
-        return({})
+        return ''
     cluster_metadata['master_vip_ipv4'] = user_io.read_kbd("--> Master VIP", [], master_vip_ipv4, True, True)
     if cluster_metadata['master_vip_ipv4'] == "q":
-        return({})
+        return ''
     cluster_metadata['master_vip_iface'] = user_io.read_kbd("--> Interface Name for VIP", [], master_vip_iface, True, True)
     if cluster_metadata['master_vip_iface'] == "q":
-        return({})
+        return ''
     cluster_metadata['metallb_cidr'] = user_io.read_kbd("--> IP Range for MetalLB", [], metallb_cidr, True, True)
     if cluster_metadata['metallb_cidr'] == "q":
-        return({})
+        return ''
     cluster_metadata['privileged'] = user_io.read_kbd("--> Privileged API Mode", ['0','1'], privileged, True, True)
     if cluster_metadata['privileged'] == "q":
-        return({})
+        return ''
     cluster_metadata['app_catalog_enabled'] = user_io.read_kbd("--> Enable Helm Application Catalog", ['0','1'], app_catalog_enabled, True, True)
     if cluster_metadata['app_catalog_enabled'] == "q":
-        return({})
+        return ''
     cluster_metadata['allow_workloads_on_master'] = user_io.read_kbd("--> Enable Workloads on Master Nodes", ['0','1'], allow_workloads_on_master, True, True)
     if cluster_metadata['allow_workloads_on_master'] == "q":
-        return({})
+        return ''
 
     return(cluster_metadata)
 
@@ -88,7 +88,7 @@ def get_host_metadata(du, project_id, token):
     elif du['du_type'] == "KVM/Kubernetes":
         du_host_type = user_io.read_kbd("--> Host Type ['kvm','kubernetes']", ['kvm','kubernetes'], 'kvm', True, True)
         if du_host_type == "q":
-            return({})
+            return ''
 
     # initialize host record
     host_metadata = datamodel.create_host_entry()
@@ -96,7 +96,7 @@ def get_host_metadata(du, project_id, token):
     host_metadata['du_host_type'] = du_host_type
     host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True)
     if host_metadata['hostname'] == "q":
-        return({})
+        return ''
 
     # get current host settings (if already defined)
     host_settings = datamodel.get_host_record(du['url'], host_metadata['hostname'])
@@ -128,23 +128,26 @@ def get_host_metadata(du, project_id, token):
 
     host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
     if host_metadata['ip'] == "q":
-        return({})
+        return ''
     if du_host_type == "kvm":
         host_metadata['bond_config'] = user_io.read_kbd("--> Bond Config", [], host_bond_config, True, False)
         if host_metadata['bond_config'] == "q":
-            return({})
-        host_metadata['nova'] = user_io.read_kbd("--> Enable Nova", ['y','n'], host_nova, True, True)
+            return ''
+        host_metadata['nova'] = user_io.read_kbd("--> Enable Nova", ['y', 'n'], host_nova, True, True)
         if host_metadata['nova'] == "q":
-            return({})
-        host_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y','n'], host_glance, True, True)
+            return ''
+        host_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y', 'n'], host_glance, True, True)
         if host_metadata['glance'] == "q":
-            return({})
-        host_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y','n'], host_cinder, True, True)
+            return ''
+        host_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y', 'n'], host_cinder, True, True)
         if host_metadata['cinder'] == "q":
-            return({})
-        host_metadata['designate'] = user_io.read_kbd("--> Enable Designate", ['y','n'], host_designate, True, True)
+            return ''
+        host_metadata['designate'] = user_io.read_kbd("--> Enable Designate",
+                                                      ['y', 'n'],
+                                                      host_designate,
+                                                      True, True)
         if host_metadata['designate'] == "q":
-            return({})
+            return ''
         host_metadata['node_type'] = ""
         host_metadata['pf9-kube'] = "n"
         host_metadata['cluster_name'] = ""
@@ -155,12 +158,15 @@ def get_host_metadata(du, project_id, token):
         host_metadata['cinder'] = ""
         host_metadata['designate'] = ""
         host_metadata['pf9-kube'] = "y"
-        host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]", ['master','worker'], host_node_type, True, True)
+        host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]",
+                                                      ['master', 'worker'],
+                                                      host_node_type,
+                                                      True, True)
         if host_metadata['node_type'] == "q":
-            return({})
+            return ''
         host_metadata['cluster_name'] = interview.select_cluster(du['url'], host_cluster_name)
         if host_metadata['cluster_name'] == "q":
-            return({})
+            return ''
     elif du_host_type == "vmware":
         sys.stdout.write("INFO: vmware host detected\n")
 
@@ -184,7 +190,7 @@ def select_cluster(du_url, current_assigned_cluster):
             for cluster in defined_clusters:
                 if cluster['name'] == current_assigned_cluster:
                     current_assigned_cluster = cnt
-                sys.stdout.write("    {}. {}\n".format(cnt,cluster['name']))
+                sys.stdout.write("    {}. {}\n".format(cnt, cluster['name']))
                 allowed_values.append(str(cnt))
                 cnt += 1
 
@@ -194,7 +200,10 @@ def select_cluster(du_url, current_assigned_cluster):
             allowed_values.append(str(cnt))
             sys.stdout.write("    {}. Unassigned\n".format(cnt))
 
-            user_input = user_io.read_kbd("--> Select Cluster", allowed_values, current_assigned_cluster, True, True)
+            user_input = user_io.read_kbd("--> Select Cluster",
+                                          allowed_values,
+                                          current_assigned_cluster,
+                                          True, True)
             if user_input == "q":
                 return(selected_cluster)
             else:
@@ -218,18 +227,17 @@ def get_du_creds(existing_du_url):
     if existing_du_url == None:
         user_url = user_io.read_kbd("--> Region URL", [], '', True, True)
         if user_url == 'q':
-            return({})
+            return ''
     else:
         user_url = existing_du_url
     
     if user_url.startswith('http://'):
-        user_url = user_url.replace('http://','https://')
+        user_url = user_url.replace('http://', 'https://')
     if not user_url.startswith('https://'):
         user_url = "https://{}".format(user_url)
 
     du_metadata['du_url'] = user_url
     du_settings = datamodel.get_du_metadata(du_metadata['du_url'])
-
     # define du types
     du_types = [
         'KVM',
@@ -275,12 +283,12 @@ def get_du_creds(existing_du_url):
     cnt = 1
     allowed_values = ['q']
     for target_type in du_types:
-        sys.stdout.write("    {}. {}\n".format(cnt,target_type))
+        sys.stdout.write("    {}. {}\n".format(cnt, target_type))
         allowed_values.append(str(cnt))
         cnt += 1
     user_input = user_io.read_kbd("--> Region Type", allowed_values, selected_du_type, True, True)
     if user_input == 'q':
-        return({})
+        return ''
     else:
         if type(user_input) is int or user_input.isdigit():
             if int(user_input) > 0 and int(user_input) -1 in range(-len(du_types), len(du_types)):
@@ -293,60 +301,91 @@ def get_du_creds(existing_du_url):
     # set du type
     du_metadata['du_type'] = selected_du_type
     du_metadata['region_name'] = ""
-
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     # get common du parameters
     du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True)
     if du_metadata['du_user'] == 'q':
-        return({})
+        return ''
     du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], '', False, True)
     if du_metadata['du_password'] == 'q':
-        return({})
+        return ''
+    else:
+        du_metadata['du_password'] = encryption.encrypt_password(du_metadata['du_password'])
     du_metadata['du_tenant'] = user_io.read_kbd("--> Region Tenant", [], du_tenant, True, True)
     if du_metadata['du_tenant'] == 'q':
-        return({})
+        return ''
     du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True)
     if du_metadata['git_branch'] == 'q':
-        return({})
+        return ''
     #du_metadata['region_name'] = user_io.read_kbd("--> Region Name", [], region_name, True, True)
     #if du_metadata['region_name'] == 'q':
-    #    return({})
-    du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple','sshkey']", ['simple','sshkey'], region_auth_type, True, True)
+    #    return ''
+    du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']",
+                                                       ['simple', 'sshkey'],
+                                                       region_auth_type,
+                                                       True, True)
     if du_metadata['region_auth_type'] == 'q':
-        return({})
-    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True)
+        return ''
+    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access",
+                                                    [],
+                                                    auth_username,
+                                                    True, True)
     if du_metadata['auth_username'] == 'q':
-        return({})
+        return ''
     if du_metadata['region_auth_type'] == "simple":
-        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True)
+        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access",
+                                                        [],
+                                                        auth_password,
+                                                        False, True)
         if du_metadata['auth_password'] == 'q':
-            return({})
+            return ''
+        else:
+            du_metadata['auth_password'] = encryption.encrypt_password(du_metadata['auth_password'])
     else:
         du_metadata['auth_password'] = ""
   
     if du_metadata['region_auth_type'] == "sshkey":
-        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True)
+        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access",
+                                                       [],
+                                                       auth_ssh_key,
+                                                       True, True)
         if du_metadata['auth_ssh_key'] == 'q':
-            return({})
+            return ''
     else:
         du_metadata['auth_ssh_key'] = ""
 
     # get du-specific parameters
     if selected_du_type in ['KVM','KVM/Kubernetes']:
-        du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy", [], region_proxy, True, True)
+        du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy",
+                                                       [],
+                                                       region_proxy,
+                                                       True, True)
         if du_metadata['region_proxy'] == 'q':
-            return({})
-        du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)", [], region_dns, True, True)
+            return ''
+        du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)",
+                                                     [],
+                                                     region_dns,
+                                                     True, True)
         if du_metadata['region_dns'] == 'q':
-            return({})
-        du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)", [], region_bond_if_name, True, True)
+            return ''
+        du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)",
+                                                              [],
+                                                              region_bond_if_name,
+                                                              True, True)
         if du_metadata['region_bond_if_name'] == 'q':
-            return({})
-        du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode", [], region_bond_mode, True, True)
+            return ''
+        du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode",
+                                                           [],
+                                                           region_bond_mode,
+                                                           True, True)
         if du_metadata['region_bond_mode'] == 'q':
-            return({})
-        du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface", [], region_bond_mtu, True, True)
+            return ''
+        du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface",
+                                                          [],
+                                                          region_bond_mtu,
+                                                          True, True)
         if du_metadata['region_bond_mtu'] == 'q':
-            return({})
+            return ''
     else:
         du_metadata['region_proxy'] = ""
         du_metadata['region_dns'] = ""
@@ -375,7 +414,10 @@ def add_edit_du():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)",
+                                          allowed_values,
+                                          '',
+                                          True, True)
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -409,16 +451,16 @@ def select_du(du_type_filter=None):
             allowed_values = ['q']
             sys.stdout.write("\n")
             for du in du_list:
-                sys.stdout.write("{}. {}\n".format(cnt,du['url']))
+                sys.stdout.write("{}. {}\n".format(cnt, du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
             user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
             if user_input == "q":
-                return({})
+                return ''
             else:
                 idx = int(user_input) - 1
                 return(du_list[idx])
-        return({})
+        return ''
 
 
 def select_target_cluster(du_url):
@@ -433,25 +475,25 @@ def select_target_cluster(du_url):
             allowed_values = ['q']
             sys.stdout.write("\n")
             for cluster in current_clusters:
-                sys.stdout.write("{}. {}\n".format(cnt,cluster['name']))
+                sys.stdout.write("{}. {}\n".format(cnt, cluster['name']))
                 allowed_values.append(str(cnt))
                 cnt += 1
             user_input = user_io.read_kbd("Select Cluster", allowed_values, '', True, True)
             if user_input == "q":
-                return({})
+                return ''
             else:
                 idx = int(user_input) - 1
                 return(current_clusters[idx])
-        return({})
+        return ''
 
 
 def add_cluster(du):
     sys.stdout.write("\nAdding Cluster to Region: {}\n".format(du['url']))
-    # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
-    # Added call to decrypt password before du_utils.login_du
-    # We need to review all password handling and converge strategy for
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-    project_id, token = du_utils.login_du(du['url'], du['username'], encryption.decrypt_password(du['password']), du['tenant'])
+    project_id, token = du_utils.login_du(du['url'],
+                                          du['username'],
+                                          du['password'],
+                                          du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
@@ -490,11 +532,11 @@ def add_cluster(du):
 
 def add_host(du):
     sys.stdout.write("\nAdding Host to Region: {}\n".format(du['url']))
-    # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
-    # Added call to decrypt password before du_utils.login_du
-    # We need to review all password handling and converge strategy for
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-    project_id, token = du_utils.login_du(du['url'], du['username'], encryption.decrypt_password(du['password']), du['tenant'])
+    project_id, token = du_utils.login_du(du['url'],
+                                          du['username'],
+                                          du['password'],
+                                          du['tenant'])
     if token == None:
         sys.stdout.write("--> failed to login to region")
     else:
@@ -569,7 +611,7 @@ def add_region(existing_du_url):
         du['bond_ifname'] = du_metadata['region_bond_if_name']
         du['bond_mode'] = du_metadata['region_bond_mode']
         du['bond_mtu'] = du_metadata['region_bond_mtu']
-
+    
     # initialize list of regions to be discovered
     discover_targets = []
 
@@ -599,7 +641,7 @@ def add_region(existing_du_url):
             if sub_region != du['url'].replace('https://',''):
                 sys.stdout.write("{}. {}\n".format(cnt, sub_region))
                 cnt += 1
-        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q','y','n'], 'n', True, True)
+        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q', 'y', 'n'], 'n', True, True)
         if user_input == "q":
             return(None)
         elif user_input == "y":
@@ -628,15 +670,20 @@ def add_region(existing_du_url):
     # create region (and sub-regions)
     sys.stdout.write("\nCreating Regions:\n")
     for discover_target in discover_targets:
-        project_id, token = du_utils.login_du(discover_target['url'], discover_target['username'], discover_target['password'], discover_target['tenant'])
-        if project_id:
-            sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
-            region_type = du_utils.get_du_type(discover_target['url'], project_id, token)
-            if discover_target['url'] == du_metadata['du_url']:
-                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, du_metadata['du_type'], True, True)
-            else:
-                confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
-            discover_target['du_type'] = confirmed_region_type
+        encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+        sys.stdout.write("--> Adding region: {}\n".format(discover_target['url']))
+        region_type = du_utils.get_du_type(discover_target['url'],
+                                           discover_target['username'],
+                                           discover_target['password'],
+                                           discover_target['tenant'])
+        if discover_target['url'] == du_metadata['du_url']:
+            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM', 'Kubernetes', 'KVM/Kubernetes', 'VMware']",
+                                                     region_types,
+                                                     du_metadata['du_type'],
+                                                     True, True)
+        else:
+            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
+        discover_target['du_type'] = confirmed_region_type
 
         datamodel.write_config(discover_target)
 
@@ -651,14 +698,17 @@ def add_region(existing_du_url):
         flag_ssh = False
     for discover_target in discover_targets:
         num_hosts = 0
-        sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
-        # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
-        # Added call to decrypt password before du_utils.login_du
-        # We need to review all password handling and converge strategy for
-        encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],encryption.decrypt_password(discover_target['password']),discover_target['tenant'])
+        sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(discover_target['du_type'], discover_target['url']))
+        project_id, token = du_utils.login_du(discover_target['url'],
+                                              discover_target['username'],
+                                              discover_target['password'],
+                                              discover_target['tenant'])
         if project_id:
-            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'], discover_target['du_type'], project_id, token, flag_ssh)
+            discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
+                                                              discover_target['du_type'],
+                                                              project_id,
+                                                              token,
+                                                              flag_ssh)
             for host in discovered_hosts:
                 datamodel.write_host(host)
                 num_hosts += 1
@@ -670,36 +720,48 @@ def add_region(existing_du_url):
         num_clusters_discovered = 0
         num_clusters_created = 0
         if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
-            sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],discover_target['url']))
-            # TEMP FIX!!!! login_du quietly failing here! discover_target has current_config with encrypted passwords
-            # Added call to decrypt password before du_utils.login_du
-            # We need to review all password handling and converge strategy for
+            sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],
+                                                                                   discover_target['url']))
             encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-            project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],encryption.decrypt_password(discover_target['password']),discover_target['tenant'])
+            project_id, token = du_utils.login_du(discover_target['url'],
+                                                  discover_target['username'],
+                                                  discover_target['password'],
+                                                  discover_target['tenant'])
             if project_id:
                 # discover existing clusters
-                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'],
+                                                                     discover_target['du_type'],
+                                                                     project_id,
+                                                                     token)
 
                 # get existing/user-defined clusters for region
                 defined_clusters = datamodel.get_clusters(discover_target['url'])
 
                 # create any missing clusters
                 for cluster in defined_clusters:
-                    cluster_flag = datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters)
-                    if not datamodel.cluster_in_array(cluster['du_url'],cluster['name'],discovered_clusters):
-                        pmk_utils.create_cluster(discover_target['url'],project_id,token,cluster)
+                    cluster_flag = datamodel.cluster_in_array(cluster['du_url'],
+                                                              cluster['name'],
+                                                              discovered_clusters)
+                    if not datamodel.cluster_in_array(cluster['du_url'],
+                                                      cluster['name'],
+                                                      discovered_clusters):
+                        pmk_utils.create_cluster(discover_target['url'],
+                                                 project_id,
+                                                 token,
+                                                 cluster)
                         num_clusters_created += 1
                     num_clusters_discovered += 1
 
                 if num_clusters_created > 0:
-                    discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+                    discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'],
+                                                                         discover_target['du_type'],
+                                                                         project_id,
+                                                                         token)
 
                 for cluster in discovered_clusters:
                     datamodel.write_cluster(cluster)
-                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered,num_clusters_created))
-
+                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered,
+                                                                                        num_clusters_created))
 
     # return
-    return(discover_targets)
-
-
+    return discover_targets
