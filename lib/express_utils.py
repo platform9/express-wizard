@@ -166,7 +166,7 @@ def get_express_branch(git_branch):
 def install_express(du):
     sys.stdout.write("\nInstalling PF9-Express (branch = {})\n".format(du['git_branch']))
     if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
-        cmd = "git clone {} {}".format(EXPRESS_REPO, globals.EXPRESS_INSTALL_DIR)
+        cmd = "git clone {} {}".format(globals.EXPRESS_REPO, globals.EXPRESS_INSTALL_DIR)
         sys.stdout.write("--> cloning repository ({})\n".format(cmd))
         exit_status, stdout = ssh_utils.run_cmd(cmd)
         if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
