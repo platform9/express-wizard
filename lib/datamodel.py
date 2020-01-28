@@ -3,7 +3,6 @@ import sys
 import json
 import globals
 import ssh_utils
-from encrypt import Encryption
 
 def create_du_entry():
     du_record = {
@@ -138,7 +137,6 @@ def export_region(du_urls):
 
 
 def get_du_metadata(du_url):
-    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     du_config = {}
     if os.path.isfile(globals.CONFIG_FILE):
         with open(globals.CONFIG_FILE) as json_file:
@@ -146,8 +144,6 @@ def get_du_metadata(du_url):
         for du in du_configs:
             if du['url'] == du_url:
                 du_config = dict(du)
-                du_config['password'] = encryption.decrypt_password(du_config['password'])
-                du_config['auth_password'] = encryption.decrypt_password(du_config['auth_password'])
                 break
 
     return(du_config)
@@ -244,14 +240,11 @@ def get_clusters(du_url):
 
 
 def get_configs(du_url=None):
-    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     du_configs = []
     if os.path.isfile(globals.CONFIG_FILE):
         with open(globals.CONFIG_FILE) as json_file:
             tmp_du_configs = json.load(json_file)
             for tmp_du in tmp_du_configs:
-                tmp_du['password'] = encryption.decrypt_password(tmp_du['password'].encode('utf-8'))
-                tmp_du['auth_password'] = encryption.decrypt_password(tmp_du['auth_password'].encode('utf-8'))
                 du_configs.append(tmp_du)
 
     if not du_url:
@@ -361,11 +354,7 @@ def write_host(host):
 
 
 def write_config(du):
-    # encrypt passwords in du data structure
-    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-    du['password'] = encryption.encrypt_password(du['password'])
-    du['auth_password'] = encryption.encrypt_password(du['auth_password'])
-
+    """Write config to disk"""
     # read du database
     if not os.path.isdir(globals.CONFIG_DIR):
         try:
