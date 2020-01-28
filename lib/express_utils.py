@@ -362,7 +362,9 @@ def run_express_cli(du):
         user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             master_entries = datamodel.get_unattached_masters(selected_cluster)
-            if master_entries:
+            if not master_entries:
+                sys.stdout.write("INFO: no master nodes are mapped to this cluster\n")
+            else:
                 reports.report_host_info(master_entries)
                 allowed_values = ['q','all']
                 for node in master_entries:
@@ -393,7 +395,9 @@ def run_express_cli(du):
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
-            if worker_entries:
+            if not worker_entries:
+                sys.stdout.write("INFO: no worker nodes are mapped to this cluster\n")
+            else:
                 reports.report_host_info(worker_entries)
                 allowed_values = ['q','all']
                 for node in worker_entries:
