@@ -9,11 +9,8 @@ from subprocess import call
 from setuptools import setup, find_packages, Command
 
 here = path.abspath(path.dirname(__file__))
-
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
-
-print("CLI_BRANCH: ", os.getenv('CLI_BRANCH'))
 
 if os.getenv('CLI_BRANCH') and not None:
     cli_branch = os.getenv('CLI_BRANCH')
@@ -38,19 +35,19 @@ class RunTests(Command):
 
     def run(self):
         """Run all tests!"""
-        errno = call(['py.test', '--cov=pf9', '--cov-report=term-missing'])
+        errno = call(['py.test'])
         raise SystemExit(errno)
 
 
 setup(
-    name = 'express-wizard', 
-    version = '0.0.1', 
-    description = 'Wizard for Platform9 express-cli and pf9-express', 
-    long_description = long_description, 
-    long_description_content_type = 'text/markdown',  
-    url = 'https://github.com/Platform9/express-wizard',  
-    author = 'Thomas Christopoulos',  
-    author_email = 'tom.christopoulos@platform9.com',  
+    name = 'express-wizard',
+    version = '0.0.1',
+    description = 'Wizard for Platform9 express-cli and pf9-express',
+    long_description = long_description,
+    long_description_content_type='text/markdown',
+    url = 'https://github.com/Platform9/express-wizard',
+    author = 'Thomas Christopoulos',
+    author_email = 'tom.christopoulos@platform9.com',
     classifiers = [
 	'Development Status :: 3 - Alpha',
 	'Intended Audience :: Developers',
@@ -76,6 +73,7 @@ setup(
         "pathlib2;python_version<'3'",
         "pathlib;python_version>'3'",
         express_cli_source,
+        "wheel",
         ],
     extras_require = {
         'test': ['pytest', 'pytest-cov', 'mock']

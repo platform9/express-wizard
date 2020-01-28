@@ -133,6 +133,7 @@ init_venv_python() {
     # upgrade pip
     (. ${venv_activate} && pip install pip --upgrade > /dev/null 2>&1)
 }
+
 ## main
 
 if [ -z ${wizard_branch} ]; then wizard_branch=master; fi
@@ -196,6 +197,16 @@ debugging(${wizard_venv})
 launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
 
 #pipenv run  # Run a command in the virtualenv
+
+
+########################################
+# REQUIRED PIP INSTALLS BEFORE INSTALLING WIZARD
+#
+#    python -m pip install --upgrade pip wheel setuptool
+#   
+#    setuptools-45.1.0
+#    
+
 
 
 
