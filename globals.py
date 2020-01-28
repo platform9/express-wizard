@@ -1,5 +1,6 @@
 """Global Variable Defaults"""
 from os.path import expanduser
+import sys
 
 # globals
 PF9_DIR = "{}/.pf9".format(expanduser("~"))
@@ -8,9 +9,9 @@ CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 
-PF9_VENV = "{}/pf9-venv".format(PF9_DIR)
+PF9_VENV = sys.prefix 
 WIZARD_VENV = "{}/bin/activate".format(PF9_VENV)
-WIZARD_PYTHON = "{}/bin/python".format(PF9_VENV)
+WIZARD_PYTHON = sys.executable 
 
 SRC_DIR = "{}/src".format(PF9_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
