@@ -64,6 +64,7 @@ def create_bond_profile_entry():
 
 def create_auth_profile_entry():
     auth_profile = {
+        'auth_name': "",
         'auth_type': "",
         'auth_ssh_key': "",
         'auth_password': "",
@@ -163,6 +164,19 @@ def export_region(du_urls):
         return(None)
     
     sys.stdout.write("Export complete: {}\n".format(export_file))
+
+
+def get_auth_profile_metadata(auth_profile_name):
+    auth_config = {}
+    if os.path.isfile(globals.AUTH_PROFILE_FILE):
+        with open(globals.AUTH_PROFILE_FILE) as json_file:
+            auth_configs = json.load(json_file)
+        for auth in auth_configs:
+            if auth['auth_name'] == auth_profile_name:
+                auth_config = dict(auth)
+                break
+
+    return(auth_config)
 
 
 def get_du_metadata(du_url):
@@ -284,6 +298,17 @@ def get_configs(du_url=None):
             if du['url'] == du_url:
                 filtered_du_configs.append(du)
         return(filtered_du_configs)
+
+
+def get_auth_profiles():
+    auth_configs = []
+    if os.path.isfile(globals.AUTH_PROFILE_FILE):
+        with open(globals.AUTH_PROFILE_FILE) as json_file:
+            tmp_auth_configs = json.load(json_file)
+            for tmp_auth in tmp_auth_configs:
+                auth_configs.append(tmp_auth)
+
+    return(auth_configs)
 
 
 def delete_du(target_du):
@@ -409,6 +434,28 @@ def write_config(du):
             update_config.append(du)
         with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
+
+
+def write_auth_profile(auth):
+    """Write authorization file to disk"""
+    current_profile = get_auth_profiles()
+    if len(current_profile) == 0:
+        current_profile.append(auth)
+        with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_profile, outfile)
+    else:
+        update_profile = []
+        flag_found = False
+        for profile in current_profile:
+            if profile['auth_name'] == auth['auth_name']:
+                update_profile.append(auth)
+                flag_found = True
+            else:
+                update_profile.append(profile)
+        if not flag_found:
+            update_profile.append(auth)
+        with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_profile, outfile)
 
 
 def cluster_in_array(target_url,target_name,target_clusters):

@@ -220,6 +220,51 @@ def select_cluster(du_url, current_assigned_cluster):
         return(selected_cluster)
 
 
+def get_auth_settings(existing_auth_profile):
+    # initialize auth data structure
+    auth_metadata = datamodel.create_auth_profile_entry()
+
+    if existing_auth_profile == None:
+        auth_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        if auth_profile_name == 'q':
+            return ''
+    else:
+        auth_profile_name = existing_auth_profile
+    
+    target_auth_metadata = datamodel.get_auth_profile_metadata(auth_profile_name)
+    try:
+        auth_name = target_auth_metadata['auth_name']
+        auth_type = target_auth_metadata['auth_type']
+        auth_ssh_key = target_auth_metadata['auth_ssh_key']
+        auth_password = target_auth_metadata['auth_password']
+        auth_username = target_auth_metadata['auth_username']
+    except:
+        auth_name = ""
+        auth_type = ""
+        auth_ssh_key = ""
+        auth_username = ""
+        auth_password = ""
+
+    auth_metadata['auth_name'] = auth_profile_name
+    auth_metadata['auth_type'] = user_io.read_kbd("--> Authentication Type", [], auth_type, True, True)
+    if auth_metadata['auth_type'] == 'q':
+        return ''
+
+    auth_metadata['auth_ssh_key'] = user_io.read_kbd("--> Path to SSH Key", [], auth_ssh_key, True, True)
+    if auth_metadata['auth_ssh_key'] == 'q':
+        return ''
+
+    auth_metadata['auth_username'] = user_io.read_kbd("--> Username", [], auth_username, True, True)
+    if auth_metadata['auth_username'] == 'q':
+        return ''
+
+    auth_metadata['auth_password'] = user_io.read_kbd("--> Password", [], auth_password, True, True)
+    if auth_metadata['auth_password'] == 'q':
+        return ''
+    
+    return(auth_metadata)
+
+
 def get_du_creds(existing_du_url):
     # initialize du data structure
     du_metadata = datamodel.create_du_entry()
@@ -396,9 +441,37 @@ def get_du_creds(existing_du_url):
     return(du_metadata)
 
 
+def add_edit_auth_profile():
+    if not os.path.isfile(globals.AUTH_PROFILE_FILE):
+        return("define-new-auth-profile")
+    else:
+        current_auth = datamodel.get_auth_profiles()
+        if len(current_auth) == 0:
+            return(None)
+        else:
+            cnt = 1
+            allowed_values = ['q','n']
+            sys.stdout.write("\n")
+            for auth in current_auth:
+                sys.stdout.write("{}. {}\n".format(cnt,auth['auth_name']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            sys.stdout.write("\n")
+            user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)",
+                                          allowed_values,
+                                          '',
+                                          True, True)
+            if user_input == "q":
+                return(None)
+            elif user_input == "n":
+                return("define-new-auth-profile")
+            else:
+                idx = int(user_input) - 1
+                return(current_auth[idx]['auth_name'])
+        return(None)
+
+
 def add_edit_du():
-   #if not os.path.isdir(globals.CONFIG_DIR):
-   #    return(None)
     if not os.path.isfile(globals.CONFIG_FILE):
         return("define-new-du")
     else:
@@ -580,6 +653,29 @@ def add_host(du):
 
             # persist configurtion
             datamodel.write_host(host)
+
+
+def add_auth_profile(existing_auth_profile):
+    if existing_auth_profile == None:
+        sys.stdout.write("\nAdding an Authorization (SSH) Profile:\n")
+    else:
+        sys.stdout.write("\nUpdate Authorization (SSH) Profile:\n")
+
+    # auth_metadata is created by create_auth_profile_entry() - and initialized or populated from existing auth record
+    auth_metadata = interview.get_auth_settings(existing_auth_profile)
+    if not auth_metadata:
+        return(auth_metadata)
+    else:
+        # initialize auth data structure
+        auth = datamodel.create_auth_profile_entry()
+        auth['auth_name'] = auth_metadata['auth_name']
+        auth['auth_type'] = auth_metadata['auth_type']
+        auth['auth_ssh_key'] = auth_metadata['auth_ssh_key']
+        auth['auth_username'] = auth_metadata['auth_username']
+        auth['auth_password'] = auth_metadata['auth_password']
+    
+    # write auth profile
+    datamodel.write_auth_profile(auth)
 
 
 def add_region(existing_du_url):

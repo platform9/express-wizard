@@ -8,6 +8,7 @@ CONFIG_DIR = "{}/db".format(PF9_DIR)
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
+AUTH_PROFILE_FILE = "{}/auth-profiles.conf".format(CONFIG_DIR)
 
 PF9_VENV = sys.prefix 
 WIZARD_VENV = "{}/bin/activate".format(PF9_VENV)

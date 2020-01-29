@@ -201,7 +201,14 @@ def menu_level2():
         display_menu2()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
-            sys.stdout.write("\nNot Implemented\n")
+            action_header("MANAGE AUTHORIZATION (SSH) PROFILES")
+            selected_profile = interview.add_edit_auth_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-auth-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_auth_profile(target_profile)
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
