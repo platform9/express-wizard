@@ -224,6 +224,9 @@ def get_auth_settings(existing_auth_profile):
     # initialize auth data structure
     auth_metadata = datamodel.create_auth_profile_entry()
 
+    # initialize encryption
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+
     if existing_auth_profile == None:
         auth_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
         if auth_profile_name == 'q':
@@ -246,22 +249,30 @@ def get_auth_settings(existing_auth_profile):
         auth_password = ""
 
     auth_metadata['auth_name'] = auth_profile_name
-    auth_metadata['auth_type'] = user_io.read_kbd("--> Authentication Type", [], auth_type, True, True)
+    auth_metadata['auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']", ['simple', 'sshkey'], auth_type, True, True)
     if auth_metadata['auth_type'] == 'q':
         return ''
 
-    auth_metadata['auth_ssh_key'] = user_io.read_kbd("--> Path to SSH Key", [], auth_ssh_key, True, True)
-    if auth_metadata['auth_ssh_key'] == 'q':
-        return ''
-
-    auth_metadata['auth_username'] = user_io.read_kbd("--> Username", [], auth_username, True, True)
+    auth_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True)
     if auth_metadata['auth_username'] == 'q':
         return ''
 
-    auth_metadata['auth_password'] = user_io.read_kbd("--> Password", [], auth_password, True, True)
-    if auth_metadata['auth_password'] == 'q':
-        return ''
-    
+    if auth_metadata['auth_type'] == "simple":
+        auth_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True)
+        if auth_metadata['auth_password'] == 'q':
+            return ''
+        else:
+            auth_metadata['auth_password'] = encryption.encrypt_password(auth_metadata['auth_password'])
+    else:
+        auth_metadata['auth_password'] = ""
+
+    if auth_metadata['auth_type'] == "sshkey":
+        auth_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True)
+        if auth_metadata['auth_ssh_key'] == 'q':
+            return ''
+    else:
+        auth_metadata['auth_ssh_key'] = ""
+
     return(auth_metadata)
 
 
@@ -347,6 +358,7 @@ def get_du_creds(existing_du_url):
     du_metadata['du_type'] = selected_du_type
     du_metadata['region_name'] = ""
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+
     # get common du parameters
     du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True)
     if du_metadata['du_user'] == 'q':

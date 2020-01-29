@@ -162,6 +162,7 @@ def display_menu2():
     sys.stdout.write("2. Add/Update Bond Profiles\n")
     sys.stdout.write("3. Add/update Host Profiles\n")
     sys.stdout.write("4. Add/Update Hosts\n")
+    sys.stdout.write("5. Display SSH Profiles\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -225,6 +226,9 @@ def menu_level2():
                         user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
                         if user_input == "n":
                             flag_more_hosts = False
+        elif user_input == '5':
+            auth_entries = datamodel.get_auth_profiles()
+            reports.report_auth_profiles(auth_entries)
         elif user_input in ['q', 'Q']:
             None
         else:

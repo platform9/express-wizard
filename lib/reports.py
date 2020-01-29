@@ -14,6 +14,33 @@ def map_yn(map_key):
         return("failed-to-map")
 
 
+def report_auth_profiles(auth_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------ Authorization Profiles (SSH Access) ------\n")
+    if not os.path.isfile(globals.AUTH_PROFILE_FILE):
+        sys.stdout.write("No authorization profiles have been defined yet (run 'Add/Update SSH Profiles')\n")
+        return()
+
+    auth_table = PrettyTable()
+    auth_table.title = "Authorization Profiles"
+    auth_table.field_names = ["Profile Name","Auth Type","Remote Username","SSH Key","SSH Password"]
+    auth_table.align["Profile Name"] = "l"
+    auth_table.align["Auth Type"] = "l"
+    auth_table.align["Remote Username"] = "l"
+    auth_table.align["SSH Key"] = "l"
+    auth_table.align["SSH Password"] = "l"
+
+    for auth in auth_entries:
+        if auth['auth_password'] == "":
+            auth_password = ""
+        else:
+            auth_password = "**********"
+        auth_table.add_row([auth['auth_name'],auth['auth_type'],auth['auth_username'],auth['auth_ssh_key'],auth_password])
+
+    print(auth_table)
+
+
 def report_du_info(du_entries):
     from prettytable import PrettyTable
 
