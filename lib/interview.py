@@ -103,7 +103,7 @@ def get_host_metadata(du, project_id, token):
     if host_settings:
         host_ip = host_settings['ip']
         host_ip_interfaces = host_settings['ip_interfaces']
-        host_bond_config = host_settings['bond_config']
+        host_sub_if_config = host_settings['sub_if_config']
         host_nova = host_settings['nova']
         host_glance = host_settings['glance']
         host_cinder = host_settings['cinder']
@@ -115,7 +115,7 @@ def get_host_metadata(du, project_id, token):
         host_metadata['uuid'] = host_settings['uuid']
     else:
         host_ip = ""
-        host_bond_config = ""
+        host_sub_if_config = ""
         host_nova = "y"
         host_glance = "n"
         host_cinder = "n"
@@ -130,8 +130,8 @@ def get_host_metadata(du, project_id, token):
     if host_metadata['ip'] == "q":
         return ''
     if du_host_type == "kvm":
-        host_metadata['bond_config'] = user_io.read_kbd("--> Bond Config", [], host_bond_config, True, False)
-        if host_metadata['bond_config'] == "q":
+        host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False)
+        if host_metadata['sub_if_config'] == "q":
             return ''
         host_metadata['nova'] = user_io.read_kbd("--> Enable Nova", ['y', 'n'], host_nova, True, True)
         if host_metadata['nova'] == "q":
@@ -152,7 +152,7 @@ def get_host_metadata(du, project_id, token):
         host_metadata['pf9-kube'] = "n"
         host_metadata['cluster_name'] = ""
     elif du_host_type == "kubernetes":
-        host_metadata['bond_config'] = ""
+        host_metadata['sub_if_config'] = ""
         host_metadata['nova'] = ""
         host_metadata['glance'] = ""
         host_metadata['cinder'] = ""
@@ -550,7 +550,7 @@ def add_host(du):
             host['ip_interfaces'] = host_metadata['ip_interfaces']
             host['hostname'] = host_metadata['hostname']
             host['record_source'] = host_metadata['record_source']
-            host['bond_config'] = host_metadata['bond_config']
+            host['sub_if_config'] = host_metadata['sub_if_config']
             host['pf9-kube'] = host_metadata['pf9-kube']
             host['nova'] = host_metadata['nova']
             host['glance'] = host_metadata['glance']

@@ -37,7 +37,7 @@ def create_host_entry():
         'hostname': "",
         'record_source': "",
         'ssh_status': "",
-        'bond_config': "",
+        'sub_if_config': "",
         'pf9-kube': "",
         'nova': "",
         'glance': "",
@@ -49,6 +49,27 @@ def create_host_entry():
         'cluster_uuid': ""
     }
     return(host_record)
+
+
+def create_bond_entry():
+    bond_record = {
+        'bond_name': "",
+        'bond_ifname': "",
+        'bond_mode': "",
+        'bond_mtu': "",
+        'bond_members': []
+    }
+    return(bond_record)
+
+
+def create_host_profile():
+    profile_record = {
+        'auth_type': "",
+        'auth_ssh_key': "",
+        'auth_password': "",
+        'auth_username': ""
+    }
+    return(profile_record)
 
 
 def create_cluster_entry():

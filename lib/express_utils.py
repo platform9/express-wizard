@@ -67,8 +67,8 @@ def build_express_inventory(du,host_entries):
         # manage bond stanza
         express_inventory_fh.write("[bond_config]\n")
         for host in host_entries:
-            if host['bond_config'] != "":
-                express_inventory_fh.write("{} {}\n".format(host['hostname'], host['bond_config']))
+            if host['sub_if_config'] != "":
+                express_inventory_fh.write("{} bond_sub_interfaces='{}'\n".format(host['hostname'], host['sub_if_config']))
 
         # manage openstack groups
         express_inventory_fh.write("[pmo:children]\n")

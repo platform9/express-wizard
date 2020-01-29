@@ -111,7 +111,7 @@ def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
         host_record['hostname'] = host['info']['hostname']
         host_record['record_source'] = "Discovered"
         host_record['ssh_status'] = ssh_status
-        host_record['bond_config'] = ""
+        host_record['sub_if_config'] = ""
         host_record['pf9-kube'] = role_kube
         host_record['nova'] = role_nova
         host_record['glance'] = role_glance
