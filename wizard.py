@@ -153,8 +153,20 @@ def action_header(title):
     sys.stdout.write("\n{}".format(title.center(MAX_WIDTH, '*')))
 
 
-def display_menu1():
+def display_menu2():
+    sys.stdout.write("\n***************************************************\n")
+    sys.stdout.write("**           Platform9 Express Wizard            **\n")
+    sys.stdout.write("**                - Host Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
+    sys.stdout.write("1. Add/Update SSH Profiles\n")
+    sys.stdout.write("2. Add/Update Bond Profiles\n")
+    sys.stdout.write("3. Add/update Host Profiles\n")
+    sys.stdout.write("4. Add/Update Hosts\n")
+    sys.stdout.write("***************************************************\n")
+
+
+def display_menu1():
+    sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**            -- Maintenance Menu --             **\n")
     sys.stdout.write("***************************************************\n")
@@ -181,6 +193,36 @@ def display_menu0():
     sys.stdout.write("5. Onboard Host to Region\n")
     sys.stdout.write("6. Maintenance\n")
     sys.stdout.write("***************************************************\n")
+
+
+def menu_level2():
+    user_input = ""
+    while not user_input in ['q', 'Q']:
+        display_menu2()
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        if user_input == '1':
+            sys.stdout.write("\nNot Implemented\n")
+        elif user_input == '2':
+            sys.stdout.write("\nNot Implemented\n")
+        elif user_input == '3':
+            sys.stdout.write("\nNot Implemented\n")
+        elif user_input == '4':
+            action_header("MANAGE HOSTS")
+            sys.stdout.write("\nSelect Region to add Host to:")
+            selected_du = interview.select_du()
+            if selected_du:
+                if selected_du != "q":
+                    flag_more_hosts = True
+                    while flag_more_hosts:
+                        new_host = interview.add_host(selected_du)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
+                        if user_input == "n":
+                            flag_more_hosts = False
+        elif user_input in ['q', 'Q']:
+            None
+        else:
+            sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
+        sys.stdout.write("\n")
 
 
 def menu_level1():
@@ -243,17 +285,7 @@ def menu_level0():
                 if new_du_list:
                     reports.report_du_info(new_du_list)
         elif user_input == '2':
-            action_header("MANAGE HOSTS")
-            sys.stdout.write("\nSelect Region to add Host to:")
-            selected_du = interview.select_du()
-            if selected_du:
-                if selected_du != "q":
-                    flag_more_hosts = True
-                    while flag_more_hosts:
-                        new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
-                        if user_input == "n":
-                            flag_more_hosts = False
+            menu_level2()
         elif user_input == '3':
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
@@ -291,9 +323,6 @@ def menu_level0():
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-
-        if user_input != '7':
-            sys.stdout.write("\n")
 
 
 def ssh_validate_login(du_metadata, host_ip):

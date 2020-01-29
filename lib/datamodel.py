@@ -51,25 +51,33 @@ def create_host_entry():
     return(host_record)
 
 
-def create_bond_entry():
-    bond_record = {
+def create_bond_profile_entry():
+    bond_profile = {
         'bond_name': "",
         'bond_ifname': "",
         'bond_mode': "",
         'bond_mtu': "",
         'bond_members': []
     }
-    return(bond_record)
+    return(bond_profile)
 
 
-def create_host_profile():
-    profile_record = {
+def create_auth_profile_entry():
+    auth_profile = {
         'auth_type': "",
         'auth_ssh_key': "",
         'auth_password': "",
         'auth_username': ""
     }
-    return(profile_record)
+    return(auth_profile)
+
+
+def create_host_profile_entry():
+    host_profile = {
+        'fk_auth_profile': "",
+        'fk_bond_profile': []
+    }
+    return(host_profile)
 
 
 def create_cluster_entry():
