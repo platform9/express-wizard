@@ -166,7 +166,7 @@ def get_express_branch(git_branch):
 def install_express(du):
     sys.stdout.write("\nInstalling PF9-Express (branch = {})\n".format(du['git_branch']))
     if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
-        cmd = "git clone {} {}".format(EXPRESS_REPO, globals.EXPRESS_INSTALL_DIR)
+        cmd = "git clone {} {}".format(globals.EXPRESS_REPO, globals.EXPRESS_INSTALL_DIR)
         sys.stdout.write("--> cloning repository ({})\n".format(cmd))
         exit_status, stdout = ssh_utils.run_cmd(cmd)
         if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
@@ -362,7 +362,9 @@ def run_express_cli(du):
         user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             master_entries = datamodel.get_unattached_masters(selected_cluster)
-            if master_entries:
+            if not master_entries:
+                sys.stdout.write("INFO: no master nodes are mapped to this cluster\n")
+            else:
                 reports.report_host_info(master_entries)
                 allowed_values = ['q','all']
                 for node in master_entries:
@@ -393,7 +395,9 @@ def run_express_cli(du):
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True)
         if user_input == "y":
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
-            if worker_entries:
+            if not worker_entries:
+                sys.stdout.write("INFO: no worker nodes are mapped to this cluster\n")
+            else:
                 reports.report_host_info(worker_entries)
                 allowed_values = ['q','all']
                 for node in worker_entries:
