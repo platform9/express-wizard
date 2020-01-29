@@ -182,7 +182,7 @@ def display_menu1():
 
 
 def display_menu0():
-    sys.stdout.write("***************************************************\n")
+    sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**               -- Main Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
@@ -222,7 +222,6 @@ def menu_level2():
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-        sys.stdout.write("\n")
 
 
 def menu_level1():
@@ -264,12 +263,10 @@ def menu_level1():
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-        sys.stdout.write("\n")
 
 
 def menu_level0():
     user_input = ""
-    sys.stdout.write("\n")
     while not user_input in ['q', 'Q']:
         display_menu0()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
