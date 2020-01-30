@@ -166,6 +166,19 @@ def export_region(du_urls):
     sys.stdout.write("Export complete: {}\n".format(export_file))
 
 
+def get_bond_profile_metadata(bond_profile_name):
+    bond_config = {}
+    if os.path.isfile(globals.BOND_PROFILE_FILE):
+        with open(globals.BOND_PROFILE_FILE) as json_file:
+            bond_configs = json.load(json_file)
+        for bond in bond_configs:
+            if bond['bond_name'] == bond_profile_name:
+                bond_config = dict(bond)
+                break
+
+    return(bond_config)
+
+
 def get_auth_profile_metadata(auth_profile_name):
     auth_config = {}
     if os.path.isfile(globals.AUTH_PROFILE_FILE):
@@ -298,6 +311,17 @@ def get_configs(du_url=None):
             if du['url'] == du_url:
                 filtered_du_configs.append(du)
         return(filtered_du_configs)
+
+
+def get_bond_profiles():
+    bond_configs = []
+    if os.path.isfile(globals.BOND_PROFILE_FILE):
+        with open(globals.BOND_PROFILE_FILE) as json_file:
+            tmp_bond_configs = json.load(json_file)
+            for tmp_auth in tmp_bond_configs:
+                bond_configs.append(tmp_auth)
+
+    return(bond_configs)
 
 
 def get_auth_profiles():
@@ -434,6 +458,28 @@ def write_config(du):
             update_config.append(du)
         with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
+
+
+def write_bond_profile(bond):
+    """Write bond file to disk"""
+    current_bond = get_bond_profiles()
+    if len(current_bond) == 0:
+        current_bond.append(bond)
+        with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_bond, outfile)
+    else:
+        update_profile = []
+        flag_found = False
+        for profile in current_bond:
+            if profile['bond_name'] == bond['bond_name']:
+                update_profile.append(bond)
+                flag_found = True
+            else:
+                update_profile.append(profile)
+        if not flag_found:
+            update_profile.append(bond)
+        with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_profile, outfile)
 
 
 def write_auth_profile(auth):

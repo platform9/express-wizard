@@ -220,6 +220,63 @@ def select_cluster(du_url, current_assigned_cluster):
         return(selected_cluster)
 
 
+def get_bond_settings(existing_bond_profile):
+    # initialize bond data structure
+    bond_metadata = datamodel.create_bond_profile_entry()
+
+    if existing_bond_profile == None:
+        bond_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        if bond_profile_name == 'q':
+            return ''
+    else:
+        bond_profile_name = existing_bond_profile
+    
+    target_bond_metadata = datamodel.get_bond_profile_metadata(bond_profile_name)
+    try:
+        bond_name = target_bond_metadata['bond_name']
+        bond_ifname = target_bond_metadata['bond_ifname']
+        bond_mode = target_bond_metadata['bond_mode']
+        bond_mtu = target_bond_metadata['bond_mtu']
+        bond_members = target_bond_metadata['bond_members']
+    except:
+        bond_name = ""
+        bond_ifname = ""
+        bond_mode = ""
+        bond_mtu = ""
+        bond_members = ""
+
+    bond_metadata['bond_name'] = bond_profile_name
+    bond_metadata['bond_ifname'] = user_io.read_kbd("--> Interface Name for Bond", [], bond_ifname, True, True)
+    if bond_metadata['bond_ifname'] == 'q':
+        return ''
+
+    # prompt for bond mode
+    cnt = 1
+    allowed_values = ['q']
+    for target_mode in globals.bond_modes:
+        sys.stdout.write("    {}. {}\n".format(cnt, target_mode))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("--> Bond Mode", allowed_values, bond_mode, True, True)
+    if user_input == 'q':
+        return ''
+    else:
+        if type(user_input) is int or user_input.isdigit():
+            bond_metadata['bond_mode'] = int(user_input) - 1
+        else:
+            bond_metadata['bond_mode'] = user_input
+
+    bond_metadata['bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface", [], bond_mtu, True, True)
+    if bond_metadata['bond_mtu'] == 'q':
+        return ''
+
+    bond_metadata['bond_members'] = user_io.read_kbd("--> Member Interfaces (space-delimitted)", [], bond_members, True, True)
+    if bond_metadata['bond_members'] == 'q':
+        return ''
+
+    return(bond_metadata)
+
+
 def get_auth_settings(existing_auth_profile):
     # initialize auth data structure
     auth_metadata = datamodel.create_auth_profile_entry()
@@ -457,6 +514,36 @@ def get_du_creds(existing_du_url):
     return(du_metadata)
 
 
+def add_edit_bond_profile():
+    if not os.path.isfile(globals.BOND_PROFILE_FILE):
+        return("define-new-bond-profile")
+    else:
+        current_bond = datamodel.get_bond_profiles()
+        if len(current_bond) == 0:
+            return(None)
+        else:
+            cnt = 1
+            allowed_values = ['q','n']
+            sys.stdout.write("\n")
+            for bond in current_bond:
+                sys.stdout.write("{}. {}\n".format(cnt,bond['bond_name']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            sys.stdout.write("\n")
+            user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)",
+                                          allowed_values,
+                                          '',
+                                          True, True)
+            if user_input == "q":
+                return(None)
+            elif user_input == "n":
+                return("define-new-bond-profile")
+            else:
+                idx = int(user_input) - 1
+                return(current_bond[idx]['bond_name'])
+        return(None)
+
+
 def add_edit_auth_profile():
     if not os.path.isfile(globals.AUTH_PROFILE_FILE):
         return("define-new-auth-profile")
@@ -669,6 +756,29 @@ def add_host(du):
 
             # persist configurtion
             datamodel.write_host(host)
+
+
+def add_bond_profile(existing_bond_profile):
+    if existing_bond_profile == None:
+        sys.stdout.write("\nAdding a Bond Profile:\n")
+    else:
+        sys.stdout.write("\nUpdate Bond Profile:\n")
+
+    # bond_metadata is created by create_bond_profile_entry() - and initialized or populated from existing bond record
+    bond_metadata = interview.get_bond_settings(existing_bond_profile)
+    if not bond_metadata:
+        return(bond_metadata)
+    else:
+        # initialize bond data structure
+        bond = datamodel.create_bond_profile_entry()
+        bond['bond_name'] = bond_metadata['bond_name']
+        bond['bond_ifname'] = bond_metadata['bond_ifname']
+        bond['bond_mode'] = bond_metadata['bond_mode']
+        bond['bond_mtu'] = bond_metadata['bond_mtu']
+        bond['bond_members'] = bond_metadata['bond_members']
+    
+    # write auth profile
+    datamodel.write_bond_profile(bond)
 
 
 def add_auth_profile(existing_auth_profile):

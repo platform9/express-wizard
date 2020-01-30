@@ -158,10 +158,11 @@ def display_menu2():
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**              - Profile Menu --                **\n")
     sys.stdout.write("***************************************************\n")
-    sys.stdout.write("1. Manage Auth Profiles (SSH)\n")
+    sys.stdout.write("1. Manage Auth Profiles\n")
     sys.stdout.write("2. Manage Bond Profiles\n")
     sys.stdout.write("3. Manage Host Profiles (Auth + Bond)\n")
     sys.stdout.write("4. Display SSH Profiles\n")
+    sys.stdout.write("5. Display Bond Profiles\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -202,7 +203,7 @@ def menu_level2():
         display_menu2()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
         if user_input == '1':
-            action_header("MANAGE AUTHORIZATION (SSH) PROFILES")
+            action_header("MANAGE AUTHORIZATION PROFILES")
             selected_profile = interview.add_edit_auth_profile()
             if selected_profile != None:
                 if selected_profile == "define-new-auth-profile":
@@ -211,12 +212,22 @@ def menu_level2():
                     target_profile = selected_profile
                 interview.add_auth_profile(target_profile)
         elif user_input == '2':
-            sys.stdout.write("\nNot Implemented\n")
+            action_header("MANAGE BOND PROFILES")
+            selected_profile = interview.add_edit_bond_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-bond-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_bond_profile(target_profile)
         elif user_input == '3':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '4':
             auth_entries = datamodel.get_auth_profiles()
             reports.report_auth_profiles(auth_entries)
+        elif user_input == '5':
+            bond_entries = datamodel.get_bond_profiles()
+            reports.report_bond_profiles(bond_entries)
         elif user_input in ['q', 'Q']:
             None
         else:
