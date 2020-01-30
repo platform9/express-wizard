@@ -129,6 +129,14 @@ def get_host_metadata(du, project_id, token):
     host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
     if host_metadata['ip'] == "q":
         return ''
+
+    # prompt for host profile
+    # host_profiles = datamodel.filter_host_profiles()
+    # print("---- host_profiles ---------------------------------")
+    # print(host_profiles)
+    # print("----------------------------------------------------")
+
+    # prompt for KVM-specific settings
     if du_host_type == "kvm":
         host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False)
         if host_metadata['sub_if_config'] == "q":
@@ -158,6 +166,8 @@ def get_host_metadata(du, project_id, token):
         host_metadata['cinder'] = ""
         host_metadata['designate'] = ""
         host_metadata['pf9-kube'] = "y"
+
+        # prompt for KVM-specific settings
         host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]",
                                                       ['master', 'worker'],
                                                       host_node_type,

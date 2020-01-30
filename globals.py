@@ -18,7 +18,7 @@ WIZARD_PYTHON = sys.executable
 
 SRC_DIR = "{}/src".format(PF9_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
-EXPRESS_LOG_DIR = "{}/db/express/pf9-express/log".format(PF9_DIR)
+EXPRESS_LOG_DIR = "{}/db/express/log".format(PF9_DIR)
 PF9_EXPRESS = "{}/db/express/pf9-express".format(PF9_DIR)
 PF9_EXPRESS_CONFIG_PATH = "{}/db/express/pf9-express.conf".format(PF9_DIR)
 EXPRESS_INSTALL_DIR = "{}/db/express".format(PF9_DIR)
