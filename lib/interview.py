@@ -103,6 +103,7 @@ def get_host_metadata(du, project_id, token):
     if host_settings:
         host_ip = host_settings['ip']
         host_ip_interfaces = host_settings['ip_interfaces']
+        fk_auth_profile = host_settings['fk_auth_profile']
         host_sub_if_config = host_settings['sub_if_config']
         host_nova = host_settings['nova']
         host_glance = host_settings['glance']
@@ -125,6 +126,7 @@ def get_host_metadata(du, project_id, token):
         host_cluster_name = "Unassigned"
         host_metadata['ip_interfaces'] = ""
         host_metadata['uuid'] = ""
+        fk_auth_profile = ""
 
     host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
     if host_metadata['ip'] == "q":
@@ -248,7 +250,7 @@ def get_host_profile_settings(target_host_profile):
     host_profile_metadata = datamodel.create_host_profile_entry()
 
     if target_host_profile == None:
-        host_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        host_profile_name = user_io.read_kbd("--> Template Name", [], '', True, True)
         if host_profile_name == 'q':
             return ''
     else:
@@ -258,9 +260,11 @@ def get_host_profile_settings(target_host_profile):
     try:
         fk_auth_profile = target_host_profile_metadata['fk_auth_profile']
         fk_bond_profile = target_host_profile_metadata['fk_bond_profile']
+        fk_role_profile = target_host_profile_metadata['fk_role_profile']
     except:
         fk_auth_profile = ""
         fk_bond_profile = ""
+        fk_role_profile = ""
 
     host_profile_metadata['host_profile_name'] = host_profile_name
 
@@ -273,7 +277,7 @@ def get_host_profile_settings(target_host_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_auth_profile, True, True)
+    user_input = user_io.read_kbd("--> Select Auth Profile", allowed_values, fk_auth_profile, True, True)
     if user_input == 'q':
         return ''
     else:
@@ -281,6 +285,24 @@ def get_host_profile_settings(target_host_profile):
             host_profile_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
         else:
             host_profile_metadata['fk_auth_profile'] = auth_profile_list[user_input]
+
+    # prompt for role profile
+    sys.stdout.write("\nRole Profiles:\n")
+    role_profile_list = datamodel.get_role_profile_names()
+    cnt = 1
+    allowed_values = ['q']
+    for target in role_profile_list:
+        sys.stdout.write("    {}. {}\n".format(cnt, target))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("--> Select Role Profile", allowed_values, fk_role_profile, True, True)
+    if user_input == 'q':
+        return ''
+    else:
+        if type(user_input) is int or user_input.isdigit():
+            host_profile_metadata['fk_role_profile'] = role_profile_list[int(user_input)-1]
+        else:
+            host_profile_metadata['fk_role_profile'] = role_profile_list[user_input]
 
     # prompt for bond profile
     sys.stdout.write("\nBond Profiles:\n")
@@ -291,7 +313,7 @@ def get_host_profile_settings(target_host_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_bond_profile, True, True)
+    user_input = user_io.read_kbd("--> Select Bond Profile", allowed_values, fk_bond_profile, True, True)
     if user_input == 'q':
         return ''
     else:
@@ -360,6 +382,92 @@ def get_bond_settings(existing_bond_profile):
     return(bond_metadata)
 
 
+def get_role_settings(existing_role_profile):
+    # initialize role data structure
+    role_metadata = datamodel.create_role_profile_entry()
+
+    if existing_role_profile == None:
+        role_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        if role_profile_name == 'q':
+            return ''
+    else:
+        role_profile_name = existing_role_profile
+    
+    target_role_metadata = datamodel.get_role_profile_metadata(role_profile_name)
+    try:
+        role_pf9_kube = target_role_metadata['pf9-kube']
+        role_nova = target_role_metadata['nova']
+        role_glance = target_role_metadata['glance']
+        role_cinder = target_role_metadata['cinder']
+        role_designate = target_role_metadata['designate']
+        role_node_type = target_role_metadata['node_type']
+    except:
+        role_pf9_kube = "n"
+        role_nova = "n"
+        role_glance = "n"
+        role_cinder = "n"
+        role_designate = "n"
+        role_node_type = ""
+
+    role_metadata['role_name'] = role_profile_name
+
+    # prompt for host type (only if never set)
+    if role_pf9_kube == 'n' and role_nova == 'n':
+        sys.stdout.write("Host Type:\n")
+        node_type_list = ['OpenStack (PMO)','Kubernetes (PMK)']
+        cnt = 1
+        allowed_values = ['q']
+        for target in node_type_list:
+            sys.stdout.write("    {}. {}\n".format(cnt, target))
+            allowed_values.append(str(cnt))
+            cnt += 1
+        user_input = user_io.read_kbd("--> Select Host type", allowed_values, '', True, True)
+        if user_input == 'q':
+            return ''
+        else:
+            if type(user_input) is int or user_input.isdigit():
+                selected_host_type = node_type_list[int(user_input)-1]
+            else:
+                selected_host_type = node_type_list[user_input]
+    else:
+        if role_pf9_kube == 'y':
+            selected_host_type = "Kubernetes (PMK)"
+        if role_nova == 'y':
+            selected_host_type = "OpenStack (PMO)"
+
+    # get hypervisor-specific roles
+    if selected_host_type == "OpenStack (PMO)":
+        role_metadata['nova'] = "y"
+        role_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y', 'n'], role_glance, True, True)
+        if role_metadata['glance'] == "q":
+            return ''
+        role_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y', 'n'], role_cinder, True, True)
+        if role_metadata['cinder'] == "q":
+            return ''
+        role_metadata['designate'] = user_io.read_kbd("--> Enable Designate", ['y', 'n'], role_designate, True, True)
+        if role_metadata['designate'] == "q":
+            return ''
+        
+        # set pmk-specific fields
+        role_metadata['pf9-kube'] = ""
+        role_metadata['node_type'] = ""
+
+    # get kubernetes-specific roles
+    if selected_host_type == "Kubernetes (PMK)":
+        role_metadata['pf9-kube'] = "y"
+        role_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]", ['master', 'worker'], role_node_type, True, True)
+        if role_metadata['node_type'] == "q":
+            return ''
+
+        # set pmo-specific fields
+        role_metadata['nova'] = ""
+        role_metadata['glance'] = ""
+        role_metadata['cinder'] = ""
+        role_metadata['designate'] = ""
+
+    return(role_metadata)
+
+
 def get_auth_settings(existing_auth_profile):
     # initialize auth data structure
     auth_metadata = datamodel.create_auth_profile_entry()
@@ -383,9 +491,9 @@ def get_auth_settings(existing_auth_profile):
         auth_username = target_auth_metadata['auth_username']
     except:
         auth_name = ""
-        auth_type = ""
-        auth_ssh_key = ""
-        auth_username = ""
+        auth_type = "sshkey"
+        auth_ssh_key = "~/.ssh/id_rsa"
+        auth_username = "centos"
         auth_password = ""
 
     auth_metadata['auth_name'] = auth_profile_name
@@ -657,6 +765,36 @@ def add_edit_bond_profile():
         return(None)
 
 
+def add_edit_role_profile():
+    if not os.path.isfile(globals.ROLE_PROFILE_FILE):
+        return("define-new-role-profile")
+    else:
+        current_role = datamodel.get_role_profiles()
+        if len(current_role) == 0:
+            return(None)
+        else:
+            cnt = 1
+            allowed_values = ['q','n']
+            sys.stdout.write("\n")
+            for role in current_role:
+                sys.stdout.write("{}. {}\n".format(cnt,role['role_name']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            sys.stdout.write("\n")
+            user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)",
+                                          allowed_values,
+                                          '',
+                                          True, True)
+            if user_input == "q":
+                return(None)
+            elif user_input == "n":
+                return("define-new-role-profile")
+            else:
+                idx = int(user_input) - 1
+                return(current_role[idx]['role_name'])
+        return(None)
+
+
 def add_edit_auth_profile():
     if not os.path.isfile(globals.AUTH_PROFILE_FILE):
         return("define-new-auth-profile")
@@ -875,9 +1013,9 @@ def add_host(du):
 
 def add_host_profile(target_profile):
     if target_profile == None:
-        sys.stdout.write("\nAdding Host Profile:\n")
+        sys.stdout.write("\nAdding Host Template:\n")
     else:
-        sys.stdout.write("\nUpdating Host Profile: {}\n".format(target_profile))
+        sys.stdout.write("\nUpdating Host Template: {}\n".format(target_profile))
 
     # host_profile_metadata is created by create_host_profile_entry() - and initialized or populated from existing host profile record
     host_profile_metadata = interview.get_host_profile_settings(target_profile)
@@ -889,6 +1027,7 @@ def add_host_profile(target_profile):
         host_profile['host_profile_name'] = host_profile_metadata['host_profile_name']
         host_profile['fk_auth_profile'] = host_profile_metadata['fk_auth_profile']
         host_profile['fk_bond_profile'] = host_profile_metadata['fk_bond_profile']
+        host_profile['fk_role_profile'] = host_profile_metadata['fk_role_profile']
     
     # write auth profile
     datamodel.write_host_profile(host_profile)
@@ -915,6 +1054,31 @@ def add_bond_profile(existing_bond_profile):
     
     # write auth profile
     datamodel.write_bond_profile(bond)
+
+
+def add_role_profile(existing_role_profile):
+    if existing_role_profile == None:
+        sys.stdout.write("\nAdding Role Profile:\n")
+    else:
+        sys.stdout.write("\nUpdating Role Profile: {}\n".format(existing_role_profile))
+
+    # role_metadata is created by create_role_profile_entry() - and initialized or populated from existing role record
+    role_metadata = interview.get_role_settings(existing_role_profile)
+    if not role_metadata:
+        return(role_metadata)
+    else:
+        # initialize role data structure
+        role = datamodel.create_role_profile_entry()
+        role['role_name'] = role_metadata['role_name']
+        role['pf9-kube'] = role_metadata['pf9-kube']
+        role['nova'] = role_metadata['nova']
+        role['glance'] = role_metadata['glance']
+        role['cinder'] = role_metadata['cinder']
+        role['designate'] = role_metadata['designate']
+        role['node_type'] = role_metadata['node_type']
+    
+    # write auth profile
+    datamodel.write_role_profile(role)
 
 
 def add_auth_profile(existing_auth_profile):

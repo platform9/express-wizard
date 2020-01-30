@@ -10,6 +10,7 @@ HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 AUTH_PROFILE_FILE = "{}/auth-profiles.conf".format(CONFIG_DIR)
 BOND_PROFILE_FILE = "{}/bond-profiles.conf".format(CONFIG_DIR)
+ROLE_PROFILE_FILE = "{}/role-profiles.conf".format(CONFIG_DIR)
 HOST_PROFILE_FILE = "{}/host-profiles.conf".format(CONFIG_DIR)
 
 PF9_VENV = sys.prefix 

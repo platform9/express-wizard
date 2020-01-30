@@ -74,11 +74,25 @@ def create_auth_profile_entry():
     return(auth_profile)
 
 
+def create_role_profile_entry():
+    role_profile = {
+        'role_name': "",
+        'pf9-kube': "",
+        'nova': "",
+        'glance': "",
+        'cinder': "",
+        'designate': "",
+        'node_type': "",
+    }
+    return(role_profile)
+
+
 def create_host_profile_entry():
     host_profile = {
         'host_profile_name': "",
         'fk_auth_profile': "",
-        'fk_bond_profile': []
+        'fk_bond_profile': "",
+        'fk_role_profile': ""
     }
     return(host_profile)
 
@@ -192,6 +206,19 @@ def get_bond_profile_metadata(bond_profile_name):
                 break
 
     return(bond_config)
+
+
+def get_role_profile_metadata(role_profile_name):
+    role_config = {}
+    if os.path.isfile(globals.ROLE_PROFILE_FILE):
+        with open(globals.ROLE_PROFILE_FILE) as json_file:
+            role_configs = json.load(json_file)
+        for role in role_configs:
+            if role['role_name'] == role_profile_name:
+                role_config = dict(role)
+                break
+
+    return(role_config)
 
 
 def get_auth_profile_metadata(auth_profile_name):
@@ -350,6 +377,17 @@ def get_bond_profiles():
     return(bond_configs)
 
 
+def get_role_profiles():
+    role_configs = []
+    if os.path.isfile(globals.ROLE_PROFILE_FILE):
+        with open(globals.ROLE_PROFILE_FILE) as json_file:
+            tmp_role_configs = json.load(json_file)
+            for tmp_role in tmp_role_configs:
+                role_configs.append(tmp_role)
+
+    return(role_configs)
+
+
 def get_auth_profiles():
     auth_configs = []
     if os.path.isfile(globals.AUTH_PROFILE_FILE):
@@ -359,6 +397,17 @@ def get_auth_profiles():
                 auth_configs.append(tmp_auth)
 
     return(auth_configs)
+
+
+def get_role_profile_names():
+    role_profile_names = []
+    if os.path.isfile(globals.ROLE_PROFILE_FILE):
+        with open(globals.ROLE_PROFILE_FILE) as json_file:
+            tmp_role_configs = json.load(json_file)
+            for tmp_role in tmp_role_configs:
+                role_profile_names.append(tmp_role['role_name'])
+
+    return(role_profile_names)
 
 
 def get_auth_profile_names():
@@ -550,6 +599,28 @@ def write_bond_profile(bond):
             update_profile.append(bond)
         with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
+
+
+def write_role_profile(role):
+    """Write role file to disk"""
+    current_role = get_role_profiles()
+    if len(current_role) == 0:
+        current_role.append(role)
+        with open(globals.ROLE_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_role, outfile)
+    else:
+        update_role = []
+        flag_found = False
+        for target_role in current_role:
+            if target_role['role_name'] == role['role_name']:
+                update_role.append(role)
+                flag_found = True
+            else:
+                update_role.append(target_role)
+        if not flag_found:
+            update_role.append(role)
+        with open(globals.ROLE_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_role, outfile)
 
 
 def write_auth_profile(auth):
