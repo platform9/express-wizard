@@ -280,6 +280,9 @@ def get_du_creds(existing_du_url):
     # initialize du data structure
     du_metadata = datamodel.create_du_entry()
 
+    # initialize encryption
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+
     if existing_du_url == None:
         user_url = user_io.read_kbd("--> Region URL", [], '', True, True)
         if user_url == 'q':
@@ -305,7 +308,7 @@ def get_du_creds(existing_du_url):
     try:
         selected_du_type = du_settings['du_type']
         du_user = du_settings['username']
-        du_password = du_settings['password']
+        du_password = encryption.decrypt_password(du_settings['password'])
         du_tenant = du_settings['tenant']
         git_branch = du_settings['git_branch']
         region_name = du_settings['region']
@@ -313,8 +316,8 @@ def get_du_creds(existing_du_url):
         region_dns = du_settings['dns_list']
         region_auth_type = du_settings['auth_type']
         auth_ssh_key = du_settings['auth_ssh_key']
-        auth_password = du_settings['auth_password']
         auth_username = du_settings['auth_username']
+        auth_password = du_settings['auth_password']
         region_bond_if_name = du_settings['bond_ifname']
         region_bond_mode = du_settings['bond_mode']
         region_bond_mtu = du_settings['bond_mtu']
@@ -357,13 +360,12 @@ def get_du_creds(existing_du_url):
     # set du type
     du_metadata['du_type'] = selected_du_type
     du_metadata['region_name'] = ""
-    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     # get common du parameters
     du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True)
     if du_metadata['du_user'] == 'q':
         return ''
-    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], '', False, True)
+    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True)
     if du_metadata['du_password'] == 'q':
         return ''
     else:
@@ -374,9 +376,11 @@ def get_du_creds(existing_du_url):
     du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True)
     if du_metadata['git_branch'] == 'q':
         return ''
-    #du_metadata['region_name'] = user_io.read_kbd("--> Region Name", [], region_name, True, True)
-    #if du_metadata['region_name'] == 'q':
-    #    return ''
+
+    # Region-level parameters (overridden by host profiles)
+    sys.stdout.write("\nRegion-level Host Attributes\n")
+    sys.stdout.write("----------------------------\n")
+    sys.stdout.write("These settings apply to all hosts within the region. For host-specific overrides, use Host Profiles.\n\n")
     du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']",
                                                        ['simple', 'sshkey'],
                                                        region_auth_type,

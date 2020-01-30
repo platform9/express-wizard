@@ -156,13 +156,12 @@ def action_header(title):
 def display_menu2():
     sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
-    sys.stdout.write("**                - Host Menu --                 **\n")
+    sys.stdout.write("**              - Profile Menu --                **\n")
     sys.stdout.write("***************************************************\n")
-    sys.stdout.write("1. Add/Update SSH Profiles\n")
-    sys.stdout.write("2. Add/Update Bond Profiles\n")
-    sys.stdout.write("3. Add/update Host Profiles\n")
-    sys.stdout.write("4. Add/Update Hosts\n")
-    sys.stdout.write("5. Display SSH Profiles\n")
+    sys.stdout.write("1. Manage Auth Profiles (SSH)\n")
+    sys.stdout.write("2. Manage Bond Profiles\n")
+    sys.stdout.write("3. Manage Host Profiles (Auth + Bond)\n")
+    sys.stdout.write("4. Display SSH Profiles\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -187,12 +186,13 @@ def display_menu0():
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**               -- Main Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
-    sys.stdout.write("1. Discover/Add Regions\n")
-    sys.stdout.write("2. Discover/Add Hosts\n")
-    sys.stdout.write("3. Discover/Add Clusters\n")
-    sys.stdout.write("4. Show Region\n")
-    sys.stdout.write("5. Onboard Host to Region\n")
-    sys.stdout.write("6. Maintenance\n")
+    sys.stdout.write("1. Manage Regions\n")
+    sys.stdout.write("2. Manage Hosts\n")
+    sys.stdout.write("3. Manage Clusters\n")
+    sys.stdout.write("4. Manage Host Profiles\n")
+    sys.stdout.write("5. Show Regions\n")
+    sys.stdout.write("6. Onboard Host (to Region)\n")
+    sys.stdout.write("7. Maintenance\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -215,18 +215,6 @@ def menu_level2():
         elif user_input == '3':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '4':
-            action_header("MANAGE HOSTS")
-            sys.stdout.write("\nSelect Region to add Host to:")
-            selected_du = interview.select_du()
-            if selected_du:
-                if selected_du != "q":
-                    flag_more_hosts = True
-                    while flag_more_hosts:
-                        new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
-                        if user_input == "n":
-                            flag_more_hosts = False
-        elif user_input == '5':
             auth_entries = datamodel.get_auth_profiles()
             reports.report_auth_profiles(auth_entries)
         elif user_input in ['q', 'Q']:
@@ -293,7 +281,17 @@ def menu_level0():
                 if new_du_list:
                     reports.report_du_info(new_du_list)
         elif user_input == '2':
-            menu_level2()
+            action_header("MANAGE HOSTS")
+            sys.stdout.write("\nSelect Region to add Host to:")
+            selected_du = interview.select_du()
+            if selected_du:
+                if selected_du != "q":
+                    flag_more_hosts = True
+                    while flag_more_hosts:
+                        new_host = interview.add_host(selected_du)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
+                        if user_input == "n":
+                            flag_more_hosts = False
         elif user_input == '3':
             action_header("MANAGE CLUSTERS")
             sys.stdout.write("\nSelect Region to add Cluster to:")
@@ -302,6 +300,8 @@ def menu_level0():
                 if selected_du != "q":
                     new_cluster = interview.add_cluster(selected_du)
         elif user_input == '4':
+            menu_level2()
+        elif user_input == '5':
             action_header("SHOW REGION")
             selected_du = interview.select_du()
             if selected_du:
@@ -313,7 +313,7 @@ def menu_level0():
                     if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
                         cluster_entries = datamodel.get_clusters(selected_du['url'])
                         reports.report_cluster_info(cluster_entries)
-        elif user_input == '5':
+        elif user_input == '6':
             action_header("ONBOARD HOSTS")
             selected_du = interview.select_du()
             if selected_du:
@@ -325,7 +325,7 @@ def menu_level0():
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
-        elif user_input == '6':
+        elif user_input == '7':
             menu_level1()
         elif user_input in ['q', 'Q']:
             None
