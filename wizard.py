@@ -149,8 +149,22 @@ def action_header(title):
     sys.stdout.write("\n{}".format(title.center(MAX_WIDTH, '*')))
 
 
-def display_menu1():
+def display_menu2():
+    sys.stdout.write("\n***************************************************\n")
+    sys.stdout.write("**           Platform9 Express Wizard            **\n")
+    sys.stdout.write("**              - Profile Menu --                **\n")
     sys.stdout.write("***************************************************\n")
+    sys.stdout.write("1. Manage Auth Profiles\n")
+    sys.stdout.write("2. Manage Bond Profiles\n")
+    sys.stdout.write("3. Manage Host Profiles (Auth + Bond)\n")
+    sys.stdout.write("4. Display SSH Profiles\n")
+    sys.stdout.write("5. Display Bond Profiles\n")
+    sys.stdout.write("6. Display Host Profiles\n")
+    sys.stdout.write("***************************************************\n")
+
+
+def display_menu1():
+    sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**            -- Maintenance Menu --             **\n")
     sys.stdout.write("***************************************************\n")
@@ -166,17 +180,65 @@ def display_menu1():
 
 
 def display_menu0():
-    sys.stdout.write("***************************************************\n")
+    sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**               -- Main Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
-    sys.stdout.write("1. Discover/Add Regions\n")
-    sys.stdout.write("2. Discover/Add Hosts\n")
-    sys.stdout.write("3. Discover/Add Clusters\n")
-    sys.stdout.write("4. Show Region\n")
-    sys.stdout.write("5. Onboard Host to Region\n")
-    sys.stdout.write("6. Maintenance\n")
+    sys.stdout.write("1. Manage Regions\n")
+    sys.stdout.write("2. Manage Hosts\n")
+    sys.stdout.write("3. Manage Clusters\n")
+    sys.stdout.write("4. Manage Host Profiles\n")
+    sys.stdout.write("5. Show Regions\n")
+    sys.stdout.write("6. Onboard Host (to Region)\n")
+    sys.stdout.write("7. Maintenance\n")
     sys.stdout.write("***************************************************\n")
+
+
+def menu_level2():
+    user_input = ""
+    while not user_input in ['q', 'Q']:
+        display_menu2()
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        if user_input == '1':
+            action_header("MANAGE AUTHORIZATION PROFILES")
+            selected_profile = interview.add_edit_auth_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-auth-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_auth_profile(target_profile)
+        elif user_input == '2':
+            action_header("MANAGE BOND PROFILES")
+            selected_profile = interview.add_edit_bond_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-bond-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_bond_profile(target_profile)
+        elif user_input == '3':
+            action_header("MANAGE HOST PROFILES")
+            selected_profile = interview.add_edit_host_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-host-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_host_profile(target_profile)
+        elif user_input == '4':
+            auth_entries = datamodel.get_auth_profiles()
+            reports.report_auth_profiles(auth_entries)
+        elif user_input == '5':
+            bond_entries = datamodel.get_bond_profiles()
+            reports.report_bond_profiles(bond_entries)
+        elif user_input == '6':
+            host_profile_entries = datamodel.get_host_profiles()
+            reports.report_host_profiles(host_profile_entries)
+        elif user_input in ['q', 'Q']:
+            None
+        else:
+            sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
 
 
 def menu_level1():
@@ -218,12 +280,10 @@ def menu_level1():
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-        sys.stdout.write("\n")
 
 
 def menu_level0():
     user_input = ""
-    sys.stdout.write("\n")
     while not user_input in ['q', 'Q']:
         display_menu0()
         user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
@@ -258,6 +318,8 @@ def menu_level0():
                 if selected_du != "q":
                     new_cluster = interview.add_cluster(selected_du)
         elif user_input == '4':
+            menu_level2()
+        elif user_input == '5':
             action_header("SHOW REGION")
             selected_du = interview.select_du()
             if selected_du:
@@ -269,7 +331,7 @@ def menu_level0():
                     if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
                         cluster_entries = datamodel.get_clusters(selected_du['url'])
                         reports.report_cluster_info(cluster_entries)
-        elif user_input == '5':
+        elif user_input == '6':
             action_header("ONBOARD HOSTS")
             selected_du = interview.select_du()
             if selected_du:
@@ -281,15 +343,12 @@ def menu_level0():
                         sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
-        elif user_input == '6':
+        elif user_input == '7':
             menu_level1()
         elif user_input in ['q', 'Q']:
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-
-        if user_input != '7':
-            sys.stdout.write("\n")
 
 
 def ssh_validate_login(du_metadata, host_ip):

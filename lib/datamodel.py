@@ -37,7 +37,7 @@ def create_host_entry():
         'hostname': "",
         'record_source': "",
         'ssh_status': "",
-        'bond_config': "",
+        'sub_if_config': "",
         'pf9-kube': "",
         'nova': "",
         'glance': "",
@@ -49,6 +49,37 @@ def create_host_entry():
         'cluster_uuid': ""
     }
     return(host_record)
+
+
+def create_bond_profile_entry():
+    bond_profile = {
+        'bond_name': "",
+        'bond_ifname': "",
+        'bond_mode': "",
+        'bond_mtu': "",
+        'bond_members': []
+    }
+    return(bond_profile)
+
+
+def create_auth_profile_entry():
+    auth_profile = {
+        'auth_name': "",
+        'auth_type': "",
+        'auth_ssh_key': "",
+        'auth_password': "",
+        'auth_username': ""
+    }
+    return(auth_profile)
+
+
+def create_host_profile_entry():
+    host_profile = {
+        'host_profile_name': "",
+        'fk_auth_profile': "",
+        'fk_bond_profile': []
+    }
+    return(host_profile)
 
 
 def create_cluster_entry():
@@ -134,6 +165,45 @@ def export_region(du_urls):
         return(None)
     
     sys.stdout.write("Export complete: {}\n".format(export_file))
+
+
+def get_host_profile_metadata(host_profile_name):
+    host_profile_config = {}
+    if os.path.isfile(globals.HOST_PROFILE_FILE):
+        with open(globals.HOST_PROFILE_FILE) as json_file:
+            host_profile_configs = json.load(json_file)
+        for profile in host_profile_configs:
+            if profile['host_profile_name'] == host_profile_name:
+                host_profile_config = dict(profile)
+                break
+
+    return(host_profile_config)
+
+
+def get_bond_profile_metadata(bond_profile_name):
+    bond_config = {}
+    if os.path.isfile(globals.BOND_PROFILE_FILE):
+        with open(globals.BOND_PROFILE_FILE) as json_file:
+            bond_configs = json.load(json_file)
+        for bond in bond_configs:
+            if bond['bond_name'] == bond_profile_name:
+                bond_config = dict(bond)
+                break
+
+    return(bond_config)
+
+
+def get_auth_profile_metadata(auth_profile_name):
+    auth_config = {}
+    if os.path.isfile(globals.AUTH_PROFILE_FILE):
+        with open(globals.AUTH_PROFILE_FILE) as json_file:
+            auth_configs = json.load(json_file)
+        for auth in auth_configs:
+            if auth['auth_name'] == auth_profile_name:
+                auth_config = dict(auth)
+                break
+
+    return(auth_config)
 
 
 def get_du_metadata(du_url):
@@ -255,6 +325,61 @@ def get_configs(du_url=None):
             if du['url'] == du_url:
                 filtered_du_configs.append(du)
         return(filtered_du_configs)
+
+
+def get_host_profiles():
+    host_profile_configs = []
+    if os.path.isfile(globals.HOST_PROFILE_FILE):
+        with open(globals.HOST_PROFILE_FILE) as json_file:
+            tmp_host_profiles = json.load(json_file)
+            for tmp_host in tmp_host_profiles:
+                host_profile_configs.append(tmp_host)
+
+    return(host_profile_configs)
+
+
+def get_bond_profiles():
+    bond_configs = []
+    if os.path.isfile(globals.BOND_PROFILE_FILE):
+        with open(globals.BOND_PROFILE_FILE) as json_file:
+            tmp_bond_configs = json.load(json_file)
+            for tmp_auth in tmp_bond_configs:
+                bond_configs.append(tmp_auth)
+
+    return(bond_configs)
+
+
+def get_auth_profiles():
+    auth_configs = []
+    if os.path.isfile(globals.AUTH_PROFILE_FILE):
+        with open(globals.AUTH_PROFILE_FILE) as json_file:
+            tmp_auth_configs = json.load(json_file)
+            for tmp_auth in tmp_auth_configs:
+                auth_configs.append(tmp_auth)
+
+    return(auth_configs)
+
+
+def get_auth_profile_names():
+    auth_profile_names = []
+    if os.path.isfile(globals.AUTH_PROFILE_FILE):
+        with open(globals.AUTH_PROFILE_FILE) as json_file:
+            tmp_auth_configs = json.load(json_file)
+            for tmp_auth in tmp_auth_configs:
+                auth_profile_names.append(tmp_auth['auth_name'])
+
+    return(auth_profile_names)
+
+
+def get_bond_profile_names():
+    bond_profile_names = []
+    if os.path.isfile(globals.BOND_PROFILE_FILE):
+        with open(globals.BOND_PROFILE_FILE) as json_file:
+            tmp_configs = json.load(json_file)
+            for tmp_auth in tmp_configs:
+                bond_profile_names.append(tmp_auth['bond_name'])
+
+    return(bond_profile_names)
 
 
 def delete_du(target_du):
@@ -380,6 +505,72 @@ def write_config(du):
             update_config.append(du)
         with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
+
+
+def write_host_profile(host_profile):
+    """Write Host Profile file to disk"""
+    current_host_profile = get_host_profiles()
+    if len(current_host_profile) == 0:
+        current_host_profile.append(host_profile)
+        with open(globals.HOST_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_host_profile, outfile)
+    else:
+        update_profile = []
+        flag_found = False
+        for profile in current_host_profile:
+            if profile['host_profile_name'] == host_profile['host_profile_name']:
+                update_profile.append(host_profile)
+                flag_found = True
+            else:
+                update_profile.append(profile)
+        if not flag_found:
+            update_profile.append(host_profile)
+        with open(globals.HOST_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_profile, outfile)
+
+
+def write_bond_profile(bond):
+    """Write bond file to disk"""
+    current_bond = get_bond_profiles()
+    if len(current_bond) == 0:
+        current_bond.append(bond)
+        with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_bond, outfile)
+    else:
+        update_profile = []
+        flag_found = False
+        for profile in current_bond:
+            if profile['bond_name'] == bond['bond_name']:
+                update_profile.append(bond)
+                flag_found = True
+            else:
+                update_profile.append(profile)
+        if not flag_found:
+            update_profile.append(bond)
+        with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_profile, outfile)
+
+
+def write_auth_profile(auth):
+    """Write authorization file to disk"""
+    current_profile = get_auth_profiles()
+    if len(current_profile) == 0:
+        current_profile.append(auth)
+        with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
+            json.dump(current_profile, outfile)
+    else:
+        update_profile = []
+        flag_found = False
+        for profile in current_profile:
+            if profile['auth_name'] == auth['auth_name']:
+                update_profile.append(auth)
+                flag_found = True
+            else:
+                update_profile.append(profile)
+        if not flag_found:
+            update_profile.append(auth)
+        with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
+            json.dump(update_profile, outfile)
 
 
 def cluster_in_array(target_url,target_name,target_clusters):

@@ -14,6 +14,78 @@ def map_yn(map_key):
         return("failed-to-map")
 
 
+def report_host_profiles(host_profile_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------------ Host Profiles ------------\n")
+    if not os.path.isfile(globals.HOST_PROFILE_FILE):
+        sys.stdout.write("No host profiles have been defined yet (run 'Manage Host Profiles')\n")
+        return()
+
+    host_profile_table = PrettyTable()
+    host_profile_table.title = "Host Profiles"
+    host_profile_table.field_names = ["Profile Name","Authorization Profile","Bond Profile"]
+    host_profile_table.align["Profile Name"] = "l"
+    host_profile_table.align["Authorization Profile"] = "l"
+    host_profile_table.align["Bond Profile"] = "l"
+
+    for host_profile in host_profile_entries:
+        host_profile_table.add_row([host_profile['host_profile_name'],host_profile['fk_auth_profile'],host_profile['fk_bond_profile']])
+
+    print(host_profile_table)
+
+
+def report_bond_profiles(bond_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------------ Bond Profiles ------------\n")
+    if not os.path.isfile(globals.BOND_PROFILE_FILE):
+        sys.stdout.write("No bond profiles have been defined yet (run 'Manage Bond Profiles')\n")
+        return()
+
+    bond_table = PrettyTable()
+    bond_table.title = "Bond Profiles"
+    bond_table.field_names = ["Profile Name","Bond Interface Name","Bond Mode","Bond MTU","Member Interfaces"]
+    bond_table.align["Profile Name"] = "l"
+    bond_table.align["Bond Interface Name"] = "l"
+    bond_table.align["Bond Mode"] = "l"
+    bond_table.align["Bond MTU"] = "l"
+    bond_table.align["Member Interfaces"] = "l"
+
+    for bond in bond_entries:
+        bond_mode = globals.bond_modes[int(bond['bond_mode'])]
+        bond_table.add_row([bond['bond_name'],bond['bond_ifname'],bond_mode,bond['bond_mtu'],bond['bond_members']])
+
+    print(bond_table)
+
+
+def report_auth_profiles(auth_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------ Authorization Profiles (SSH Access) ------\n")
+    if not os.path.isfile(globals.AUTH_PROFILE_FILE):
+        sys.stdout.write("No authorization profiles have been defined yet (run 'Add/Update SSH Profiles')\n")
+        return()
+
+    auth_table = PrettyTable()
+    auth_table.title = "Authorization Profiles"
+    auth_table.field_names = ["Profile Name","Auth Type","Remote Username","SSH Key","SSH Password"]
+    auth_table.align["Profile Name"] = "l"
+    auth_table.align["Auth Type"] = "l"
+    auth_table.align["Remote Username"] = "l"
+    auth_table.align["SSH Key"] = "l"
+    auth_table.align["SSH Password"] = "l"
+
+    for auth in auth_entries:
+        if auth['auth_password'] == "":
+            auth_password = ""
+        else:
+            auth_password = "**********"
+        auth_table.add_row([auth['auth_name'],auth['auth_type'],auth['auth_username'],auth['auth_ssh_key'],auth_password])
+
+    print(auth_table)
+
+
 def report_du_info(du_entries):
     from prettytable import PrettyTable
 
