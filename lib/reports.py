@@ -14,6 +14,27 @@ def map_yn(map_key):
         return("failed-to-map")
 
 
+def report_host_profiles(host_profile_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------------ Host Profiles ------------\n")
+    if not os.path.isfile(globals.HOST_PROFILE_FILE):
+        sys.stdout.write("No host profiles have been defined yet (run 'Manage Host Profiles')\n")
+        return()
+
+    host_profile_table = PrettyTable()
+    host_profile_table.title = "Host Profiles"
+    host_profile_table.field_names = ["Profile Name","Authorization Profile","Bond Profile"]
+    host_profile_table.align["Profile Name"] = "l"
+    host_profile_table.align["Authorization Profile"] = "l"
+    host_profile_table.align["Bond Profile"] = "l"
+
+    for host_profile in host_profile_entries:
+        host_profile_table.add_row([host_profile['host_profile_name'],host_profile['fk_auth_profile'],host_profile['fk_bond_profile']])
+
+    print(host_profile_table)
+
+
 def report_bond_profiles(bond_entries):
     from prettytable import PrettyTable
 

@@ -220,6 +220,66 @@ def select_cluster(du_url, current_assigned_cluster):
         return(selected_cluster)
 
 
+def get_host_profile_settings(target_host_profile):
+    # initialize host profile data structure
+    host_profile_metadata = datamodel.create_host_profile_entry()
+
+    if target_host_profile == None:
+        host_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        if host_profile_name == 'q':
+            return ''
+    else:
+        host_profile_name = target_host_profile
+    
+    target_host_profile_metadata = datamodel.get_host_profile_metadata(host_profile_name)
+    try:
+        fk_auth_profile = target_host_profile_metadata['fk_auth_profile']
+        fk_bond_profile = target_host_profile_metadata['fk_bond_profile']
+    except:
+        fk_auth_profile = ""
+        fk_bond_profile = ""
+
+    host_profile_metadata['host_profile_name'] = host_profile_name
+
+    # prompt for auth profile
+    sys.stdout.write("\nAuthorization Profiles:\n")
+    auth_profile_list = datamodel.get_auth_profile_names()
+    cnt = 1
+    allowed_values = ['q']
+    for target in auth_profile_list:
+        sys.stdout.write("    {}. {}\n".format(cnt, target))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_auth_profile, True, True)
+    if user_input == 'q':
+        return ''
+    else:
+        if type(user_input) is int or user_input.isdigit():
+            host_profile_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
+        else:
+            host_profile_metadata['fk_auth_profile'] = auth_profile_list[user_input]
+
+    # prompt for bond profile
+    sys.stdout.write("\nBond Profiles:\n")
+    bond_profile_list = datamodel.get_bond_profile_names()
+    cnt = 1
+    allowed_values = ['q']
+    for target in bond_profile_list:
+        sys.stdout.write("    {}. {}\n".format(cnt, target))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_bond_profile, True, True)
+    if user_input == 'q':
+        return ''
+    else:
+        if type(user_input) is int or user_input.isdigit():
+            host_profile_metadata['fk_bond_profile'] = bond_profile_list[int(user_input)-1]
+        else:
+            host_profile_metadata['fk_bond_profile'] = bond_profile_list[user_input]
+
+    return(host_profile_metadata)
+
+
 def get_bond_settings(existing_bond_profile):
     # initialize bond data structure
     bond_metadata = datamodel.create_bond_profile_entry()
@@ -514,6 +574,36 @@ def get_du_creds(existing_du_url):
     return(du_metadata)
 
 
+def add_edit_host_profile():
+    if not os.path.isfile(globals.HOST_PROFILE_FILE):
+        return("define-new-host-profile")
+    else:
+        current_profile = datamodel.get_host_profiles()
+        if len(current_profile) == 0:
+            return(None)
+        else:
+            cnt = 1
+            allowed_values = ['q','n']
+            sys.stdout.write("\n")
+            for profile in current_profile:
+                sys.stdout.write("{}. {}\n".format(cnt,profile['host_profile_name']))
+                allowed_values.append(str(cnt))
+                cnt += 1
+            sys.stdout.write("\n")
+            user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)",
+                                          allowed_values,
+                                          '',
+                                          True, True)
+            if user_input == "q":
+                return(None)
+            elif user_input == "n":
+                return("define-new-host-profile")
+            else:
+                idx = int(user_input) - 1
+                return(current_profile[idx]['host_profile_name'])
+        return(None)
+
+
 def add_edit_bond_profile():
     if not os.path.isfile(globals.BOND_PROFILE_FILE):
         return("define-new-bond-profile")
@@ -756,6 +846,27 @@ def add_host(du):
 
             # persist configurtion
             datamodel.write_host(host)
+
+
+def add_host_profile(target_profile):
+    if target_profile == None:
+        sys.stdout.write("\nAdding Host Profile:\n")
+    else:
+        sys.stdout.write("\nUpdating Host Profile: {}\n".format(target_profile))
+
+    # host_profile_metadata is created by create_host_profile_entry() - and initialized or populated from existing host profile record
+    host_profile_metadata = interview.get_host_profile_settings(target_profile)
+    if not host_profile_metadata:
+        return(host_profile_metadata)
+    else:
+        # initialize host profile data structure
+        host_profile = datamodel.create_host_profile_entry()
+        host_profile['host_profile_name'] = host_profile_metadata['host_profile_name']
+        host_profile['fk_auth_profile'] = host_profile_metadata['fk_auth_profile']
+        host_profile['fk_bond_profile'] = host_profile_metadata['fk_bond_profile']
+    
+    # write auth profile
+    datamodel.write_host_profile(host_profile)
 
 
 def add_bond_profile(existing_bond_profile):

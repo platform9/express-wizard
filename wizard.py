@@ -163,6 +163,7 @@ def display_menu2():
     sys.stdout.write("3. Manage Host Profiles (Auth + Bond)\n")
     sys.stdout.write("4. Display SSH Profiles\n")
     sys.stdout.write("5. Display Bond Profiles\n")
+    sys.stdout.write("6. Display Host Profiles\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -221,13 +222,23 @@ def menu_level2():
                     target_profile = selected_profile
                 interview.add_bond_profile(target_profile)
         elif user_input == '3':
-            sys.stdout.write("\nNot Implemented\n")
+            action_header("MANAGE HOST PROFILES")
+            selected_profile = interview.add_edit_host_profile()
+            if selected_profile != None:
+                if selected_profile == "define-new-host-profile":
+                    target_profile = None
+                else:
+                    target_profile = selected_profile
+                interview.add_host_profile(target_profile)
         elif user_input == '4':
             auth_entries = datamodel.get_auth_profiles()
             reports.report_auth_profiles(auth_entries)
         elif user_input == '5':
             bond_entries = datamodel.get_bond_profiles()
             reports.report_bond_profiles(bond_entries)
+        elif user_input == '6':
+            host_profile_entries = datamodel.get_host_profiles()
+            reports.report_host_profiles(host_profile_entries)
         elif user_input in ['q', 'Q']:
             None
         else:
