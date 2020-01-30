@@ -50,9 +50,11 @@ def define_repos():
             "repo_name": "Express Wizard",
             "install_dir": globals.EXPRESS_WIZARD_INSTALL_DIR,
             "branch": globals.EXPRESS_WIZARD_BRANCH
+        }
+    ]
 
 def manage_repo():
-   """manage dependent repositories"""
+    """manage dependent repositories"""
     for repo in required_repos:
         flag_init_cli = False
         if not os.path.isdir(repo['install_dir']):

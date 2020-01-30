@@ -1,4 +1,11 @@
 *.pyc
+
 express_wizard.egg-*
 express-cli*
 express-wizard*
+
+
+# Testfiles
+.coverage
+.pytest.log
+
