@@ -130,11 +130,24 @@ def get_host_metadata(du, project_id, token):
     if host_metadata['ip'] == "q":
         return ''
 
-    # prompt for host profile
-    # host_profiles = datamodel.filter_host_profiles()
-    # print("---- host_profiles ---------------------------------")
-    # print(host_profiles)
-    # print("----------------------------------------------------")
+    # prompt for auth profile (fred)
+    sys.stdout.write("Authorization Profiles:\n")
+    auth_profile_list = datamodel.get_auth_profile_names()
+    cnt = 1
+    allowed_values = ['q']
+    for target in auth_profile_list:
+        sys.stdout.write("    {}. {}\n".format(cnt, target))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_auth_profile, True, True)
+    if user_input == 'q':
+        return ''
+    else:
+        if type(user_input) is int or user_input.isdigit():
+            host_profile_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
+        else:
+            host_profile_metadata['fk_auth_profile'] = auth_profile_list[user_input]
+
 
     # prompt for KVM-specific settings
     if du_host_type == "kvm":
@@ -853,6 +866,8 @@ def add_host(du):
                 else:
                     ssh_status = "Unvalidated"
             host['ssh_status'] = ssh_status
+
+            # discover host (fred)
 
             # persist configurtion
             datamodel.write_host(host)

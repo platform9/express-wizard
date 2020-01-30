@@ -46,7 +46,8 @@ def create_host_entry():
         'node_type': "",
         'cluster_name': "",
         'cluster_attach_status': "",
-        'cluster_uuid': ""
+        'cluster_uuid': "",
+        'fk_auth_profile': ""
     }
     return(host_record)
 
