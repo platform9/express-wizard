@@ -68,7 +68,7 @@ setup(
         "prettytable",
         "argparse",
         "pprint",
-        "openstacksdk==0.12.0",
+        "openstacksdk>=0.12.0",
         "cryptography",
         "pathlib2;python_version<'3'",
         "pathlib;python_version>'3'",
