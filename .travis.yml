@@ -4,7 +4,6 @@ python:
   - "3.7"
 
 install:
-    - pip install -e . 
+    - pip install -e .[test]
 script:
-    - 'if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (wizard --branch $TRAVIS_PULL_REQUEST_BRANCH --test --debug 2); fi'
-    - 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then (wizard --branch $TRAVIS_BRANCH --test --debug 2); fi'
+    - python setup.py test

@@ -5,7 +5,7 @@
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l)
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -e <du-url>)
 ## (. ~/.pf9-wizard/wizard-venv/bin/activate && python wizard.py -l -j <export-file>)
-## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --branch you/your_branch --test --local --debug 2)
+## (. ~/.pf9-wizard/wizard-venv/bin/activate && python ./wizard.py --test --local --debug 2)
 ####################################################################################################
 import os
 import sys
@@ -48,10 +48,6 @@ def _parse_args():
     ap.add_argument('--jsonImport', "-j", help="Path to import file (JSON format, see '--export' function)", required=False)
     ap.add_argument("--export", "-e", help = "Name of region to export", required = False, nargs = 1)
     ap.add_argument("--debug", "-d", help = "Debug Mode", action = "store", nargs = 1)
-    ap.add_argument("--config", "-c", help = "DataModel to import into Express-Wizard", action = "store", nargs = 1)
-    ap.add_argument("--branch", help = "Specify the branch to use for Express-Wizard", action = "store", nargs = 1)
-    ap.add_argument("--branch-express", help = "Specify the branch to use for Express", action = "store", nargs = 1)
-    ap.add_argument("--branch-cli", help = "Specify the branch to use for Express-CLI", action = "store", nargs = 1)
     return ap.parse_args()
 
 
@@ -358,6 +354,7 @@ def menu_level0():
 def ssh_validate_login(du_metadata, host_ip):
     if du_metadata['auth_type'] == "simple":
         return False
+        cmd = "ssh -o StrictHostKeyChecking=no -o PubkeyAuthentication=no {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
     elif du_metadata['auth_type'] == "sshkey":
         cmd = "ssh -o StrictHostKeyChecking, no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
         exit_status, stdout = run_cmd(cmd)
