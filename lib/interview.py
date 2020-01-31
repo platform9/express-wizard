@@ -146,9 +146,9 @@ def get_host_metadata(du, project_id, token):
         return ''
     else:
         if type(user_input) is int or user_input.isdigit():
-            host_profile_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
+            host_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
         else:
-            host_profile_metadata['fk_auth_profile'] = auth_profile_list[user_input]
+            host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
 
 
     # prompt for KVM-specific settings
@@ -166,7 +166,7 @@ def get_host_metadata(du, project_id, token):
         if host_metadata['cinder'] == "q":
             return ''
         host_metadata['designate'] = user_io.read_kbd("--> Enable Designate",
-                                                      ['y', 'n'],
+                                                      ['q','y', 'n'],
                                                       host_designate,
                                                       True, True)
         if host_metadata['designate'] == "q":
@@ -184,7 +184,7 @@ def get_host_metadata(du, project_id, token):
 
         # prompt for KVM-specific settings
         host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]",
-                                                      ['master', 'worker'],
+                                                      ['q','master', 'worker'],
                                                       host_node_type,
                                                       True, True)
         if host_metadata['node_type'] == "q":
