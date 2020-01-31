@@ -125,23 +125,50 @@ def import_region(import_file_path):
     with open(import_file_path) as json_file:
         region_config = json.load(json_file)
 
-    required_keys = ['region','hosts','clusters']
+    required_keys = ['region','hosts','clusters','auth-profiles','bond-profiles','role-profiles','host-profiles']
     for k in required_keys:
         if not k in region_config:
-            sys.stdout.write("--> export data missing dictionary key: {}\n".format(k))
+            sys.stdout.write("--> INFO: export data missing dictionary key: {}\n".format(k))
 
-    sys.stdout.write("--> importing region configuration\n")
-    write_config(region_config['region'])
+    if 'region' in region_config:
+        sys.stdout.write("--> importing region configuration\n")
+        write_config(region_config['region'])
 
-    sys.stdout.write("--> importing hosts\n")
-    for h in region_config['hosts']:
-        sys.stdout.write("    {}\n".format(h['hostname']))
-        write_host(h)
+    if 'hosts' in region_config:
+        sys.stdout.write("--> importing hosts\n")
+        for target in region_config['hosts']:
+            sys.stdout.write("    {}\n".format(target['hostname']))
+            write_host(target)
 
-    sys.stdout.write("--> importing clusters\n")
-    for c in region_config['clusters']:
-        sys.stdout.write("    {}\n".format(c['name']))
-        write_cluster(c)
+    if 'clusters' in region_config:
+        sys.stdout.write("--> importing clusters\n")
+        for target in region_config['clusters']:
+            sys.stdout.write("    {}\n".format(target['name']))
+            write_cluster(target)
+
+    if 'auth-profiles' in region_config:
+        sys.stdout.write("--> importing auth-profiles\n")
+        for target in region_config['auth-profiles']:
+            sys.stdout.write("    {}\n".format(target['auth_name']))
+            write_auth_profile(target)
+
+    if 'bond-profiles' in region_config:
+        sys.stdout.write("--> importing bond-profiles\n")
+        for target in region_config['bond-profiles']:
+            sys.stdout.write("    {}\n".format(target['bond_name']))
+            write_bond_profile(target)
+
+    if 'role-profiles' in region_config:
+        sys.stdout.write("--> importing role-profiles\n")
+        for target in region_config['role-profiles']:
+            sys.stdout.write("    {}\n".format(target['role_name']))
+            write_role_profile(target)
+
+    if 'host-profiles' in region_config:
+        sys.stdout.write("--> importing host-profiles\n")
+        for target in region_config['host-profiles']:
+            sys.stdout.write("    {}\n".format(target['host_profile_name']))
+            write_host_profile(target)
 
 
 def export_region(du_urls):
@@ -160,16 +187,32 @@ def export_region(du_urls):
     # get hosts and clusters
     du_hosts = get_hosts(target_du)
     du_clusters = get_clusters(target_du)
+    du_auth_profiles = get_auth_profiles()
+    du_bond_profiles = get_bond_profiles()
+    du_role_profiles = get_role_profiles()
+    du_host_profiles = get_host_profiles()
 
     # create export
     region_export = {}
     region_export['region'] = du
     region_export['hosts'] = []
     region_export['clusters'] = []
-    for h in du_hosts:
-        region_export['hosts'].append(h)
-    for c in du_clusters:
-        region_export['clusters'].append(c)
+    region_export['auth-profiles'] = []
+    region_export['bond-profiles'] = []
+    region_export['role-profiles'] = []
+    region_export['host-profiles'] = []
+    for target in du_hosts:
+        region_export['hosts'].append(target)
+    for target in du_clusters:
+        region_export['clusters'].append(target)
+    for target in du_auth_profiles:
+        region_export['auth-profiles'].append(target)
+    for target in du_bond_profiles:
+        region_export['bond-profiles'].append(target)
+    for target in du_role_profiles:
+        region_export['role-profiles'].append(target)
+    for target in du_host_profiles:
+        region_export['host-profiles'].append(target)
 
     export_file = "/tmp/{}.json".format(du_url.replace('https://',''))
     try:
@@ -386,7 +429,6 @@ def get_role_profiles():
                 role_configs.append(tmp_role)
 
     return(role_configs)
-
 
 def get_auth_profiles():
     auth_configs = []
