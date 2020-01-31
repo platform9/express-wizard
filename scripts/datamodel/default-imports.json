@@ -1,51 +1,51 @@
 {
   "host-profiles": [
     {
-      "fk_role_profile": "Hypervisor",
-      "host_profile_name": "CentOS Hypervisor with ALB Bonding",
+      "fk_role_profile": "Hypervisor with Glance",
+      "host_profile_name": "CentOS Hypervisor",
       "fk_bond_profile": "CentOS Bond Config 1 (ALB)",
       "fk_auth_profile": "CentOS SSH Access (Key-based)"
     },
     {
-      "fk_role_profile": "Hypervisor",
-      "host_profile_name": "CentOS Hypervisor with Round-Robin Bonding",
+      "fk_role_profile": "Hypervisor with Glance",
+      "host_profile_name": "CentOS Hypervisor",
       "fk_bond_profile": "CentOS Bond Config 2 (Round-Robin)",
       "fk_auth_profile": "CentOS SSH Access (Key-based)"
     },
     {
-      "fk_role_profile": "Kubernetes Master Node",
-      "host_profile_name": "Ubuntu Kubernetes Master with ALB Bonding",
+      "fk_role_profile": "Hypervisor with Glance",
+      "host_profile_name": "Ubuntu Hypervisor",
       "fk_bond_profile": "Ubuntu Bond Config 1 (ALB)",
       "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
     },
     {
-      "fk_role_profile": "Kubernetes Worker Node",
-      "host_profile_name": "Ubuntu Kubernetes Worker with ALB Bonding",
-      "fk_bond_profile": "Ubuntu Bond Config 1 (ALB)",
-      "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
-    },
-    {
-      "fk_role_profile": "Kubernetes Master Node",
-      "host_profile_name": "Centos Kubernetes Master with ALB Bonding",
-      "fk_bond_profile": "CentOS Bond Config 1 (ALB)",
-      "fk_auth_profile": "CentOS SSH Access (Key-based)"
-    },
-    {
-      "fk_role_profile": "Kubernetes Worker Node",
-      "host_profile_name": "Centos Kubernetes Worker with ALB Bonding",
-      "fk_bond_profile": "CentOS Bond Config 1 (ALB)",
-      "fk_auth_profile": "CentOS SSH Access (Key-based)"
-    },
-    {
-      "fk_role_profile": "Hypervisor",
-      "host_profile_name": "Ubuntu Hypervisor with ALB Bonding",
-      "fk_bond_profile": "Ubuntu Bond Config 1 (ALB)",
-      "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
-    },
-    {
-      "fk_role_profile": "Hypervisor",
-      "host_profile_name": "Ubuntu Hypervisor with Round-Robin Bonding",
+      "fk_role_profile": "Hypervisor with Glance",
+      "host_profile_name": "Ubuntu Hypervisor",
       "fk_bond_profile": "Ubuntu Bond Config 2 (Round-Robin)",
+      "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
+    },
+    {
+      "fk_role_profile": "Kubernetes Master",
+      "host_profile_name": "Centos Kubernetes Master",
+      "fk_bond_profile": "CentOS Bond Config 1 (ALB)",
+      "fk_auth_profile": "CentOS SSH Access (Key-based)"
+    },
+    {
+      "fk_role_profile": "Kubernetes Worker",
+      "host_profile_name": "Centos Kubernetes Worker",
+      "fk_bond_profile": "CentOS Bond Config 1 (ALB)",
+      "fk_auth_profile": "CentOS SSH Access (Key-based)"
+    },
+    {
+      "fk_role_profile": "Kubernetes Master",
+      "host_profile_name": "Ubuntu Kubernetes Master",
+      "fk_bond_profile": "Ubuntu Bond Config 1 (ALB)",
+      "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
+    },
+    {
+      "fk_role_profile": "Kubernetes Worker",
+      "host_profile_name": "Ubuntu Kubernetes Worker",
+      "fk_bond_profile": "Ubuntu Bond Config 1 (ALB)",
       "fk_auth_profile": "Ubuntu SSH Access (Key-based)"
     }
   ],
@@ -111,7 +111,7 @@
       "pf9-kube": "y",
       "nova": "",
       "node_type": "master",
-      "role_name": "Kubernetes Master Node",
+      "role_name": "Kubernetes Master",
       "cinder": "",
       "glance": "",
       "designate": ""
@@ -120,7 +120,7 @@
       "pf9-kube": "y",
       "nova": "",
       "node_type": "worker",
-      "role_name": "Kubernetes Worker Node",
+      "role_name": "Kubernetes Worker",
       "cinder": "",
       "glance": "",
       "designate": ""
