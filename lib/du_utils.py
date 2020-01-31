@@ -1,5 +1,6 @@
 """lib/du_utils.py"""
 import requests
+import sys
 import json
 import globals
 import pmk_utils
@@ -30,6 +31,8 @@ def login(du_host, username, password, project_name):
             }
         }
     }
+
+    # attempt to login to region
     try:
         resp = requests.post(url,
                              data=json.dumps(body),
@@ -37,7 +40,17 @@ def login(du_host, username, password, project_name):
                              verify=False)
         json_response = json.loads(resp.text)
     except:
-        fail_bootstrap("failed to parse json result")
+        sys.stdout.write("\nERROR: failed to login to region\n")
+        return(None, None)
+
+    # check for login failure
+    try:
+        json_response['error']['code']
+        if json_response['error']['code'] != 200:
+            return(None, None)
+    except:
+        None
+
     return json_response['token']['project']['id'], resp.headers['X-Subject-Token']
 
 
@@ -123,3 +136,18 @@ def get_du_type(du_url, du_user, du_password, du_tenant):
         else:
             region_type = "VMware"
     return region_type
+
+# Traceback (most recent call last):
+#   File "/home/centos/wizard-env2/bin/wizard", line 11, in <module>
+#     load_entry_point('express-wizard', 'console_scripts', 'wizard')()
+#   File "/home/centos/express-wizard/wizard.py", line 424, in main
+#     menu_level0()
+#   File "/home/centos/express-wizard/wizard.py", line 312, in menu_level0
+#     new_du_list = interview.add_region(target_du)
+#   File "/home/centos/express-wizard/lib/interview.py", line 1141, in add_region
+#     sub_regions, du_name_list = du_utils.get_sub_dus(du)
+#   File "/home/centos/express-wizard/lib/du_utils.py", line 60, in get_sub_dus
+#     du['tenant'])
+#   File "/home/centos/express-wizard/lib/du_utils.py", line 41, in login
+#     return json_response['token']['project']['id'], resp.headers['X-Subject-Token']
+# KeyError: 'token'
