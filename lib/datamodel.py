@@ -410,6 +410,17 @@ def get_role_profile_names():
     return(role_profile_names)
 
 
+def get_host_profile_names():
+    host_profile_names = []
+    if os.path.isfile(globals.HOST_PROFILE_FILE):
+        with open(globals.HOST_PROFILE_FILE) as json_file:
+            tmp_host_profile_configs = json.load(json_file)
+            for tmp_host_profile in tmp_host_profile_configs:
+                host_profile_names.append(tmp_host_profile['host_profile_name'])
+
+    return(host_profile_names)
+
+
 def get_auth_profile_names():
     auth_profile_names = []
     if os.path.isfile(globals.AUTH_PROFILE_FILE):
@@ -657,4 +668,39 @@ def get_cluster_uuid(du_url, cluster_name):
     if cluster_settings:
         return(cluster_settings['uuid'])
     return(None)
+
+
+def get_aggregate_host_profile(host_profile_name):
+    host_profile_metadata = {}
+
+    host_profile = get_host_profile_metadata(host_profile_name)
+    auth_profile = get_auth_profile_metadata(host_profile['fk_auth_profile'])
+    bond_profile = get_bond_profile_metadata(host_profile['fk_bond_profile'])
+    role_profile = get_role_profile_metadata(host_profile['fk_role_profile'])
+
+    if auth_profile:
+        host_profile_metadata['auth_profile'] = {}
+        host_profile_metadata['auth_profile']['auth_name'] = auth_profile['auth_name']
+        host_profile_metadata['auth_profile']['auth_type'] = auth_profile['auth_type']
+        host_profile_metadata['auth_profile']['auth_ssh_key'] = auth_profile['auth_ssh_key']
+        host_profile_metadata['auth_profile']['auth_password'] = auth_profile['auth_password']
+        host_profile_metadata['auth_profile']['auth_username'] = auth_profile['auth_username']
+    if bond_profile:
+        host_profile_metadata['bond_profile'] = {}
+        host_profile_metadata['bond_profile']['bond_name'] = bond_profile['bond_name']
+        host_profile_metadata['bond_profile']['bond_ifname'] = bond_profile['bond_ifname']
+        host_profile_metadata['bond_profile']['bond_mode'] = bond_profile['bond_mode']
+        host_profile_metadata['bond_profile']['bond_mtu'] = bond_profile['bond_mtu']
+        host_profile_metadata['bond_profile']['bond_members'] = bond_profile['bond_members']
+    if role_profile:
+        host_profile_metadata['role_profile'] = {}
+        host_profile_metadata['role_profile']['role_name'] = role_profile['role_name']
+        host_profile_metadata['role_profile']['pf9-kube'] = role_profile['pf9-kube']
+        host_profile_metadata['role_profile']['nova'] = role_profile['nova']
+        host_profile_metadata['role_profile']['glance'] = role_profile['glance']
+        host_profile_metadata['role_profile']['cinder'] = role_profile['cinder']
+        host_profile_metadata['role_profile']['designate'] = role_profile['designate']
+        host_profile_metadata['role_profile']['node_type'] = role_profile['node_type']
+
+    return(host_profile_metadata)
 

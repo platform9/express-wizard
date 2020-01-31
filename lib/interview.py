@@ -79,6 +79,7 @@ def get_cluster_metadata(du, project_id, token):
 
 
 def get_host_metadata(du, project_id, token):
+    sys.stdout.write("\n---- ADD/UPDATE A HOST ----\n")
     if du['du_type'] == "KVM":
         du_host_type = "kvm"
     elif du['du_type'] == "Kubernetes":
@@ -94,6 +95,9 @@ def get_host_metadata(du, project_id, token):
     host_metadata = datamodel.create_host_entry()
     host_metadata['record_source'] = "User-Defined"
     host_metadata['du_host_type'] = du_host_type
+
+    # prompt for hostname
+    sys.stdout.write("\nSystem Parameters:\n")
     host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True)
     if host_metadata['hostname'] == "q":
         return ''
@@ -128,20 +132,16 @@ def get_host_metadata(du, project_id, token):
         host_metadata['uuid'] = ""
         fk_auth_profile = ""
 
-    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
-    if host_metadata['ip'] == "q":
-        return ''
-
-    # prompt for auth profile (fred)
-    sys.stdout.write("Authorization Profiles:\n")
-    auth_profile_list = datamodel.get_auth_profile_names()
+    # prompt for host template (fred)
+    sys.stdout.write("\nHost Templates:\n")
+    auth_profile_list = datamodel.get_host_profile_names()
     cnt = 1
     allowed_values = ['q']
     for target in auth_profile_list:
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Profile", allowed_values, fk_auth_profile, True, True)
+    user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True)
     if user_input == 'q':
         return ''
     else:
@@ -150,45 +150,38 @@ def get_host_metadata(du, project_id, token):
         else:
             host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
 
+    sys.stdout.write("\nNetwork Parameters:\n")
+    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
+    if host_metadata['ip'] == "q":
+        return ''
+    host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False)
+    if host_metadata['sub_if_config'] == "q":
+        return ''
+
+    # get host profile metadata
+    host_profile_metadata = datamodel.get_aggregate_host_profile(host_metadata['fk_auth_profile'])
+    if not host_profile_metadata:
+        sys.stdout.write("ERROR: failed to lookup metadata for host template\n")
+        return ''
 
     # prompt for KVM-specific settings
     if du_host_type == "kvm":
-        host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False)
-        if host_metadata['sub_if_config'] == "q":
-            return ''
-        host_metadata['nova'] = user_io.read_kbd("--> Enable Nova", ['y', 'n'], host_nova, True, True)
-        if host_metadata['nova'] == "q":
-            return ''
-        host_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y', 'n'], host_glance, True, True)
-        if host_metadata['glance'] == "q":
-            return ''
-        host_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y', 'n'], host_cinder, True, True)
-        if host_metadata['cinder'] == "q":
-            return ''
-        host_metadata['designate'] = user_io.read_kbd("--> Enable Designate",
-                                                      ['q','y', 'n'],
-                                                      host_designate,
-                                                      True, True)
-        if host_metadata['designate'] == "q":
-            return ''
+        host_metadata['nova'] = host_profile_metadata['role_profile']['nova']
+        host_metadata['glance'] = host_profile_metadata['role_profile']['glance']
+        host_metadata['cinder'] =  host_profile_metadata['role_profile']['cinder']
+        host_metadata['designate'] =  host_profile_metadata['role_profile']['designate']
         host_metadata['node_type'] = ""
         host_metadata['pf9-kube'] = "n"
         host_metadata['cluster_name'] = ""
     elif du_host_type == "kubernetes":
-        host_metadata['sub_if_config'] = ""
         host_metadata['nova'] = ""
         host_metadata['glance'] = ""
         host_metadata['cinder'] = ""
         host_metadata['designate'] = ""
+        host_metadata['node_type'] = host_profile_metadata['role_profile']['node_type']
         host_metadata['pf9-kube'] = "y"
-
-        # prompt for KVM-specific settings
-        host_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]",
-                                                      ['q','master', 'worker'],
-                                                      host_node_type,
-                                                      True, True)
-        if host_metadata['node_type'] == "q":
-            return ''
+        
+        # prompt for cluster to attach to
         host_metadata['cluster_name'] = interview.select_cluster(du['url'], host_cluster_name)
         if host_metadata['cluster_name'] == "q":
             return ''
@@ -881,7 +874,7 @@ def select_du(du_type_filter=None):
                 sys.stdout.write("{}. {}\n".format(cnt, du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = user_io.read_kbd("Select Region", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True)
             if user_input == "q":
                 return ''
             else:
@@ -958,7 +951,6 @@ def add_cluster(du):
 
 
 def add_host(du):
-    sys.stdout.write("\nAdding Host to Region: {}\n".format(du['url']))
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
     project_id, token = du_utils.login_du(du['url'],
                                           du['username'],
@@ -990,8 +982,7 @@ def add_host(du):
             if host['ip'] == "":
                 ssh_status = "No Primary IP"
             else:
-                user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts", ['q','y','n'], 'n', True, True)
-                if user_input == "y":
+                if globals.ADD_HOST_VALIDATE_SSH:
                     du_metadata = datamodel.get_du_metadata(du['url'])
                     if du_metadata:
                         ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])

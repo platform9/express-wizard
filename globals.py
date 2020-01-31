@@ -43,3 +43,5 @@ bond_modes = [
     "Adaptive Load-Balancing (ALB)"
 ]
 
+# discovery settings
+ADD_HOST_VALIDATE_SSH = False

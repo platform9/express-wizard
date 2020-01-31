@@ -314,7 +314,7 @@ def menu_level0():
                     reports.report_du_info(new_du_list)
         elif user_input == '2':
             action_header("MANAGE HOSTS")
-            sys.stdout.write("\nSelect Region to add Host to:")
+            sys.stdout.write("\nSelect Region to Add Host To:")
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
