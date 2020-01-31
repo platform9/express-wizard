@@ -16,9 +16,9 @@ if os.getenv('CLI_BRANCH') and not None:
     cli_branch = os.getenv('CLI_BRANCH')
 else:
     cli_branch="master"
-    
+
 if os.getenv('CLI_LOCAL_SRC'):
-    express_cli_source = ('express-cli @ git+file://home/tomchris/Development/express-cli#egg=express-cli')
+    express_cli_source = 'file://{}#egg=express-cli'.format(path.join(path.dirname(here), 'express-cli'))
 else:
     express_cli_source = ("express-cli @ git+git://github.com/platform9/express-cli.git@{}#egg=express-cli".format(cli_branch))
 
@@ -72,8 +72,11 @@ setup(
         "cryptography",
         "pathlib2;python_version<'3'",
         "pathlib;python_version>'3'",
-        express_cli_source,
+        'express_cli',
         "wheel",
+    ],
+    dependency_links=[
+        express_cli_source,
         ],
     extras_require = {
         'test': ['pytest', 'pytest-cov', 'mock']

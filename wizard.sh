@@ -20,12 +20,18 @@ start_time=$(date +"%s.%N")
 
 assert() {
     if [ $# -gt 0 ]; then stdout_log "ASSERT: ${1}"; fi
-    echo -e "\n\n"
-    echo "$(tail ${log_file})"
-    echo ""
-    echo "Installation failed, Here are the last 10 lines from the log" 
-    echo "The full installation log is available at ${log_file}"
-    echo "If more information is needed re-run the install with --debug"
+    if [[ -f ${log_file} ]]; then
+        echo -e "\n\n"
+	echo ""
+	echo "Installation failed, Here are the last 10 lines from the log" 
+	echo "The full installation log is available at ${log_file}"
+	echo "If more information is needed re-run the install with --debug"
+	echo "$(tail ${log_file})"
+    else
+	echo "Installation failed prior to log file being created"
+	echo "Try re-running with --debug"
+	echo "Installation instructions: https://docs.platform9.com/kubernetes/PMK-CLI/#installation"
+    fi
     exit 1
 }
 
@@ -51,30 +57,45 @@ parse_args() {
       case $i in
 	-h|--help)
 	    echo "Usage: $(basename $0)"
-	    echo "	  [-i|--init]"
-	    echo "	  [-t|--test]"
-	    echo "	  [-l|--local]"
-	    echo "	  [-d|--debug=]"
 	    echo "	  [-c|--config=]"
 	    echo "	  [-b|--branch=]"
+	    echo "	  [--wizard-branch='branch_name']"
+	    echo "	  [--cli-branch='branch_name']"
+	    echo "	  [--dev] Installs from local source code for each project in editable mode."
+	    echo "                This assumes you have provided all source code in the correct locations"
+	    echo "	  [--test] any installation, passes test CLF to cli|wizard."
+	    echo "                 After install each app launches and then exits to validate install."
+	    echo "	  [--local] Installs local source code in the same directory"
+	    echo "	  [-d|--debug]"
+	    echo "	  [--debug=[1-4]"
+	    echo "	  [--initialize] !!!! THIS DELETES YOUR LOCAL PF9 DATABASE!!!!"
+	    echo ""
 	    echo ""
 	    exit 0
 	    shift
 	    ;;
-	-b=*|--branch=*)
+	--wizard-branch=*)
 	    if [ -n ${i#*=} ]; then
 		wizard_branch="${i#*=}"
 	    else
-		assert "Branch name must be provided";
+		assert "'--wizard-branch=' Requires a Branch name"
+	    fi
+	    shift
+	    ;;
+	--cli-branch=*)
+	    if [ -n ${i#*=} ]; then
+		cli_branch="${i#*=}"
+	    else
+		assert "'--cli-branch=' Requires a Branch name"
 	    fi
 	    shift
 	    ;;
 	-c=*|--config=*)
 	    config_file="${i#*=}"
-	    if [ -z ${config_file} ];
-		then assert "config file not provided: ${config_file}" 
-	    elif [[ ! -r ${config_file} ]];
-		then assert "failed to access config file: ${config_file}";
+	    if [ -z ${config_file} ]; then
+		assert "config file not provided: ${config_file}" 
+	    elif [[ ! -r ${config_file} ]]; then
+		assert "failed to access config file: ${config_file}"
 	    fi
 	    shift
 	    ;;
@@ -86,7 +107,11 @@ parse_args() {
 	    debug_flag="${i#*=}"
 	    shift
 	    ;;
-	-l|--local)
+	--dev)
+	    dev_build="--dev"
+	    shift
+	    ;;
+	--local)
 	    run_local="--local"
 	    shift
 	    ;;
@@ -94,7 +119,7 @@ parse_args() {
 	    test_wizard="--test"
 	    shift
 	    ;;
-	-i|--init)
+	--initialize)
 	    init_flag="--init"
 	    shift
 	    ;;
@@ -111,6 +136,16 @@ parse_args() {
 }
 
 init_venv_python() {
+    debugging "Virtualenv: ${venv} doesn't not exist, Configuring."
+    for ver in {3,2,''}; do #ensure python3 is first
+	debugging "Checking Python${ver}: $(which python${ver})"
+        if (which python${ver} > /dev/null 2>&1); then
+	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
+	    stdout_log "Python Version Selected: python${python_version}"
+	    break
+        fi
+    done
+
     if [[ ${python_version} == 2 ]]; then
         pyver="";
     else 
@@ -174,9 +209,29 @@ initialize_basedir() {
 ## main
 
 parse_args "$@"
-cd ~
 # Set global variables
 if [ -z ${wizard_branch} ]; then wizard_branch=master; fi
+debugging "Setting environment variables to be passed to installers"
+
+if [[ -z ${run_local} && -z ${dev_build} ]]; then
+    wizard_url="git+git://github.com/platform9/express-wizard.git@${wizard_branch}#egg=express-wizard"
+    if [[ -z ${cli_branch} ]]; then 
+	export CLI_BRANCH="tomchris/restructure"
+    else 
+	CLI_BRANCH=${cli_branch}
+    fi
+elif [[ -n ${dev_build} ]]; then 
+    wizard_url="-e .[test]"
+    export CLI_LOCAL_SRC='True'
+elif [[ -n ${run_local} ]]; then
+    wizard_url="."
+    export CLI_LOCAL_SRC='True'
+fi
+
+debugging "CLFs: $@"
+debugging "wizard_branch: ${wizard_branch}"
+debugging "cli_branch: ${wizard_branch}"
+debugging "wizard_url: ${wizard_url}"
 # Set the path so double quotes don't use the litteral '~'
 pf9_basedir=$(dirname ~/pf9/.) 
 pip_path=${pf9_basedir}/get_pip.py
@@ -185,13 +240,12 @@ pf9_bin=${pf9_basedir}/bin
 venv="${pf9_basedir}/pf9-venv"
 venv_python="${venv}/bin/python"
 venv_activate="${venv}/bin/activate"
-wizard_url="git+git://github.com/platform9/express-wizard.git@${wizard_branch}#egg=express-wizard"
-#https://raw.githubusercontent.com/platform9/express-wizard/${wizard_branch}/wizard.py"
 pip_url="https://bootstrap.pypa.io/get-pip.py"
 wizard_entrypoint=$(dirname ${venv_python})/wizard
 cli_entrypoint=$(dirname ${venv_python})/express
 wizard=${pf9_bin}/wizard
 cli=${pf9_bin}/cli
+
 
 # initialize installation directory
 initialize_basedir
@@ -199,39 +253,37 @@ initialize_basedir
 # configure python virtual environment
 stdout_log "Configuring virtualenv"
 if [ ! -f "${venv_activate}" ]; then
-    debugging "Virtual Environment: ${venv} Doesn't not exist, Configuring."
-    for ver in {3,2,''}; do #ensure python3 is first
-	debugging "Checking Python${ver}: $(which python${ver})"
-        if (which python${ver} > /dev/null 2>&1); then
-	    python_version="$(python${ver} <<< 'import sys; print(sys.version_info[0])')"
-	    stdout_log "Python Version Selected: python${python_version}"
-	    break
-        fi
-    done
     init_venv_python
 else
     stdout_log "INFO: using exising virtual environment"
     debugging "Upgrade pip"
-    if ! (${venv_python} -m pip install pip --upgrade > /dev/null 2>&1); then assert "Pip upgrade failed"; fi
+    if ! (${venv_python} -m pip install --upgrade pip setuptools wheel > /dev/null 2>&1); then assert "Pip upgrade failed"; fi
 fi
 
+
 stdout_log "Installing Platform9 Express Management Suite"
-if ! (${venv_python} -m pip install -e  ${wizard_url} > /dev/null 2>&1); then
+if ! (${venv_python} -m pip install --upgrade ${wizard_url} > debugging); then
     assert "Installation of Platform9 Express Wizard Failed"; fi
-if ! (wizard --help > /dev/null 2>&1); then assert "Unable to launch Platform9 Wizard"; fi
+
+debugging "Test launch wizard"
+if ! (${wizard_entrypoint} --help > /dev/null 2>&1); then
+    assert "Unable to launch Platform9 Wizard"; fi
 if [ ! -f ${wizard} ]; then
+    debugging "Create Express-Wizard symlink"
     if ! (ln -s ${wizard_entrypoint} ${wizard} > /dev/null 2>&1); then
 	assert "failed to create Express-Wizard symlink: ${wizard_entrypoint} ${wizard}"; fi
 fi
+
 stdout_log "Installing Platform9 Express Management Environment"
-if ! (express init > /dev/null 2>&1); then assert "Initialization of Platform9 Express-CLI Failed"; fi
+if ! (${cli_entrypoint} init > /dev/null 2>&1); then
+    assert "Initialization of Platform9 Express-CLI Failed"; fi
 if [ ! -f ${cli} ]; then
+    debugging "Create Express-CLI symlink"
     if ! (ln -s ${cli_entrypoint} ${cli} > /dev/null 2>&1); then
 	assert "failed to create Express-CLI symlink: ${cli_script}"; fi
 fi
 
 # Merge runtime arguments
-if [[ -n ${wizard_branch} ]]; then args+=" --branch ${wizard_branch}";fi
 if [[ -n ${test_wizard} ]]; then args+=" ${test_wizard}";fi
 if [[ -n ${run_local} ]]; then args+=" ${run_local}";fi
 if [[ -n ${config_file} ]]; then args+=" --config ${config_file}";fi
@@ -243,12 +295,18 @@ if [[ -n ${debug_flag} ]]; then
     fi
 fi
 
+# Code executes clean but is updating path in subshell
 if [[ -d "${pf9_bin}" ]]; then
+    debugging "echo $PATH | grep -q ${pf9_bin}"
     if ! echo "$PATH" | grep -q "${pf9_bin}"; then
-        export PATH="${pf9_bin}:$PATH"
+	debugging "Adding ${pf9_bin} to '$PATH'"
+	$(export PATH="${pf9_bin}:$PATH")
     fi
 fi
+echo "To access Platform9 Express Wizard: ${wizard}"
+echo "To access Platform9 Express CLI: ${cli}"
+
 debugging "Wizard Launch Command: ${wizard}${args}"
-launch_wizard="(${venv_python} ${wizard}${args} -t)"
+(${venv_python} ${wizard}${args})
 
 #launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
