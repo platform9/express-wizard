@@ -281,7 +281,8 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
         ['q','y','n','s'], 
         's', 
         True, 
-        True
+        True,
+        ''
     )
     if user_input == 'q':
         return()
@@ -293,7 +294,7 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
         else:
             wait_for_job(p)
 
-    user_input = user_io.read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True, '')
     if user_input == 'q':
         return()
     if role_flag == 1:
@@ -330,7 +331,7 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
 
 def invoke_express_cli(nodes, cluster_name, node_type):
     sys.stdout.write("\nRunning PF9-Express CLI\n")
-    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, True)
+    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, '', True)
     sys.stdout.flush()
     sys.stdout.write("\n\n>>>> DBG: just flushed stdout after reading from keyboard with timeout\n\n")
     if user_input == 'q':
@@ -361,7 +362,7 @@ def invoke_express_cli(nodes, cluster_name, node_type):
 def run_express_cli(du):
     selected_cluster = interview.select_target_cluster(du['url'])
     if selected_cluster:
-        user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True)
+        user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True, '')
         if user_input == "y":
             master_entries = datamodel.get_unattached_masters(selected_cluster)
             if not master_entries:
@@ -371,7 +372,7 @@ def run_express_cli(du):
                 allowed_values = ['q','all']
                 for node in master_entries:
                     allowed_values.append(node['hostname'])
-                user_input = user_io.read_kbd("\nSelect Master Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True)
+                user_input = user_io.read_kbd("\nSelect Master Node to Attach ('all' to attach all master nodes):", allowed_values, 'all', True, True, '')
                 if user_input == "all":
                     targets = master_entries
                 else:
@@ -394,7 +395,7 @@ def run_express_cli(du):
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                             invoke_express_cli(targets,selected_cluster['name'],"master")
 
-        user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True)
+        user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True, '')
         if user_input == "y":
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if not worker_entries:
@@ -404,7 +405,7 @@ def run_express_cli(du):
                 allowed_values = ['q','all']
                 for node in worker_entries:
                     allowed_values.append(node['hostname'])
-                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all worker nodes):", allowed_values, 'all', True, True)
+                user_input = user_io.read_kbd("\nSelect Worker Node to Attach ('all' to attach all worker nodes):", allowed_values, 'all', True, True, '')
                 if user_input == "all":
                     targets = worker_entries
                 else:
@@ -463,20 +464,20 @@ def run_express(du,host_entries):
     custom_idx = cnt
     sys.stdout.write("    {}. custom inventory\n".format(cnt))
     allowed_values.append(str(cnt))
-    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '1', True, True)
+    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '1', True, True, '')
     if user_input == "q":
         return()
     if int(user_input) != custom_idx:
         idx = int(user_input) - 1
         target_inventory = express_inventories[idx]
     else:
-        user_input = user_io.read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True)
+        user_input = user_io.read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True, '')
         target_inventory = user_input
 
     sys.stdout.write("\nPF9-Express Role Assignment\n")
     sys.stdout.write("    1. Install Hostagent\n")
     sys.stdout.write("    2. Install Hostagent and Assign Roles\n")
-    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '2', True, True)
+    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '2', True, True, '')
     if assign_roles == "q":
         return()
     else:

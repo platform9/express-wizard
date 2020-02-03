@@ -93,7 +93,7 @@ def view_log(log_files):
         sys.stdout.write("{}. {}\n".format(cnt, log_file))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True, '')
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
@@ -200,7 +200,7 @@ def menu_level2():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu2()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
         if user_input == '1':
             action_header("MANAGE AUTHORIZATION PROFILES")
             selected_profile = interview.add_edit_auth_profile()
@@ -259,7 +259,7 @@ def menu_level1():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu1()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
         if user_input == '1':
             selected_du = interview.select_du()
             if selected_du:
@@ -300,7 +300,7 @@ def menu_level0():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu0()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()
@@ -330,7 +330,7 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, '')
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '5':

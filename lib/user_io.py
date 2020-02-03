@@ -58,8 +58,10 @@ def read_kbd_timeout(user_prompt, default_value):
     return(user_in)
 
 
-def read_kbd(user_prompt, allowed_values, default_value, flag_echo=True, disallow_null=True, input_timeout=False):
+def read_kbd(user_prompt, allowed_values, default_value, flag_echo, disallow_null, help_text, input_timeout=False):
     input_is_valid = False
+    if help_text == '':
+        help_text = "No help available"
     while not input_is_valid:
         if sys.version_info[0] == 3:
             if flag_echo:
@@ -80,7 +82,9 @@ def read_kbd(user_prompt, allowed_values, default_value, flag_echo=True, disallo
             else:
                 user_input = getpass.getpass(prompt="{}: ".format(user_prompt), stream=None)
 
-        if user_input == "":
+        if user_input in ['help','h']:
+            sys.stdout.write("\n------------------------ Wizard Help ------------------------\n{}\n\n".format(help_text))
+        elif user_input == "":
             if disallow_null == True:
                 if default_value != "":
                     user_input = default_value

@@ -13,9 +13,13 @@ import express_utils
 import pmk_utils
 import datamodel
 from encrypt import Encryption
+from help_messages import Help
 
 
 def get_cluster_metadata(du, project_id, token):
+    # intialize help
+    help = Help()
+
     if du['du_type'] in ['KVM','VMware']:
         sys.stdout.write("Invalid region type for adding cluster ({})\n".format(du['du_type']))
         return ''
@@ -24,7 +28,7 @@ def get_cluster_metadata(du, project_id, token):
     cluster_metadata = {}
     cluster_metadata['record_source'] = "User-Defined"
     cluster_metadata['du_url'] = du['url']
-    cluster_metadata['name'] = user_io.read_kbd("--> Cluster Name", [], '', True, True)
+    cluster_metadata['name'] = user_io.read_kbd("--> Cluster Name", [], '', True, True, help.cluster_interview("cluster-name"))
     if cluster_metadata['name'] == "q":
         return ''
 
@@ -50,28 +54,28 @@ def get_cluster_metadata(du, project_id, token):
         app_catalog_enabled = "0"
         allow_workloads_on_master = "0"
 
-    cluster_metadata['containers_cidr'] = user_io.read_kbd("--> Containers CIDR", [], containers_cidr, True, True)
+    cluster_metadata['containers_cidr'] = user_io.read_kbd("--> Containers CIDR", [], containers_cidr, True, True, help.cluster_interview("containers-cidr"))
     if cluster_metadata['containers_cidr'] == "q":
         return ''
-    cluster_metadata['services_cidr'] = user_io.read_kbd("--> Services CIDR", [], services_cidr, True, True)
+    cluster_metadata['services_cidr'] = user_io.read_kbd("--> Services CIDR", [], services_cidr, True, True, help.cluster_interview("services-cird"))
     if cluster_metadata['services_cidr'] == "q":
         return ''
-    cluster_metadata['master_vip_ipv4'] = user_io.read_kbd("--> Master VIP", [], master_vip_ipv4, True, True)
+    cluster_metadata['master_vip_ipv4'] = user_io.read_kbd("--> Master VIP", [], master_vip_ipv4, True, True, help.cluster_interview("master-vip"))
     if cluster_metadata['master_vip_ipv4'] == "q":
         return ''
-    cluster_metadata['master_vip_iface'] = user_io.read_kbd("--> Interface Name for VIP", [], master_vip_iface, True, True)
+    cluster_metadata['master_vip_iface'] = user_io.read_kbd("--> Interface Name for VIP", [], master_vip_iface, True, True, help.cluster_interview("interface-name-vip"))
     if cluster_metadata['master_vip_iface'] == "q":
         return ''
-    cluster_metadata['metallb_cidr'] = user_io.read_kbd("--> IP Range for MetalLB", [], metallb_cidr, True, True)
+    cluster_metadata['metallb_cidr'] = user_io.read_kbd("--> IP Range for MetalLB", [], metallb_cidr, True, True, help.cluster_interview("ip-range-metallb"))
     if cluster_metadata['metallb_cidr'] == "q":
         return ''
-    cluster_metadata['privileged'] = user_io.read_kbd("--> Privileged API Mode", ['0','1'], privileged, True, True)
+    cluster_metadata['privileged'] = user_io.read_kbd("--> Privileged API Mode", ['0','1'], privileged, True, True, help.cluster_interview("priviliged-mode"))
     if cluster_metadata['privileged'] == "q":
         return ''
-    cluster_metadata['app_catalog_enabled'] = user_io.read_kbd("--> Enable Helm Application Catalog", ['0','1'], app_catalog_enabled, True, True)
+    cluster_metadata['app_catalog_enabled'] = user_io.read_kbd("--> Enable Helm Application Catalog", ['0','1'], app_catalog_enabled, True, True, help.cluster_interview("enable-helm-catalog"))
     if cluster_metadata['app_catalog_enabled'] == "q":
         return ''
-    cluster_metadata['allow_workloads_on_master'] = user_io.read_kbd("--> Enable Workloads on Master Nodes", ['0','1'], allow_workloads_on_master, True, True)
+    cluster_metadata['allow_workloads_on_master'] = user_io.read_kbd("--> Enable Workloads on Master Nodes", ['0','1'], allow_workloads_on_master, True, True, help.cluster_interview("enable-master-workloads"))
     if cluster_metadata['allow_workloads_on_master'] == "q":
         return ''
 
@@ -79,6 +83,9 @@ def get_cluster_metadata(du, project_id, token):
 
 
 def get_host_metadata(du, project_id, token):
+    # intialize help
+    help = Help()
+
     sys.stdout.write("\n---- ADD/UPDATE A HOST ----\n")
     if du['du_type'] == "KVM":
         du_host_type = "kvm"
@@ -87,7 +94,7 @@ def get_host_metadata(du, project_id, token):
     elif du['du_type'] == "VMware":
         du_host_type = "vmware"
     elif du['du_type'] == "KVM/Kubernetes":
-        du_host_type = user_io.read_kbd("--> Host Type ['kvm','kubernetes']", ['kvm','kubernetes'], 'kvm', True, True)
+        du_host_type = user_io.read_kbd("--> Host Type ['kvm','kubernetes']", ['kvm','kubernetes'], 'kvm', True, True, help.host_interview("host-type"))
         if du_host_type == "q":
             return ''
 
@@ -98,7 +105,7 @@ def get_host_metadata(du, project_id, token):
 
     # prompt for hostname
     sys.stdout.write("\nSystem Parameters:\n")
-    host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True)
+    host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True, help.host_interview("hostname"))
     if host_metadata['hostname'] == "q":
         return ''
 
@@ -141,7 +148,7 @@ def get_host_metadata(du, project_id, token):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True, help.host_interview("host-template"))
     if user_input == 'q':
         return ''
     else:
@@ -151,10 +158,10 @@ def get_host_metadata(du, project_id, token):
             host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
 
     sys.stdout.write("\nNetwork Parameters:\n")
-    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True)
+    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True, help.host_interview("Primary IP"))
     if host_metadata['ip'] == "q":
         return ''
-    host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False)
+    host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False, help.host_interview("Sub-Interfaces"))
     if host_metadata['sub_if_config'] == "q":
         return ''
 
@@ -192,6 +199,9 @@ def get_host_metadata(du, project_id, token):
 
 
 def select_cluster(du_url, current_assigned_cluster):
+    # intialize help
+    help = Help()
+
     selected_cluster = "Unassigned"
     if not os.path.isdir(globals.CONFIG_DIR):
         return(selected_cluster)
@@ -221,7 +231,7 @@ def select_cluster(du_url, current_assigned_cluster):
             user_input = user_io.read_kbd("--> Select Cluster",
                                           allowed_values,
                                           current_assigned_cluster,
-                                          True, True)
+                                          True, True, help.cluster_interview("select-cluster"))
             if user_input == "q":
                 return(selected_cluster)
             else:
@@ -239,11 +249,14 @@ def select_cluster(du_url, current_assigned_cluster):
 
 
 def get_host_profile_settings(target_host_profile):
+    # intialize help
+    help = Help()
+
     # initialize host profile data structure
     host_profile_metadata = datamodel.create_host_profile_entry()
 
     if target_host_profile == None:
-        host_profile_name = user_io.read_kbd("--> Template Name", [], '', True, True)
+        host_profile_name = user_io.read_kbd("--> Template Name", [], '', True, True, help.host_profile_interview('host-profile-name'))
         if host_profile_name == 'q':
             return ''
     else:
@@ -270,7 +283,7 @@ def get_host_profile_settings(target_host_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Auth Profile", allowed_values, fk_auth_profile, True, True)
+    user_input = user_io.read_kbd("--> Select Auth Profile", allowed_values, fk_auth_profile, True, True, help.host_profile_interview('auth-profile-name'))
     if user_input == 'q':
         return ''
     else:
@@ -288,7 +301,7 @@ def get_host_profile_settings(target_host_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Role Profile", allowed_values, fk_role_profile, True, True)
+    user_input = user_io.read_kbd("--> Select Role Profile", allowed_values, fk_role_profile, True, True, help.host_profile_interview('role-profile-name'))
     if user_input == 'q':
         return ''
     else:
@@ -306,7 +319,7 @@ def get_host_profile_settings(target_host_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Select Bond Profile", allowed_values, fk_bond_profile, True, True)
+    user_input = user_io.read_kbd("--> Select Bond Profile", allowed_values, fk_bond_profile, True, True, help.host_profile_interview('bond-profile-name'))
     if user_input == 'q':
         return ''
     else:
@@ -319,11 +332,14 @@ def get_host_profile_settings(target_host_profile):
 
 
 def get_bond_settings(existing_bond_profile):
+    # intialize help
+    help = Help()
+
     # initialize bond data structure
     bond_metadata = datamodel.create_bond_profile_entry()
 
     if existing_bond_profile == None:
-        bond_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        bond_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True, help.bond_profile_interview('bond-profile-name'))
         if bond_profile_name == 'q':
             return ''
     else:
@@ -344,7 +360,7 @@ def get_bond_settings(existing_bond_profile):
         bond_members = ""
 
     bond_metadata['bond_name'] = bond_profile_name
-    bond_metadata['bond_ifname'] = user_io.read_kbd("--> Interface Name for Bond", [], bond_ifname, True, True)
+    bond_metadata['bond_ifname'] = user_io.read_kbd("--> Interface Name for Bond", [], bond_ifname, True, True, help.bond_profile_interview('bond-interface-name'))
     if bond_metadata['bond_ifname'] == 'q':
         return ''
 
@@ -355,7 +371,7 @@ def get_bond_settings(existing_bond_profile):
         sys.stdout.write("    {}. {}\n".format(cnt, target_mode))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Bond Mode", allowed_values, bond_mode, True, True)
+    user_input = user_io.read_kbd("--> Bond Mode", allowed_values, bond_mode, True, True, help.bond_profile_interview('bond-mode'))
     if user_input == 'q':
         return ''
     else:
@@ -364,11 +380,11 @@ def get_bond_settings(existing_bond_profile):
         else:
             bond_metadata['bond_mode'] = user_input
 
-    bond_metadata['bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface", [], bond_mtu, True, True)
+    bond_metadata['bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface", [], bond_mtu, True, True, help.bond_profile_interview('bond-mtu'))
     if bond_metadata['bond_mtu'] == 'q':
         return ''
 
-    bond_metadata['bond_members'] = user_io.read_kbd("--> Member Interfaces (space-delimitted)", [], bond_members, True, True)
+    bond_metadata['bond_members'] = user_io.read_kbd("--> Member Interfaces (space-delimitted)", [], bond_members, True, True, help.bond_profile_interview('bond-members'))
     if bond_metadata['bond_members'] == 'q':
         return ''
 
@@ -376,11 +392,14 @@ def get_bond_settings(existing_bond_profile):
 
 
 def get_role_settings(existing_role_profile):
+    # intialize help
+    help = Help()
+
     # initialize role data structure
     role_metadata = datamodel.create_role_profile_entry()
 
     if existing_role_profile == None:
-        role_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        role_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True, help.role_profile_interview('role-profile-name'))
         if role_profile_name == 'q':
             return ''
     else:
@@ -414,7 +433,7 @@ def get_role_settings(existing_role_profile):
             sys.stdout.write("    {}. {}\n".format(cnt, target))
             allowed_values.append(str(cnt))
             cnt += 1
-        user_input = user_io.read_kbd("--> Select Host type", allowed_values, '', True, True)
+        user_input = user_io.read_kbd("--> Select Host type", allowed_values, '', True, True, help.role_profile_interview('role-du-host-type'))
         if user_input == 'q':
             return ''
         else:
@@ -431,13 +450,13 @@ def get_role_settings(existing_role_profile):
     # get hypervisor-specific roles
     if selected_host_type == "OpenStack (PMO)":
         role_metadata['nova'] = "y"
-        role_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y', 'n'], role_glance, True, True)
+        role_metadata['glance'] = user_io.read_kbd("--> Enable Glance", ['y', 'n'], role_glance, True, True, help.role_profile_interview('role-pmo-glance'))
         if role_metadata['glance'] == "q":
             return ''
-        role_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y', 'n'], role_cinder, True, True)
+        role_metadata['cinder'] = user_io.read_kbd("--> Enable Cinder", ['y', 'n'], role_cinder, True, True, help.role_profile_interview('role-pmo-cinder'))
         if role_metadata['cinder'] == "q":
             return ''
-        role_metadata['designate'] = user_io.read_kbd("--> Enable Designate", ['y', 'n'], role_designate, True, True)
+        role_metadata['designate'] = user_io.read_kbd("--> Enable Designate", ['y', 'n'], role_designate, True, True, help.role_profile_interview('role-pmo-designate'))
         if role_metadata['designate'] == "q":
             return ''
         
@@ -448,7 +467,7 @@ def get_role_settings(existing_role_profile):
     # get kubernetes-specific roles
     if selected_host_type == "Kubernetes (PMK)":
         role_metadata['pf9-kube'] = "y"
-        role_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]", ['master', 'worker'], role_node_type, True, True)
+        role_metadata['node_type'] = user_io.read_kbd("--> Node Type [master, worker]", ['master', 'worker'], role_node_type, True, True, help.role_profile_interview('role-k8s-node-type'))
         if role_metadata['node_type'] == "q":
             return ''
 
@@ -462,6 +481,9 @@ def get_role_settings(existing_role_profile):
 
 
 def get_auth_settings(existing_auth_profile):
+    # intialize help
+    help = Help()
+
     # initialize auth data structure
     auth_metadata = datamodel.create_auth_profile_entry()
 
@@ -469,7 +491,7 @@ def get_auth_settings(existing_auth_profile):
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     if existing_auth_profile == None:
-        auth_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True)
+        auth_profile_name = user_io.read_kbd("--> Profile Name", [], '', True, True, help.auth_profile_interview('auth-profile-name'))
         if auth_profile_name == 'q':
             return ''
     else:
@@ -490,16 +512,16 @@ def get_auth_settings(existing_auth_profile):
         auth_password = ""
 
     auth_metadata['auth_name'] = auth_profile_name
-    auth_metadata['auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']", ['simple', 'sshkey'], auth_type, True, True)
+    auth_metadata['auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']", ['simple', 'sshkey'], auth_type, True, True, help.auth_profile_interview('auth-profile-type'))
     if auth_metadata['auth_type'] == 'q':
         return ''
 
-    auth_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True)
+    auth_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True, help.auth_profile_interview('auth-profile-username'))
     if auth_metadata['auth_username'] == 'q':
         return ''
 
     if auth_metadata['auth_type'] == "simple":
-        auth_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True)
+        auth_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True, help.auth_profile_interview('auth-profile-password'))
         if auth_metadata['auth_password'] == 'q':
             return ''
         else:
@@ -508,7 +530,7 @@ def get_auth_settings(existing_auth_profile):
         auth_metadata['auth_password'] = ""
 
     if auth_metadata['auth_type'] == "sshkey":
-        auth_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True)
+        auth_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True, help.auth_profile_interview('auth-profile-key'))
         if auth_metadata['auth_ssh_key'] == 'q':
             return ''
     else:
@@ -525,7 +547,7 @@ def get_du_creds(existing_du_url):
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     if existing_du_url == None:
-        user_url = user_io.read_kbd("--> Region URL", [], '', True, True)
+        user_url = user_io.read_kbd("--> Region URL", [], '', True, True, '')
         if user_url == 'q':
             return ''
     else:
@@ -586,7 +608,7 @@ def get_du_creds(existing_du_url):
         sys.stdout.write("    {}. {}\n".format(cnt, target_type))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Region Type", allowed_values, selected_du_type, True, True)
+    user_input = user_io.read_kbd("--> Region Type", allowed_values, selected_du_type, True, True, '')
     if user_input == 'q':
         return ''
     else:
@@ -603,18 +625,18 @@ def get_du_creds(existing_du_url):
     du_metadata['region_name'] = ""
 
     # get common du parameters
-    du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True)
+    du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True, '')
     if du_metadata['du_user'] == 'q':
         return ''
-    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True)
+    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True, '')
     if du_metadata['du_password'] == 'q':
         return ''
     else:
         du_metadata['du_password'] = encryption.encrypt_password(du_metadata['du_password'])
-    du_metadata['du_tenant'] = user_io.read_kbd("--> Region Tenant", [], du_tenant, True, True)
+    du_metadata['du_tenant'] = user_io.read_kbd("--> Region Tenant", [], du_tenant, True, True, '')
     if du_metadata['du_tenant'] == 'q':
         return ''
-    du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True)
+    du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True, '')
     if du_metadata['git_branch'] == 'q':
         return ''
 
@@ -625,20 +647,20 @@ def get_du_creds(existing_du_url):
     du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']",
                                                        ['simple', 'sshkey'],
                                                        region_auth_type,
-                                                       True, True)
+                                                       True, True, '')
     if du_metadata['region_auth_type'] == 'q':
         return ''
     du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access",
                                                     [],
                                                     auth_username,
-                                                    True, True)
+                                                    True, True, '')
     if du_metadata['auth_username'] == 'q':
         return ''
     if du_metadata['region_auth_type'] == "simple":
         du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access",
                                                         [],
                                                         auth_password,
-                                                        False, True)
+                                                        False, True, '')
         if du_metadata['auth_password'] == 'q':
             return ''
         else:
@@ -650,7 +672,7 @@ def get_du_creds(existing_du_url):
         du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access",
                                                        [],
                                                        auth_ssh_key,
-                                                       True, True)
+                                                       True, True, '')
         if du_metadata['auth_ssh_key'] == 'q':
             return ''
     else:
@@ -661,31 +683,31 @@ def get_du_creds(existing_du_url):
         du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy",
                                                        [],
                                                        region_proxy,
-                                                       True, True)
+                                                       True, True, '')
         if du_metadata['region_proxy'] == 'q':
             return ''
         du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)",
                                                      [],
                                                      region_dns,
-                                                     True, True)
+                                                     True, True, '')
         if du_metadata['region_dns'] == 'q':
             return ''
         du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)",
                                                               [],
                                                               region_bond_if_name,
-                                                              True, True)
+                                                              True, True, '')
         if du_metadata['region_bond_if_name'] == 'q':
             return ''
         du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode",
                                                            [],
                                                            region_bond_mode,
-                                                           True, True)
+                                                           True, True, '')
         if du_metadata['region_bond_mode'] == 'q':
             return ''
         du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface",
                                                           [],
                                                           region_bond_mtu,
-                                                          True, True)
+                                                          True, True, '')
         if du_metadata['region_bond_mtu'] == 'q':
             return ''
     else:
@@ -717,7 +739,7 @@ def add_edit_host_profile():
             user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)",
                                           allowed_values,
                                           '',
-                                          True, True)
+                                          True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -747,7 +769,7 @@ def add_edit_bond_profile():
             user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)",
                                           allowed_values,
                                           '',
-                                          True, True)
+                                          True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -777,7 +799,7 @@ def add_edit_role_profile():
             user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)",
                                           allowed_values,
                                           '',
-                                          True, True)
+                                          True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -807,7 +829,7 @@ def add_edit_auth_profile():
             user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)",
                                           allowed_values,
                                           '',
-                                          True, True)
+                                          True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -837,7 +859,7 @@ def add_edit_du():
             user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)",
                                           allowed_values,
                                           '',
-                                          True, True)
+                                          True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -874,7 +896,7 @@ def select_du(du_type_filter=None):
                 sys.stdout.write("{}. {}\n".format(cnt, du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True, '')
             if user_input == "q":
                 return ''
             else:
@@ -898,7 +920,7 @@ def select_target_cluster(du_url):
                 sys.stdout.write("{}. {}\n".format(cnt, cluster['name']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = user_io.read_kbd("Select Cluster", allowed_values, '', True, True)
+            user_input = user_io.read_kbd("Select Cluster", allowed_values, '', True, True, '')
             if user_input == "q":
                 return ''
             else:
@@ -1154,7 +1176,7 @@ def add_region(existing_du_url):
             if sub_region != du['url'].replace('https://',''):
                 sys.stdout.write("{}. {}\n".format(cnt, sub_region))
                 cnt += 1
-        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q', 'y', 'n'], 'n', True, True)
+        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q', 'y', 'n'], 'n', True, True, '')
         if user_input == "q":
             return(None)
         elif user_input == "y":
@@ -1193,16 +1215,16 @@ def add_region(existing_du_url):
             confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM', 'Kubernetes', 'KVM/Kubernetes', 'VMware']",
                                                      region_types,
                                                      du_metadata['du_type'],
-                                                     True, True)
+                                                     True, True, '')
         else:
-            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True)
+            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True, '')
         discover_target['du_type'] = confirmed_region_type
 
         datamodel.write_config(discover_target)
 
     # perform host discovery
     sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
-    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True)
+    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True, '')
     if user_input == "q":
         return(None)
     elif user_input == "y":
