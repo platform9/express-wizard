@@ -10,6 +10,8 @@ def map_yn(map_key):
         return("Enabled")
     elif map_key == "n":
         return("Disabled")
+    elif map_key == "":
+        return("Disabled")
     else:
         return("failed-to-map")
 
@@ -17,22 +19,52 @@ def map_yn(map_key):
 def report_host_profiles(host_profile_entries):
     from prettytable import PrettyTable
 
-    sys.stdout.write("\n------------ Host Profiles ------------\n")
+    sys.stdout.write("\n------------ Host Templates ------------\n")
     if not os.path.isfile(globals.HOST_PROFILE_FILE):
         sys.stdout.write("No host profiles have been defined yet (run 'Manage Host Profiles')\n")
         return()
 
     host_profile_table = PrettyTable()
-    host_profile_table.title = "Host Profiles"
-    host_profile_table.field_names = ["Profile Name","Authorization Profile","Bond Profile"]
+    host_profile_table.title = "Host Templates"
+    host_profile_table.field_names = ["Template Name","Authorization Profile","Role Profile","Bond Profile"]
     host_profile_table.align["Profile Name"] = "l"
     host_profile_table.align["Authorization Profile"] = "l"
+    host_profile_table.align["Role Name"] = "l"
     host_profile_table.align["Bond Profile"] = "l"
 
     for host_profile in host_profile_entries:
-        host_profile_table.add_row([host_profile['host_profile_name'],host_profile['fk_auth_profile'],host_profile['fk_bond_profile']])
+        host_profile_table.add_row([host_profile['host_profile_name'],host_profile['fk_auth_profile'],host_profile['fk_role_profile'],host_profile['fk_bond_profile']])
 
     print(host_profile_table)
+
+
+def report_role_profiles(role_entries):
+    from prettytable import PrettyTable
+
+    sys.stdout.write("\n------------ Role Profiles ------------\n")
+    if not os.path.isfile(globals.ROLE_PROFILE_FILE):
+        sys.stdout.write("No role profiles have been defined yet (run 'Manage Role Profiles')\n")
+        return()
+
+    role_table = PrettyTable()
+    role_table.title = "Role Profiles"
+    role_table.field_names = ["Profile Name","Host Type","Nova","Glance","Cinder","Designate","K8s NodeType"]
+    role_table.align["Profile Name"] = "l"
+    role_table.align["Host Type"] = "l"
+    role_table.align["Nova"] = "l"
+    role_table.align["Glance"] = "l"
+    role_table.align["Cinder"] = "l"
+    role_table.align["Designate"] = "l"
+    role_table.align["K8s NodeType"] = "l"
+
+    for role in role_entries:
+        if role['nova'] == 'y':
+            node_type = "OpenStack (PMO)"
+        if role['pf9-kube'] == 'y':
+            node_type = "Kubernetes (PMK)"
+        role_table.add_row([role['role_name'],node_type,map_yn(role['nova']),map_yn(role['glance']),map_yn(role['cinder']),map_yn(role['designate']),role['node_type']])
+
+    print(role_table)
 
 
 def report_bond_profiles(bond_entries):

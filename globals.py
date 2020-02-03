@@ -10,6 +10,7 @@ HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 AUTH_PROFILE_FILE = "{}/auth-profiles.conf".format(CONFIG_DIR)
 BOND_PROFILE_FILE = "{}/bond-profiles.conf".format(CONFIG_DIR)
+ROLE_PROFILE_FILE = "{}/role-profiles.conf".format(CONFIG_DIR)
 HOST_PROFILE_FILE = "{}/host-profiles.conf".format(CONFIG_DIR)
 
 PF9_VENV = sys.prefix 
@@ -18,7 +19,7 @@ WIZARD_PYTHON = sys.executable
 
 SRC_DIR = "{}/src".format(PF9_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
-EXPRESS_LOG_DIR = "{}/db/express/pf9-express/log".format(PF9_DIR)
+EXPRESS_LOG_DIR = "{}/db/express/log".format(PF9_DIR)
 PF9_EXPRESS = "{}/db/express/pf9-express".format(PF9_DIR)
 PF9_EXPRESS_CONFIG_PATH = "{}/db/express/pf9-express.conf".format(PF9_DIR)
 EXPRESS_INSTALL_DIR = "{}/db/express".format(PF9_DIR)
@@ -42,3 +43,5 @@ bond_modes = [
     "Adaptive Load-Balancing (ALB)"
 ]
 
+# discovery settings
+ADD_HOST_VALIDATE_SSH = False

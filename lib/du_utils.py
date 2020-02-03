@@ -1,5 +1,6 @@
 """lib/du_utils.py"""
 import requests
+import sys
 import json
 import globals
 import pmk_utils
@@ -30,6 +31,8 @@ def login(du_host, username, password, project_name):
             }
         }
     }
+
+    # attempt to login to region
     try:
         resp = requests.post(url,
                              data=json.dumps(body),
@@ -37,7 +40,17 @@ def login(du_host, username, password, project_name):
                              verify=False)
         json_response = json.loads(resp.text)
     except:
-        fail_bootstrap("failed to parse json result")
+        sys.stdout.write("\nERROR: failed to login to region\n")
+        return(None, None)
+
+    # check for login failure
+    try:
+        json_response['error']['code']
+        if json_response['error']['code'] != 200:
+            return(None, None)
+    except:
+        None
+
     return json_response['token']['project']['id'], resp.headers['X-Subject-Token']
 
 
