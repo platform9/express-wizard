@@ -15,7 +15,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 if os.getenv('CLI_BRANCH') and not None:
     cli_branch = os.getenv('CLI_BRANCH')
 else:
-    cli_branch="master"
+    cli_branch="tomchris/restructure"
+    #cli_branch="master"
 
 if os.getenv('CLI_LOCAL_SRC'):
     express_cli_source = 'file://{}#egg=express-cli'.format(path.join(path.dirname(here), 'express-cli'))

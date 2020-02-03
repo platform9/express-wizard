@@ -179,8 +179,6 @@ init_venv_python() {
     if ! (virtualenv -p python${pyver} ${venv} > /dev/null 2>&1); then assert "Creation of virtual environment failed"; fi
     debugging "venv_python:"${venv_python}
     if [ ! -r ${venv_python} ]; then assert "failed to initialize virtual environment"; fi
-    debugging "Upgrade pip"
-    if ! (${venv_python} -m pip install pip --upgrade > /dev/null 2>&1); then assert "Pip upgrade failed"; fi
 }
 
 initialize_basedir() {
@@ -256,10 +254,11 @@ if [ ! -f "${venv_activate}" ]; then
     init_venv_python
 else
     stdout_log "INFO: using exising virtual environment"
-    debugging "Upgrade pip"
-    if ! (${venv_python} -m pip install --upgrade pip setuptools wheel > /dev/null 2>&1); then assert "Pip upgrade failed"; fi
 fi
 
+debugging "Upgrade pip"
+if ! (${venv_python} -m pip install --upgrade pip setuptools wheel > /dev/null 2>&1); then
+    assert "Pip upgrade failed"; fi
 
 stdout_log "Installing Platform9 Express Management Suite"
 if ! (${venv_python} -m pip install --upgrade ${wizard_url} > debugging); then
@@ -307,6 +306,10 @@ echo "To access Platform9 Express Wizard: ${wizard}"
 echo "To access Platform9 Express CLI: ${cli}"
 
 debugging "Wizard Launch Command: ${wizard}${args}"
+# Need to add path to user's bash profile or bashrc
+# Launch wizard -t and CLI --version > /dev/null 2>&1 to ensure they are good to go.
+# Need to Build Dump Screen (What you are left with Post Install)
+# Should have option (or different filename that launches CLI onboarding)
 (${venv_python} ${wizard}${args})
 
 #launch_wizard="(. ${venv_activate} && ${venv_python} ${wizard_script}${args})"
