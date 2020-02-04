@@ -29,6 +29,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
 try:
     import globals, urllib3, requests, json, prettytable, signal, getpass, argparse, subprocess, time
     import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
+    from help_messages import Help
 except:
     debug("EXCEPT: {}".format(sys.exc_info()))
     except_str = str(sys.exc_info()[1])
@@ -197,10 +198,13 @@ def display_menu0():
 
 
 def menu_level2():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu2()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu2"))
         if user_input == '1':
             action_header("MANAGE AUTHORIZATION PROFILES")
             selected_profile = interview.add_edit_auth_profile()
@@ -256,10 +260,13 @@ def menu_level2():
 
 
 def menu_level1():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu1()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu1"))
         if user_input == '1':
             selected_du = interview.select_du()
             if selected_du:
@@ -297,10 +304,13 @@ def menu_level1():
 
 
 def menu_level0():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu0()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, '')
+        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu0"))
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()

@@ -108,3 +108,42 @@ class Help:
         else:
             return(help_strings[question])
 
+
+    def menu_interview(self,question):
+        help_strings = {
+            "menu0": self.help_config.get('menu_interview', 'menu0'),
+            "menu1": self.help_config.get('menu_interview', 'menu1'),
+            "menu2": self.help_config.get('menu_interview', 'menu2')
+        }
+
+        if not question in help_strings:
+            return("ERROR: menu_interview.help_strings missing key: {}".format(question))
+        else:
+            return(help_strings[question])
+
+
+    def region_interview(self,question):
+        help_strings = {
+            "add-region": self.help_config.get('region_interview', 'add-region'),
+            "region-url": self.help_config.get('region_interview', 'region-url'),
+            "region-type": self.help_config.get('region_interview', 'region-type'),
+            "region-username": self.help_config.get('region_interview', 'region-username'),
+            "region-password": self.help_config.get('region_interview', 'region-password'),
+            "region-tentant": self.help_config.get('region_interview', 'region-tentant'),
+            "region-branch": self.help_config.get('region_interview', 'region-branch'),
+            "region-auth-type": self.help_config.get('region_interview', 'region-auth-type'),
+            "region-ssh-username": self.help_config.get('region_interview', 'region-ssh-username'),
+            "region-ssh-password": self.help_config.get('region_interview', 'region-ssh-password'),
+            "region-ssh-key": self.help_config.get('region_interview', 'region-ssh-key'),
+            "region-http-proxy": self.help_config.get('region_interview', 'region-http-proxy'),
+            "region-dns": self.help_config.get('region_interview', 'region-dns'),
+            "region-bond-if-name": self.help_config.get('region_interview', 'region-bond-if-name'),
+            "region-bond-mode": self.help_config.get('region_interview', 'region-bond-mode'),
+            "region-bond-mtu": self.help_config.get('region_interview', 'region-bond-mtu')
+        }
+
+        if not question in help_strings:
+            return("ERROR: region_interview.help_strings missing key: {}".format(question))
+        else:
+            return(help_strings[question])
+

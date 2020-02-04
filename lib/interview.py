@@ -540,6 +540,9 @@ def get_auth_settings(existing_auth_profile):
 
 
 def get_du_creds(existing_du_url):
+    # intialize help
+    help = Help()
+
     # initialize du data structure
     du_metadata = datamodel.create_du_entry()
 
@@ -547,7 +550,7 @@ def get_du_creds(existing_du_url):
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     if existing_du_url == None:
-        user_url = user_io.read_kbd("--> Region URL", [], '', True, True, '')
+        user_url = user_io.read_kbd("--> Region URL", [], '', True, True, help.region_interview("region-url"))
         if user_url == 'q':
             return ''
     else:
@@ -608,7 +611,7 @@ def get_du_creds(existing_du_url):
         sys.stdout.write("    {}. {}\n".format(cnt, target_type))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("--> Region Type", allowed_values, selected_du_type, True, True, '')
+    user_input = user_io.read_kbd("--> Region Type", allowed_values, selected_du_type, True, True, help.region_interview("region-type"))
     if user_input == 'q':
         return ''
     else:
@@ -625,18 +628,18 @@ def get_du_creds(existing_du_url):
     du_metadata['region_name'] = ""
 
     # get common du parameters
-    du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True, '')
+    du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True, help.region_interview("region-username"))
     if du_metadata['du_user'] == 'q':
         return ''
-    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True, '')
+    du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True, help.region_interview("region-password"))
     if du_metadata['du_password'] == 'q':
         return ''
     else:
         du_metadata['du_password'] = encryption.encrypt_password(du_metadata['du_password'])
-    du_metadata['du_tenant'] = user_io.read_kbd("--> Region Tenant", [], du_tenant, True, True, '')
+    du_metadata['du_tenant'] = user_io.read_kbd("--> Region Tenant", [], du_tenant, True, True, help.region_interview("region-tentant"))
     if du_metadata['du_tenant'] == 'q':
         return ''
-    du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True, '')
+    du_metadata['git_branch'] = user_io.read_kbd("--> GIT Branch (for PF9-Express)", [], git_branch, True, True, help.region_interview("region-branch"))
     if du_metadata['git_branch'] == 'q':
         return ''
 
@@ -647,20 +650,20 @@ def get_du_creds(existing_du_url):
     du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']",
                                                        ['simple', 'sshkey'],
                                                        region_auth_type,
-                                                       True, True, '')
+                                                       True, True, help.region_interview("region-auth-type"))
     if du_metadata['region_auth_type'] == 'q':
         return ''
     du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access",
                                                     [],
                                                     auth_username,
-                                                    True, True, '')
+                                                    True, True, help.region_interview("region-ssh-username"))
     if du_metadata['auth_username'] == 'q':
         return ''
     if du_metadata['region_auth_type'] == "simple":
         du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access",
                                                         [],
                                                         auth_password,
-                                                        False, True, '')
+                                                        False, True, help.region_interview("region-ssh-password"))
         if du_metadata['auth_password'] == 'q':
             return ''
         else:
@@ -672,7 +675,7 @@ def get_du_creds(existing_du_url):
         du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access",
                                                        [],
                                                        auth_ssh_key,
-                                                       True, True, '')
+                                                       True, True, help.region_interview("region-ssh-key"))
         if du_metadata['auth_ssh_key'] == 'q':
             return ''
     else:
@@ -683,31 +686,31 @@ def get_du_creds(existing_du_url):
         du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy",
                                                        [],
                                                        region_proxy,
-                                                       True, True, '')
+                                                       True, True, help.region_interview("region-http-proxy"))
         if du_metadata['region_proxy'] == 'q':
             return ''
         du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)",
                                                      [],
                                                      region_dns,
-                                                     True, True, '')
+                                                     True, True, help.region_interview("region-dns"))
         if du_metadata['region_dns'] == 'q':
             return ''
         du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)",
                                                               [],
                                                               region_bond_if_name,
-                                                              True, True, '')
+                                                              True, True, help.region_interview("region-bond-if-name"))
         if du_metadata['region_bond_if_name'] == 'q':
             return ''
         du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode",
                                                            [],
                                                            region_bond_mode,
-                                                           True, True, '')
+                                                           True, True, help.region_interview("region-bond-mode"))
         if du_metadata['region_bond_mode'] == 'q':
             return ''
         du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface",
                                                           [],
                                                           region_bond_mtu,
-                                                          True, True, '')
+                                                          True, True, help.region_interview("region-bond-mtu"))
         if du_metadata['region_bond_mtu'] == 'q':
             return ''
     else:
@@ -841,6 +844,9 @@ def add_edit_auth_profile():
 
 
 def add_edit_du():
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.CONFIG_FILE):
         return("define-new-du")
     else:
@@ -859,7 +865,7 @@ def add_edit_du():
             user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)",
                                           allowed_values,
                                           '',
-                                          True, True, '')
+                                          True, True, help.region_interview("add-region"))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
