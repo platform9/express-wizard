@@ -83,7 +83,7 @@ def read_kbd(user_prompt, allowed_values, default_value, flag_echo, disallow_nul
                 user_input = getpass.getpass(prompt="{}: ".format(user_prompt), stream=None)
 
         if user_input in ['help','h']:
-            sys.stdout.write("\n------------------------ Wizard Help ------------------------\n{}\n\n".format(help_text))
+            sys.stdout.write("\n[ WIZARD HELP ]\n{}\n\n".format(help_text))
         elif user_input == "":
             if disallow_null == True:
                 if default_value != "":

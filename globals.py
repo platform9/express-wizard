@@ -1,5 +1,6 @@
 """Global Variable Defaults"""
 from os.path import expanduser
+import os
 import sys
 
 # globals
@@ -46,3 +47,7 @@ bond_modes = [
 
 # discovery settings
 ADD_HOST_VALIDATE_SSH = False
+
+# get terminal width
+terminal_width = int(os.popen('stty size', 'r').read().split()[1])
+

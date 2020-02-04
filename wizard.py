@@ -76,12 +76,13 @@ def run_cmd(cmd):
 
 
 def dump_text_file(target_file):
-    BAR = "======================================================================================================"
     try:
         target_fh = open(target_file, 'r')
-        sys.stdout.write('========== {0:^80} ==========\n'.format(target_file))
+        title = "  START OF: {}  ".format(target_file)
+        sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
         sys.stdout.write(target_fh.read())
-        sys.stdout.write('{}\n'.format(BAR))
+        footer = "  END OF: {}  ".format(target_file)
+        sys.stdout.write("{}\n".format(footer.center(globals.terminal_width, '*')))
         target_fh.close()
     except:
         sys.stdout.write("ERROR: failed to open file: {}".format(target_file))
@@ -145,9 +146,8 @@ def dump_database(db_file):
 
 
 def action_header(title):
-    MAX_WIDTH = 132
     title = "  {}  ".format(title)
-    sys.stdout.write("\n{}".format(title.center(MAX_WIDTH, '*')))
+    sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
 
 
 def display_menu2():
@@ -204,7 +204,7 @@ def menu_level2():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu2()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu2"))
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu2"))
         if user_input == '1':
             action_header("MANAGE AUTHORIZATION PROFILES")
             selected_profile = interview.add_edit_auth_profile()
@@ -266,7 +266,7 @@ def menu_level1():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu1()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu1"))
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu1"))
         if user_input == '1':
             selected_du = interview.select_du()
             if selected_du:
@@ -310,7 +310,7 @@ def menu_level0():
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu0()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True, help.menu_interview("menu0"))
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu0"))
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()
