@@ -1,19 +1,26 @@
 """libs/help.py"""
 import os
 import sys
-import ConfigParser
 import globals
+try:
+    import ConfigParser
+except ImportError:
+    import configparser
 
 class Help:
     """Standardized help strings"""
 
-    help_config = ConfigParser.ConfigParser()
+    if sys.version_info[0] == 2:
+        help_config = ConfigParser.ConfigParser()
+    else:
+        help_config = configparser.ConfigParser()
 
     def __init__(self):
         try:
             self.help_config.read(globals.HELP_FILE)
-        except:
-            sys.stdout.write("ERROR: failed to initialize help subsystem, failed to open: {}".format(globals.HELP_FILE))
+        except Exception as ex:
+            sys.stdout.write("ERROR: failed to initialize help subsystem, failed to parse: {}\n".format(globals.HELP_FILE))
+            sys.stdout.write("ConfigParser.Exception: {}\n".format(ex.message))
             sys.exit(1)
 
     def host_interview(self,question):
