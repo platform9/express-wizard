@@ -158,7 +158,7 @@ def get_host_metadata(du, project_id, token):
             host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
 
     sys.stdout.write("\nNetwork Parameters:\n")
-    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True, help.host_interview("Primary IP"))
+    host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True, help.host_interview("primary-ip"))
     if host_metadata['ip'] == "q":
         return ''
     host_metadata['sub_if_config'] = user_io.read_kbd("--> Sub-Interfaces", [], host_sub_if_config, True, False, help.host_interview("Sub-Interfaces"))

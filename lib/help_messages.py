@@ -20,7 +20,8 @@ class Help:
         help_strings = {
             "host-type": self.help_config.get('host_interview', 'host-type'),
             "Hostname": self.help_config.get('host_interview', 'hostname'),
-            "host-template": self.help_config.get('host_interview', 'host-template')
+            "host-template": self.help_config.get('host_interview', 'host-template'),
+            "primary-ip": self.help_config.get('host_interview', 'primary-ip')
         }
 
         if not question in help_strings:
