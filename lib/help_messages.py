@@ -37,7 +37,10 @@ class Help:
             "select-workers": self.help_config.get('onboard_interview', 'select-workers'),
             "express-prereqs": self.help_config.get('onboard_interview', 'express-prereqs'),
             "run-express": self.help_config.get('onboard_interview', 'run-express'),
-            "run-express-cli": self.help_config.get('onboard_interview', 'run-express-cli')
+            "run-express-cli": self.help_config.get('onboard_interview', 'run-express-cli'),
+            "select-inventory": self.help_config.get('onboard_interview', 'select-inventory'),
+            "custom-inventory": self.help_config.get('onboard_interview', 'custom-inventory'),
+            "role-assignment": self.help_config.get('onboard_interview', 'role-assignment')
         }
 
         if not question in help_strings:
@@ -72,7 +75,9 @@ class Help:
             "host-profile-name": self.help_config.get('host_profile_interview', 'host-profile-name'),
             "auth-profile-name": self.help_config.get('host_profile_interview', 'auth-profile-name'),
             "bond-profile-name": self.help_config.get('host_profile_interview', 'bond-profile-name'),
-            "role-profile-name": self.help_config.get('host_profile_interview', 'role-profile-name')
+            "role-profile-name": self.help_config.get('host_profile_interview', 'role-profile-name'),
+            "select-host-profile": self.help_config.get('host_profile_interview', 'select-host-profile'),
+            "update-bond-profile": self.help_config.get('host_profile_interview', 'update-bond-profile')
         }
 
         if not question in help_strings:
@@ -103,7 +108,8 @@ class Help:
             "role-pmo-glance": self.help_config.get('role_profile_interview', 'role-pmo-glance'),
             "role-pmo-cinder": self.help_config.get('role_profile_interview', 'role-pmo-cinder'),
             "role-pmo-designate": self.help_config.get('role_profile_interview', 'role-pmo-designate'),
-            "role-k8s-node-type": self.help_config.get('role_profile_interview', 'role-k8s-node-type')
+            "role-k8s-node-type": self.help_config.get('role_profile_interview', 'role-k8s-node-type'),
+            "update-role-profile": self.help_config.get('role_profile_interview', 'update-role-profile')
         }
 
         if not question in help_strings:
@@ -118,7 +124,8 @@ class Help:
             "auth-profile-type": self.help_config.get('auth_profile_interview', 'auth-profile-type'),
             "auth-profile-username": self.help_config.get('auth_profile_interview', 'auth-profile-username'),
             "auth-profile-password": self.help_config.get('auth_profile_interview', 'auth-profile-password'),
-            "auth-profile-key": self.help_config.get('auth_profile_interview', 'auth-profile-key')
+            "auth-profile-key": self.help_config.get('auth_profile_interview', 'auth-profile-key'),
+            "update-auth-profile": self.help_config.get('auth_profile_interview', 'update-auth-profile')
         }
 
         if not question in help_strings:
@@ -131,7 +138,9 @@ class Help:
         help_strings = {
             "menu0": self.help_config.get('menu_interview', 'menu0'),
             "menu1": self.help_config.get('menu_interview', 'menu1'),
-            "menu2": self.help_config.get('menu_interview', 'menu2')
+            "menu2": self.help_config.get('menu_interview', 'menu2'),
+            "select-log": self.help_config.get('menu_interview', 'select-log'),
+            "add-another-host": self.help_config.get('menu_interview', 'add-another-host')
         }
 
         if not question in help_strings:

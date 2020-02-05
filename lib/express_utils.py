@@ -434,6 +434,9 @@ def run_express_cli(du):
 
 
 def run_express(du,host_entries):
+    # intialize help
+    help = Help()
+
     sys.stdout.write("\nPF9-Express Inventory (region type = {})\n".format(du['du_type']))
     if du['du_type'] == "Kubernetes":
         express_inventories = [
@@ -468,20 +471,20 @@ def run_express(du,host_entries):
     custom_idx = cnt
     sys.stdout.write("    {}. custom inventory\n".format(cnt))
     allowed_values.append(str(cnt))
-    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '1', True, True, '')
+    user_input = user_io.read_kbd("\nSelect Inventory (to run PF9-Express against)", allowed_values, '1', True, True, help.onboard_interview("select-inventory"))
     if user_input == "q":
         return()
     if int(user_input) != custom_idx:
         idx = int(user_input) - 1
         target_inventory = express_inventories[idx]
     else:
-        user_input = user_io.read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True, '')
+        user_input = user_io.read_kbd("\nInventory Targets (comma/space-delimitted list of hostnames)", [], '', True, True, help.onboard_interview("custom-inventory"))
         target_inventory = user_input
 
     sys.stdout.write("\nPF9-Express Role Assignment\n")
     sys.stdout.write("    1. Install Hostagent\n")
     sys.stdout.write("    2. Install Hostagent and Assign Roles\n")
-    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '2', True, True, '')
+    assign_roles = user_io.read_kbd("\nRole Assignment", ['q','1','2'], '2', True, True, help.onboard_interview("role-assignment"))
     if assign_roles == "q":
         return()
     else:

@@ -89,13 +89,16 @@ def dump_text_file(target_file):
 
 
 def view_log(log_files):
+    # intialize help
+    help = Help()
+
     cnt = 1
     allowed_values = ['q']
     for log_file in log_files:
         sys.stdout.write("{}. {}\n".format(cnt, log_file))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True, '')
+    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True, help.menu_interview("select-log"))
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
@@ -104,15 +107,22 @@ def view_log(log_files):
 
 
 def get_logs():
+    MAX_LOGS = 10
     log_files = []
+    cnt = 0
     if not os.path.isdir(globals.EXPRESS_LOG_DIR):
         return log_files
 
     for r, d, f in os.walk(globals.EXPRESS_LOG_DIR):
-        for file in f:
+        # traverse list in reverse order (to show newest logs first)
+        for file in f[::-1]:
+            if cnt >= MAX_LOGS:
+                break
+
             if file == ".keep":
                 continue
             log_files.append(file)
+            cnt += 1
 
     return log_files
 
@@ -340,7 +350,7 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, '')
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, help.menu_interview("add-another-host"))
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '5':

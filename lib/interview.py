@@ -694,6 +694,9 @@ def get_du_creds(existing_du_url):
 
 
 def add_edit_host_profile():
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.HOST_PROFILE_FILE):
         return("define-new-host-profile")
     else:
@@ -709,7 +712,7 @@ def add_edit_host_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, help.host_profile_interview("select-host-profile"))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -721,6 +724,9 @@ def add_edit_host_profile():
 
 
 def add_edit_bond_profile():
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.BOND_PROFILE_FILE):
         return("define-new-bond-profile")
     else:
@@ -736,7 +742,7 @@ def add_edit_bond_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, help.host_profile_interview('update-bond-profile'))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -748,6 +754,9 @@ def add_edit_bond_profile():
 
 
 def add_edit_role_profile():
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.ROLE_PROFILE_FILE):
         return("define-new-role-profile")
     else:
@@ -763,7 +772,7 @@ def add_edit_role_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, help.role_profile_interview("update-role-profile"))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -775,6 +784,9 @@ def add_edit_role_profile():
 
 
 def add_edit_auth_profile():
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.AUTH_PROFILE_FILE):
         return("define-new-auth-profile")
     else:
@@ -790,7 +802,7 @@ def add_edit_auth_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, help.auth_profile_interview("update-auth-profile"))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
