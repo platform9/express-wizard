@@ -228,10 +228,7 @@ def select_cluster(du_url, current_assigned_cluster):
             allowed_values.append(str(cnt))
             sys.stdout.write("    {}. Unassigned\n".format(cnt))
 
-            user_input = user_io.read_kbd("--> Select Cluster",
-                                          allowed_values,
-                                          current_assigned_cluster,
-                                          True, True, help.cluster_interview("select-cluster"))
+            user_input = user_io.read_kbd("--> Select Cluster", allowed_values, current_assigned_cluster, True, True, help.cluster_interview("select-cluster"))
             if user_input == "q":
                 return(selected_cluster)
             else:
@@ -647,23 +644,14 @@ def get_du_creds(existing_du_url):
     sys.stdout.write("\nRegion-level Host Attributes\n")
     sys.stdout.write("----------------------------\n")
     sys.stdout.write("These settings apply to all hosts within the region. For host-specific overrides, use Host Profiles.\n\n")
-    du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']",
-                                                       ['simple', 'sshkey'],
-                                                       region_auth_type,
-                                                       True, True, help.region_interview("region-auth-type"))
+    du_metadata['region_auth_type'] = user_io.read_kbd("--> Authentication Type ['simple', 'sshkey']", ['simple', 'sshkey'], region_auth_type, True, True, help.region_interview("region-auth-type"))
     if du_metadata['region_auth_type'] == 'q':
         return ''
-    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access",
-                                                    [],
-                                                    auth_username,
-                                                    True, True, help.region_interview("region-ssh-username"))
+    du_metadata['auth_username'] = user_io.read_kbd("--> Username for Remote Host Access", [], auth_username, True, True, help.region_interview("region-ssh-username"))
     if du_metadata['auth_username'] == 'q':
         return ''
     if du_metadata['region_auth_type'] == "simple":
-        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access",
-                                                        [],
-                                                        auth_password,
-                                                        False, True, help.region_interview("region-ssh-password"))
+        du_metadata['auth_password'] = user_io.read_kbd("--> Password for Remote Host Access", [], auth_password, False, True, help.region_interview("region-ssh-password"))
         if du_metadata['auth_password'] == 'q':
             return ''
         else:
@@ -672,10 +660,7 @@ def get_du_creds(existing_du_url):
         du_metadata['auth_password'] = ""
   
     if du_metadata['region_auth_type'] == "sshkey":
-        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access",
-                                                       [],
-                                                       auth_ssh_key,
-                                                       True, True, help.region_interview("region-ssh-key"))
+        du_metadata['auth_ssh_key'] = user_io.read_kbd("--> SSH Key for Remote Host Access", [], auth_ssh_key, True, True, help.region_interview("region-ssh-key"))
         if du_metadata['auth_ssh_key'] == 'q':
             return ''
     else:
@@ -683,34 +668,19 @@ def get_du_creds(existing_du_url):
 
     # get du-specific parameters
     if selected_du_type in ['KVM','KVM/Kubernetes']:
-        du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy",
-                                                       [],
-                                                       region_proxy,
-                                                       True, True, help.region_interview("region-http-proxy"))
+        du_metadata['region_proxy'] = user_io.read_kbd("--> Proxy", [], region_proxy, True, True, help.region_interview("region-http-proxy"))
         if du_metadata['region_proxy'] == 'q':
             return ''
-        du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)",
-                                                     [],
-                                                     region_dns,
-                                                     True, True, help.region_interview("region-dns"))
+        du_metadata['region_dns'] = user_io.read_kbd("--> DNS Server (comma-delimited list or IPs)", [], region_dns, True, True, help.region_interview("region-dns"))
         if du_metadata['region_dns'] == 'q':
             return ''
-        du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)",
-                                                              [],
-                                                              region_bond_if_name,
-                                                              True, True, help.region_interview("region-bond-if-name"))
+        du_metadata['region_bond_if_name'] = user_io.read_kbd("--> Interface Name (for OVS Bond)", [], region_bond_if_name, True, True, help.region_interview("region-bond-if-name"))
         if du_metadata['region_bond_if_name'] == 'q':
             return ''
-        du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode",
-                                                           [],
-                                                           region_bond_mode,
-                                                           True, True, help.region_interview("region-bond-mode"))
+        du_metadata['region_bond_mode'] = user_io.read_kbd("--> Bond Mode", [], region_bond_mode, True, True, help.region_interview("region-bond-mode"))
         if du_metadata['region_bond_mode'] == 'q':
             return ''
-        du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface",
-                                                          [],
-                                                          region_bond_mtu,
-                                                          True, True, help.region_interview("region-bond-mtu"))
+        du_metadata['region_bond_mtu'] = user_io.read_kbd("--> MTU for Bond Interface", [], region_bond_mtu, True, True, help.region_interview("region-bond-mtu"))
         if du_metadata['region_bond_mtu'] == 'q':
             return ''
     else:
@@ -739,10 +709,7 @@ def add_edit_host_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)",
-                                          allowed_values,
-                                          '',
-                                          True, True, '')
+            user_input = user_io.read_kbd("Select Host Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -769,10 +736,7 @@ def add_edit_bond_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)",
-                                          allowed_values,
-                                          '',
-                                          True, True, '')
+            user_input = user_io.read_kbd("Select Bond Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -799,10 +763,7 @@ def add_edit_role_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)",
-                                          allowed_values,
-                                          '',
-                                          True, True, '')
+            user_input = user_io.read_kbd("Select Role Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -829,10 +790,7 @@ def add_edit_auth_profile():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)",
-                                          allowed_values,
-                                          '',
-                                          True, True, '')
+            user_input = user_io.read_kbd("Select Auth Profile to Update (enter 'n' to create a New Profile)", allowed_values, '', True, True, '')
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -862,10 +820,7 @@ def add_edit_du():
                 allowed_values.append(str(cnt))
                 cnt += 1
             sys.stdout.write("\n")
-            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)",
-                                          allowed_values,
-                                          '',
-                                          True, True, help.region_interview("add-region"))
+            user_input = user_io.read_kbd("Select Region to Update/Rediscover (enter 'n' to create a New Region)", allowed_values, '', True, True, help.region_interview("add-region"))
             if user_input == "q":
                 return(None)
             elif user_input == "n":
@@ -877,6 +832,9 @@ def add_edit_du():
 
 
 def select_du(du_type_filter=None):
+    # intialize help
+    help = Help()
+
     if not os.path.isdir(globals.CONFIG_DIR):
         sys.stdout.write("\nNo regions have been defined yet (run 'Discover/Add Region')\n")
     elif not os.path.isfile(globals.CONFIG_FILE):
@@ -902,7 +860,7 @@ def select_du(du_type_filter=None):
                 sys.stdout.write("{}. {}\n".format(cnt, du['url']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = user_io.read_kbd("Enter Selection", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Selection", allowed_values, '', True, True, help.region_interview("select-region"))
             if user_input == "q":
                 return ''
             else:
@@ -912,6 +870,9 @@ def select_du(du_type_filter=None):
 
 
 def select_target_cluster(du_url):
+    # intialize help
+    help = Help()
+
     if not os.path.isfile(globals.CLUSTER_FILE):
         sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
     else:
@@ -919,6 +880,7 @@ def select_target_cluster(du_url):
         if len(current_clusters) == 0:
             sys.stdout.write("\nNo clusters have been defined yet (run 'Discover/Add Clusters')\n")
         else:
+            sys.stdout.write("\nSelect Cluster (for node attachment)")
             cnt = 1
             allowed_values = ['q']
             sys.stdout.write("\n")
@@ -926,7 +888,7 @@ def select_target_cluster(du_url):
                 sys.stdout.write("{}. {}\n".format(cnt, cluster['name']))
                 allowed_values.append(str(cnt))
                 cnt += 1
-            user_input = user_io.read_kbd("Select Cluster", allowed_values, '', True, True, '')
+            user_input = user_io.read_kbd("Selection", allowed_values, '', True, True, help.cluster_interview("select-cluster"))
             if user_input == "q":
                 return ''
             else:
@@ -1124,6 +1086,9 @@ def add_auth_profile(existing_auth_profile):
 
 
 def add_region(existing_du_url):
+    # intialize help
+    help = Help()
+
     if existing_du_url == None:
         sys.stdout.write("\nAdding a Region:\n")
     else:
@@ -1182,7 +1147,7 @@ def add_region(existing_du_url):
             if sub_region != du['url'].replace('https://',''):
                 sys.stdout.write("{}. {}\n".format(cnt, sub_region))
                 cnt += 1
-        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q', 'y', 'n'], 'n', True, True, '')
+        user_input = user_io.read_kbd("\nDo you want to discover these regions as well", ['q', 'y', 'n'], 'n', True, True, help.region_interview("discover-region"))
         if user_input == "q":
             return(None)
         elif user_input == "y":
@@ -1218,19 +1183,16 @@ def add_region(existing_du_url):
                                            discover_target['password'],
                                            discover_target['tenant'])
         if discover_target['url'] == du_metadata['du_url']:
-            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM', 'Kubernetes', 'KVM/Kubernetes', 'VMware']",
-                                                     region_types,
-                                                     du_metadata['du_type'],
-                                                     True, True, '')
+            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM', 'Kubernetes', 'KVM/Kubernetes', 'VMware']", region_types, du_metadata['du_type'], True, True, help.region_interview("confirm-region-type"))
         else:
-            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True, '')
+            confirmed_region_type = user_io.read_kbd("    Confirm region type ['KVM','Kubernetes','KVM/Kubernetes','VMware']", region_types, region_type, True, True, help.region_interview("confirm-region-type"))
         discover_target['du_type'] = confirmed_region_type
 
         datamodel.write_config(discover_target)
 
     # perform host discovery
     sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
-    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True, '')
+    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True, help.region_interview("validate-ssh-connectivity"))
     if user_input == "q":
         return(None)
     elif user_input == "y":

@@ -29,9 +29,27 @@ class Help:
             return(help_strings[question])
 
 
+    def onboard_interview(self,question):
+        help_strings = {
+            "attach-masters": self.help_config.get('onboard_interview', 'attach-masters'),
+            "select-masters": self.help_config.get('onboard_interview', 'select-masters'),
+            "attach-workers": self.help_config.get('onboard_interview', 'attach-workers'),
+            "select-workers": self.help_config.get('onboard_interview', 'select-workers'),
+            "express-prereqs": self.help_config.get('onboard_interview', 'express-prereqs'),
+            "run-express": self.help_config.get('onboard_interview', 'run-express'),
+            "run-express-cli": self.help_config.get('onboard_interview', 'run-express-cli')
+        }
+
+        if not question in help_strings:
+            return("ERROR: onboard_interview.help_strings missing key: {}".format(question))
+        else:
+            return(help_strings[question])
+
+
     def cluster_interview(self,question):
         help_strings = {
             "cluster-name": self.help_config.get('cluster_interview', 'cluster-name'),
+            "select-cluster": self.help_config.get('cluster_interview', 'select-cluster'),
             "containers-cidr": self.help_config.get('cluster_interview', 'containers-cidr'),
             "services-cird": self.help_config.get('cluster_interview', 'services-cird'),
             "master-vip": self.help_config.get('cluster_interview', 'master-vip'),
@@ -125,6 +143,10 @@ class Help:
     def region_interview(self,question):
         help_strings = {
             "add-region": self.help_config.get('region_interview', 'add-region'),
+            "discover-region": self.help_config.get('region_interview', 'discover-region'),
+            "select-region": self.help_config.get('region_interview', 'select-region'),
+            "confirm-region-type": self.help_config.get('region_interview', 'confirm-region-type'),
+            "validate-ssh-connectivity": self.help_config.get('region_interview', 'validate-ssh-connectivity'),
             "region-url": self.help_config.get('region_interview', 'region-url'),
             "region-type": self.help_config.get('region_interview', 'region-type'),
             "region-username": self.help_config.get('region_interview', 'region-username'),

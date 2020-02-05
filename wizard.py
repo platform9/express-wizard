@@ -352,7 +352,7 @@ def menu_level0():
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
                         express_utils.run_express_cli(selected_du)
                     elif selected_du['du_type'] == "KVM":
-                        sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
+                        sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
         elif user_input == '6':
