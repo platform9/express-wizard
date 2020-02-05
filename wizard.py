@@ -79,7 +79,7 @@ def dump_text_file(target_file):
     try:
         target_fh = open(target_file, 'r')
         title = "  START OF: {}  ".format(target_file)
-        sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
+        sys.stdout.write("\n{}\n".format(title.center(globals.terminal_width, '*')))
         sys.stdout.write(target_fh.read())
         footer = "  END OF: {}  ".format(target_file)
         sys.stdout.write("{}\n".format(footer.center(globals.terminal_width, '*')))

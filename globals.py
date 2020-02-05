@@ -48,6 +48,4 @@ bond_modes = [
 # discovery settings
 ADD_HOST_VALIDATE_SSH = False
 
-# get terminal width
-terminal_width = int(os.popen('stty size', 'r').read().split()[1])
-
+terminal_width = 120
