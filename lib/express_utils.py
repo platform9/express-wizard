@@ -230,7 +230,7 @@ def tail_log(p):
         if sys.version_info[0] == 2:
             sys.stdout.write(current_line)
         else:
-            sys.stdout.write(str(current_line))
+            sys.stdout.write(current_line.decode())
         if p.poll() != None:
             if current_line == last_line:
                 sys.stdout.write("-------------------------------- Process Complete -------------------------------\n")
