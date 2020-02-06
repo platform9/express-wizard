@@ -53,15 +53,20 @@ def discover_host(du_metadata, host):
         discover_metadata['message'] = "discovery-disabled"
         return(discover_metadata)
 
-    auth_profile_metadata = datamodel.get_auth_profile_metadata(host['fk_auth_profile'])
-    if auth_profile_metadata:
-        ssh_key = auth_profile_metadata['auth_ssh_key']
-        ssh_user = auth_profile_metadata['auth_username']
+    host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
+    if host_profile_metadata:
+        auth_type = host_profile_metadata['auth_profile']['auth_type']
+        ssh_key = host_profile_metadata['auth_profile']['auth_ssh_key']
+        ssh_user = host_profile_metadata['auth_profile']['auth_username']
     else:
+        auth_type = du_metadata['auth_type']
         ssh_key = du_metadata['auth_ssh_key']
         ssh_user = du_metadata['auth_username']
 
-    if du_metadata['auth_type'] == "simple":
+    #ssh_key = du_metadata['auth_ssh_key']
+    #ssh_user = du_metadata['auth_username']
+
+    if auth_type == "simple":
         return(discover_metadata)
     elif du_metadata['auth_type'] == "sshkey":
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,host['ip'],target_script)

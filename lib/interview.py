@@ -114,7 +114,7 @@ def get_host_metadata(du, project_id, token):
     if host_settings:
         host_ip = host_settings['ip']
         host_ip_interfaces = host_settings['ip_interfaces']
-        fk_auth_profile = host_settings['fk_auth_profile']
+        fk_host_profile = host_settings['fk_host_profile']
         host_sub_if_config = host_settings['sub_if_config']
         host_nova = host_settings['nova']
         host_glance = host_settings['glance']
@@ -137,7 +137,7 @@ def get_host_metadata(du, project_id, token):
         host_cluster_name = "Unassigned"
         host_metadata['ip_interfaces'] = ""
         host_metadata['uuid'] = ""
-        fk_auth_profile = ""
+        fk_host_profile = ""
 
     # prompt for host template
     sys.stdout.write("\nHost Templates:\n")
@@ -152,13 +152,10 @@ def get_host_metadata(du, project_id, token):
     if user_input == 'q':
         return ''
     else:
-        print("======== setting fk_auth_profile ======================================")
         if type(user_input) is int or user_input.isdigit():
-            host_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
+            host_metadata['fk_host_profile'] = auth_profile_list[int(user_input)-1]
         else:
-            host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
-        print("set to: {}".format(host_metadata['fk_auth_profile']))
-        print("=======================================================================")
+            host_metadata['fk_host_profile'] = auth_profile_list[user_input]
 
     sys.stdout.write("\nNetwork Parameters:\n")
     host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True, help.host_interview("primary-ip"))
@@ -169,7 +166,7 @@ def get_host_metadata(du, project_id, token):
         return ''
 
     # get host profile metadata
-    host_profile_metadata = datamodel.get_aggregate_host_profile(host_metadata['fk_auth_profile'])
+    host_profile_metadata = datamodel.get_aggregate_host_profile(host_metadata['fk_host_profile'])
     if not host_profile_metadata:
         sys.stdout.write("ERROR: failed to lookup metadata for host template\n")
         return ''
@@ -974,6 +971,7 @@ def add_host(du):
             host['ip_interfaces'] = host_metadata['ip_interfaces']
             host['hostname'] = host_metadata['hostname']
             host['record_source'] = host_metadata['record_source']
+            host['fk_host_profile'] = host_metadata['fk_host_profile']
             host['sub_if_config'] = host_metadata['sub_if_config']
             host['pf9-kube'] = host_metadata['pf9-kube']
             host['nova'] = host_metadata['nova']
@@ -1000,11 +998,13 @@ def add_host(du):
                 else:
                     ssh_status = "Unvalidated"
 
-                # discover host (fred)
-                discovered_interfaces = ssh_utils.discover_host(du, host)
-
             # update host record / persist configurtion
             host['ssh_status'] = ssh_status
+            datamodel.write_host(host)
+
+            # discover host
+            discovered_interfaces = ssh_utils.discover_host(du, host)
+            host['ssh_status'] = discovered_interfaces['message']
             datamodel.write_host(host)
 
 

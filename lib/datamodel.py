@@ -47,7 +47,7 @@ def create_host_entry():
         'cluster_name': "",
         'cluster_attach_status': "",
         'cluster_uuid': "",
-        'fk_auth_profile': ""
+        'fk_host_profile': ""
     }
     return(host_record)
 
@@ -718,6 +718,8 @@ def get_cluster_uuid(du_url, cluster_name):
 
 def get_aggregate_host_profile(host_profile_name):
     host_profile_metadata = {}
+    if host_profile_name == "":
+        return(host_profile_metadata)
 
     host_profile = get_host_profile_metadata(host_profile_name)
     auth_profile = get_auth_profile_metadata(host_profile['fk_auth_profile'])
