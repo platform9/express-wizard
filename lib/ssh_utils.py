@@ -1,6 +1,7 @@
 import os
 import sys
 import globals
+import datamodel
 
 def run_cmd(cmd):
     cmd_stdout = ""
@@ -33,7 +34,16 @@ def validate_login(du_metadata, host_ip):
     return(False)
 
 
-def discover_host(du_metadata, host_ip):
+def search_discovery_data(discovery_stdout, key_name):
+    discovery_data = ""
+    for line in discovery_stdout:
+        if line.startswith(key_name):
+            discovery_data = line
+            break
+    return(discovery_data)
+
+
+def discover_host(du_metadata, host):
     discover_metadata = {}
     source_script = "/tmp/ssh_discovery.sh"
     target_script = "/tmp/ssh_discovery.sh"
@@ -43,14 +53,24 @@ def discover_host(du_metadata, host_ip):
         discover_metadata['message'] = "discovery-disabled"
         return(discover_metadata)
 
+    auth_profile_metadata = datamodel.get_auth_profile_metadata(host['fk_auth_profile'])
+    if auth_profile_metadata:
+        ssh_key = auth_profile_metadata['auth_ssh_key']
+        ssh_user = auth_profile_metadata['auth_username']
+    else:
+        ssh_key = du_metadata['auth_ssh_key']
+        ssh_user = du_metadata['auth_username']
+
     if du_metadata['auth_type'] == "simple":
         return(discover_metadata)
     elif du_metadata['auth_type'] == "sshkey":
-        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,du_metadata['auth_ssh_key'],source_script,du_metadata['auth_username'],host_ip,target_script)
+        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,host['ip'],target_script)
         exit_status, stdout = run_cmd(cmd)
         if exit_status == 0:
-            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,du_metadata['auth_ssh_key'],du_metadata['auth_username'],host_ip,target_script)
+            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,host['ip'],target_script)
+            exit_status, stdout = run_cmd(cmd)
             if exit_status == 0:
+                discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
                 discover_metadata['message'] = "discovery-complete"
             else:
                 discover_metadata['message'] = "ssh-failed"
@@ -58,3 +78,4 @@ def discover_host(du_metadata, host_ip):
             discover_metadata['message'] = "scp-failed"
             
     return(discover_metadata)
+

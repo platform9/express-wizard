@@ -152,10 +152,13 @@ def get_host_metadata(du, project_id, token):
     if user_input == 'q':
         return ''
     else:
+        print("======== setting fk_auth_profile ======================================")
         if type(user_input) is int or user_input.isdigit():
             host_metadata['fk_auth_profile'] = auth_profile_list[int(user_input)-1]
         else:
             host_metadata['fk_auth_profile'] = auth_profile_list[user_input]
+        print("set to: {}".format(host_metadata['fk_auth_profile']))
+        print("=======================================================================")
 
     sys.stdout.write("\nNetwork Parameters:\n")
     host_metadata['ip'] = user_io.read_kbd("--> Primary IP Address", [], host_ip, True, True, help.host_interview("primary-ip"))
@@ -998,7 +1001,7 @@ def add_host(du):
                     ssh_status = "Unvalidated"
 
                 # discover host (fred)
-                discovered_interfaces = ssh_utils.discover_host(du, host['ip'])
+                discovered_interfaces = ssh_utils.discover_host(du, host)
 
             # update host record / persist configurtion
             host['ssh_status'] = ssh_status
@@ -1239,8 +1242,9 @@ def add_region(existing_du_url):
                     for tmp_host in du_hosts:
                         if not tmp_host['hostname'] in discovered_hostnames:
                             sys.stdout.write("    {}: ".format(tmp_host['hostname']))
-                            discovered_interfaces = ssh_utils.discover_host(discover_target, tmp_host['ip'])
-                            sys.stdout.write("{}\n".format(discovered_interfaces['message']))
+                            discovered_interfaces = ssh_utils.discover_host(discover_target, tmp_host)
+                            sys.stdout.write("\n{}\n".format(discovered_interfaces))
+
                             tmp_host['ssh_status'] = discovered_interfaces['message']
                             datamodel.write_host(tmp_host)
                             num_hosts += 1
