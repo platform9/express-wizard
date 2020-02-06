@@ -91,7 +91,8 @@ def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
             du_metadata = datamodel.get_du_metadata(du_url)
             if du_metadata:
                 if flag_validate_ssh:
-                    ssh_status = ssh_utils.ssh_validate_login(du_metadata, host_primary_ip)
+                    discovered_interfaces = ssh_utils.discover_host(du_metadata, host_primary_ip)
+                    ssh_status = ssh_utils.validate_login(du_metadata, host_primary_ip)
                     if ssh_status == True:
                         ssh_status = "OK"
                     else:

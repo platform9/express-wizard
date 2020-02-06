@@ -1,4 +1,5 @@
 import os
+import sys
 import globals
 
 def run_cmd(cmd):
@@ -18,7 +19,7 @@ def run_cmd(cmd):
     return cmd_exitcode, cmd_stdout
 
 
-def ssh_validate_login(du_metadata, host_ip):
+def validate_login(du_metadata, host_ip):
     if du_metadata['auth_type'] == "simple":
         return(False)
     elif du_metadata['auth_type'] == "sshkey":
@@ -32,3 +33,28 @@ def ssh_validate_login(du_metadata, host_ip):
     return(False)
 
 
+def discover_host(du_metadata, host_ip):
+    discover_metadata = {}
+    source_script = "/tmp/ssh_discovery.sh"
+    target_script = "/tmp/ssh_discovery.sh"
+    ssh_args = "-o StrictHostKeyChecking=no"
+
+    if not globals.SSH_DISCOVERY:
+        discover_metadata['message'] = "discovery-disabled"
+        return(discover_metadata)
+
+    if du_metadata['auth_type'] == "simple":
+        return(discover_metadata)
+    elif du_metadata['auth_type'] == "sshkey":
+        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,du_metadata['auth_ssh_key'],source_script,du_metadata['auth_username'],host_ip,target_script)
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status == 0:
+            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,du_metadata['auth_ssh_key'],du_metadata['auth_username'],host_ip,target_script)
+            if exit_status == 0:
+                discover_metadata['message'] = "discovery-complete"
+            else:
+                discover_metadata['message'] = "ssh-failed"
+        else:
+            discover_metadata['message'] = "scp-failed"
+            
+    return(discover_metadata)

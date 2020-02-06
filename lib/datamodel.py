@@ -118,6 +118,9 @@ def create_cluster_entry():
 def import_region(import_file_path):
     sys.stdout.write("Importing Region (existing data will be over-written) from import file: {}\n".format(import_file_path))
 
+    # for host imports, enforce a minimum set of required keys
+    host_record_required_keys = ["du_url", "du_type", "ip", "du_host_type", "hostname"]
+
     if not os.path.isfile(import_file_path):
         sys.stdout.write("--> failed to open import file: {}\n".format(import_file_path))
         return(None)
@@ -126,49 +129,50 @@ def import_region(import_file_path):
         region_config = json.load(json_file)
 
     required_keys = ['region','hosts','clusters','auth-profiles','bond-profiles','role-profiles','host-profiles']
-    for k in required_keys:
-        if not k in region_config:
-            sys.stdout.write("--> INFO: export data missing dictionary key: {}\n".format(k))
+    for key_name in required_keys:
+        if not key_name in region_config:
+            sys.stdout.write("--> INFO: export data missing dictionary key: {}\n".format(key_name))
+            continue
 
-    if 'region' in region_config:
-        sys.stdout.write("--> importing region configuration\n")
-        write_config(region_config['region'])
-
-    if 'hosts' in region_config:
-        sys.stdout.write("--> importing hosts\n")
-        for target in region_config['hosts']:
-            sys.stdout.write("    {}\n".format(target['hostname']))
-            write_host(target)
-
-    if 'clusters' in region_config:
-        sys.stdout.write("--> importing clusters\n")
-        for target in region_config['clusters']:
-            sys.stdout.write("    {}\n".format(target['name']))
-            write_cluster(target)
-
-    if 'auth-profiles' in region_config:
-        sys.stdout.write("--> importing auth-profiles\n")
-        for target in region_config['auth-profiles']:
-            sys.stdout.write("    {}\n".format(target['auth_name']))
-            write_auth_profile(target)
-
-    if 'bond-profiles' in region_config:
-        sys.stdout.write("--> importing bond-profiles\n")
-        for target in region_config['bond-profiles']:
-            sys.stdout.write("    {}\n".format(target['bond_name']))
-            write_bond_profile(target)
-
-    if 'role-profiles' in region_config:
-        sys.stdout.write("--> importing role-profiles\n")
-        for target in region_config['role-profiles']:
-            sys.stdout.write("    {}\n".format(target['role_name']))
-            write_role_profile(target)
-
-    if 'host-profiles' in region_config:
-        sys.stdout.write("--> importing host-profiles\n")
-        for target in region_config['host-profiles']:
-            sys.stdout.write("    {}\n".format(target['host_profile_name']))
-            write_host_profile(target)
+        if key_name == "region":
+            sys.stdout.write("--> importing region\n")
+            write_config(region_config['region'])
+        elif key_name == "hosts":
+            sys.stdout.write("--> importing hosts\n")
+            for target in region_config['hosts']:
+                sys.stdout.write("    {}\n".format(target['hostname']))
+                host_record = create_host_entry()
+                for req_key in host_record_required_keys:
+                    if not req_key in target:
+                        sys.stdout.write("FATAL: missing required key: {}\n".format(req_key))
+                        sys.exit(0)
+                    host_record[req_key] = target[req_key]
+                write_host(host_record)
+        elif key_name == "clusters":
+            sys.stdout.write("--> importing clusters\n")
+            for target in region_config['clusters']:
+                sys.stdout.write("    {}\n".format(target['name']))
+                write_cluster(target)
+        elif key_name == "auth-profiles":
+            sys.stdout.write("--> importing auth-profiles\n")
+            for target in region_config['auth-profiles']:
+                sys.stdout.write("    {}\n".format(target['auth_name']))
+                write_auth_profile(target)
+        elif key_name == "bond-profiles":
+            sys.stdout.write("--> importing bond-profiles\n")
+            for target in region_config['bond-profiles']:
+                sys.stdout.write("    {}\n".format(target['bond_name']))
+                write_bond_profile(target)
+        elif key_name == "role-profiles":
+            sys.stdout.write("--> importing role-profiles\n")
+            for target in region_config['role-profiles']:
+                sys.stdout.write("    {}\n".format(target['role_name']))
+                write_role_profile(target)
+        elif key_name == "host-profiles":
+            sys.stdout.write("--> importing host-profiles\n")
+            for target in region_config['host-profiles']:
+                sys.stdout.write("    {}\n".format(target['host_profile_name']))
+                write_host_profile(target)
 
 
 def export_region(du_urls):

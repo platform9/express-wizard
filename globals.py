@@ -46,6 +46,6 @@ bond_modes = [
 ]
 
 # discovery settings
-ADD_HOST_VALIDATE_SSH = False
+SSH_DISCOVERY = True
 
 terminal_width = 120

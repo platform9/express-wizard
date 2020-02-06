@@ -139,7 +139,7 @@ def get_host_metadata(du, project_id, token):
         host_metadata['uuid'] = ""
         fk_auth_profile = ""
 
-    # prompt for host template (fred)
+    # prompt for host template
     sys.stdout.write("\nHost Templates:\n")
     auth_profile_list = datamodel.get_host_profile_names()
     cnt = 1
@@ -984,10 +984,10 @@ def add_host(du):
             if host['ip'] == "":
                 ssh_status = "No Primary IP"
             else:
-                if globals.ADD_HOST_VALIDATE_SSH:
+                if globals.SSH_DISCOVERY:
                     du_metadata = datamodel.get_du_metadata(du['url'])
                     if du_metadata:
-                        ssh_status = ssh_utils.ssh_validate_login(du_metadata, host['ip'])
+                        ssh_status = ssh_utils.validate_login(du_metadata, host['ip'])
                         if ssh_status == True:
                             ssh_status = "OK"
                         else:
@@ -996,11 +996,12 @@ def add_host(du):
                         ssh_status = "Unvalidated"
                 else:
                     ssh_status = "Unvalidated"
+
+                # discover host (fred)
+                discovered_interfaces = ssh_utils.discover_host(du, host['ip'])
+
+            # update host record / persist configurtion
             host['ssh_status'] = ssh_status
-
-            # discover host (fred)
-
-            # persist configurtion
             datamodel.write_host(host)
 
 
@@ -1203,8 +1204,8 @@ def add_region(existing_du_url):
         datamodel.write_config(discover_target)
 
     # perform host discovery
-    sys.stdout.write("\nPerforming Host Discovery (this can take a while...)\n")
-    user_input = user_io.read_kbd("--> Validate SSH connectivity to hosts during discovery", ['q','y','n'], 'n', True, True, help.region_interview("validate-ssh-connectivity"))
+    sys.stdout.write("\n\nPerforming Host Discovery (this can take a while...)\n")
+    user_input = user_io.read_kbd("--> Perform SSH-based host discovery?", ['q','y','n'], 'n', True, True, help.region_interview("validate-ssh-connectivity"))
     if user_input == "q":
         return(None)
     elif user_input == "y":
@@ -1224,9 +1225,27 @@ def add_region(existing_du_url):
                                                               project_id,
                                                               token,
                                                               flag_ssh)
+            discovered_hostnames = []
             for host in discovered_hosts:
+                discovered_hostnames.append(host['hostname'])
                 datamodel.write_host(host)
                 num_hosts += 1
+
+            # trigger discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
+            if flag_ssh:
+                sys.stdout.write("--> Discovering user-defined hosts for region\n")
+                du_hosts = datamodel.get_hosts(discover_target['url'])
+                if du_hosts:
+                    for tmp_host in du_hosts:
+                        if not tmp_host['hostname'] in discovered_hostnames:
+                            sys.stdout.write("    {}: ".format(tmp_host['hostname']))
+                            discovered_interfaces = ssh_utils.discover_host(discover_target, tmp_host['ip'])
+                            sys.stdout.write("{}\n".format(discovered_interfaces['message']))
+                            tmp_host['ssh_status'] = discovered_interfaces['message']
+                            datamodel.write_host(tmp_host)
+                            num_hosts += 1
+
+        # report discovery metrics
         sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
 
     # perform cluster discovery

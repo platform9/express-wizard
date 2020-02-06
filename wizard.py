@@ -385,21 +385,6 @@ def menu_level0():
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
 
 
-def ssh_validate_login(du_metadata, host_ip):
-    if du_metadata['auth_type'] == "simple":
-        return False
-        cmd = "ssh -o StrictHostKeyChecking=no -o PubkeyAuthentication=no {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
-    elif du_metadata['auth_type'] == "sshkey":
-        cmd = "ssh -o StrictHostKeyChecking, no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status == 0:
-            return True
-        else:
-            return False
-
-    return False
-
-
 ## main
 def main():
     args = _parse_args()
@@ -427,6 +412,7 @@ def main():
             os.remove(globals.ROLE_PROFILE_FILE)
         if os.path.isfile(globals.HOST_PROFILE_FILE):
             os.remove(globals.HOST_PROFILE_FILE)
+        sys.exit(0)
 
     # export datamodel
     if args.export:
