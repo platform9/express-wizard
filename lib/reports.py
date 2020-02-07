@@ -27,9 +27,9 @@ def report_host_profiles(host_profile_entries):
     host_profile_table = PrettyTable()
     host_profile_table.title = "Host Templates"
     host_profile_table.field_names = ["Template Name","Authorization Profile","Role Profile","Bond Profile"]
-    host_profile_table.align["Profile Name"] = "l"
+    host_profile_table.align["Template Name"] = "l"
     host_profile_table.align["Authorization Profile"] = "l"
-    host_profile_table.align["Role Name"] = "l"
+    host_profile_table.align["Role Profile"] = "l"
     host_profile_table.align["Bond Profile"] = "l"
 
     for host_profile in host_profile_entries:
@@ -211,19 +211,20 @@ def report_host_info(host_entries):
     # display KVM hosts
     if du_metadata['du_type'] == "KVM":
         host_table = PrettyTable()
-        host_table.field_names = ["Hostname","Primary IP","Host Template","SSH Discovery","Source","Network IFs"]
+        host_table.field_names = ["Hostname","Primary IP","Host Template","Discovery Status","Source","Net Interfaces","IP Interfaces"]
         host_table.title = "KVM Hosts"
         host_table.align["Hostname"] = "l"
         host_table.align["Primary IP"] = "l"
         host_table.align["Host Template"] = "l"
         host_table.align["SSH Auth"] = "l"
         host_table.align["Source"] = "l"
-        host_table.align["Network IFs"] = "l"
+        host_table.align["Net Interfaces"] = "l"
+        host_table.align["IP Interfaces"] = "l"
         num_kvm_rows = 0
         for host in host_entries:
             if host['du_host_type'] != "kvm":
                 continue
-            host_table.add_row([host['hostname'],host['ip'],host['fk_host_profile'],host['ssh_status'],host['record_source'],host['interface_list']])
+            host_table.add_row([host['hostname'],host['ip'],host['fk_host_profile'],host['ssh_status'],host['record_source'],host['interface_list'],host['ip_interfaces']])
             num_kvm_rows += 1
         if num_kvm_rows > 0:
             sys.stdout.write("\n------ KVM Hosts ------\n")
@@ -231,7 +232,7 @@ def report_host_info(host_entries):
 
     if du_metadata['du_type'] == "VMware":
         host_table = PrettyTable()
-        host_table.field_names = ["HOSTNAME","Primary IP","SSH Discovery","Source","Nova","Glance","Cinder","Designate"]
+        host_table.field_names = ["HOSTNAME","Primary IP","Discovery Status","Source","Nova","Glance","Cinder","Designate"]
         host_table.title = "KVM Hosts"
         host_table.align["HOSTNAME"] = "l"
         host_table.align["Primary IP"] = "l"
@@ -253,7 +254,7 @@ def report_host_info(host_entries):
 
     # print K8s nodes
     host_table = PrettyTable()
-    host_table.field_names = ["HOSTNAME","Primary IP","SSH Discovery","Source","Node Type","Cluster Name","Attached"]
+    host_table.field_names = ["HOSTNAME","Primary IP","Discovery Status","Source","Node Type","Cluster Name","Attached"]
     host_table.title = "Kubernetes Hosts"
     host_table.align["HOSTNAME"] = "l"
     host_table.align["Primary IP"] = "l"
@@ -279,7 +280,7 @@ def report_host_info(host_entries):
 
     # print unassigned hosts
     unassigned_table = PrettyTable()
-    unassigned_table.field_names = ["HOSTNAME","Primary IP","SSH Discovery","Source","IP Interfaces"]
+    unassigned_table.field_names = ["HOSTNAME","Primary IP","Discovery Status","Source","IP Interfaces"]
     unassigned_table.title = "Unassigned Hosts"
     unassigned_table.align["HOSTNAME"] = "l"
     unassigned_table.align["Primary IP"] = "l"

@@ -47,8 +47,10 @@ def discover_host(du_metadata, host):
     discover_metadata = {}
     source_script = "/tmp/ssh_discovery.sh"
     target_script = "/tmp/ssh_discovery.sh"
-    ssh_args = "-o StrictHostKeyChecking=no"
+    ssh_args = "-o StrictHostKeyChecking=no -o ConnectTimeout=5"
 
+    sys.stdout.write("    {}: ".format(host['hostname']))
+    discover_metadata['message'] = "discovery-started"
     if not globals.SSH_DISCOVERY:
         discover_metadata['message'] = "discovery-disabled"
         return(discover_metadata)
@@ -63,25 +65,43 @@ def discover_host(du_metadata, host):
         ssh_key = du_metadata['auth_ssh_key']
         ssh_user = du_metadata['auth_username']
 
-    #ssh_key = du_metadata['auth_ssh_key']
-    #ssh_user = du_metadata['auth_username']
-
     if auth_type == "simple":
         return(discover_metadata)
     elif du_metadata['auth_type'] == "sshkey":
-        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,host['ip'],target_script)
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status == 0:
-            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,host['ip'],target_script)
+        sys.stdout.write("trying ")
+        sys.stdout.flush()
+        cnt = 0
+        for interface_ipaddr in host['ip_interfaces'].split(","):
+            if cnt == 0:
+                sys.stdout.write("{}".format(interface_ipaddr))
+            else:
+                sys.stdout.write(", {}".format(interface_ipaddr))
+            sys.stdout.flush()
+            cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
+            exit_status, stdout = run_cmd(cmd)
+            if exit_status != 0:
+                cnt += 1
+                continue
+
+            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,interface_ipaddr,target_script)
             exit_status, stdout = run_cmd(cmd)
             if exit_status == 0:
+                sys.stdout.write(" - succeeded\n".format(interface_ipaddr))
                 discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
                 discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
                 discover_metadata['message'] = "discovery-complete"
             else:
-                discover_metadata['message'] = "ssh-failed"
-        else:
-            discover_metadata['message'] = "scp-failed"
+                sys.stdout.write(" - failed on all interfaces\n".format(interface_ipaddr))
+                discover_metadata['message'] = "discovery-failed"
+            sys.stdout.flush()
+            cnt += 1
+    else:
+        discover_metadata['message'] = "scp-failed"
             
+    # catch the case where SCP fails on all interfaces
+    if discover_metadata['message'] == "discovery-started":
+        sys.stdout.write(" - failed on all interfaces\n")
+        discover_metadata['message'] = "discovery-failed"
+
     return(discover_metadata)
 

@@ -1005,7 +1005,10 @@ def add_host(du):
             # discover host
             discovery_metadata = ssh_utils.discover_host(du, host)
             host['ssh_status'] = discovery_metadata['message']
-            host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+            if "interface-list" in discovery_metadata:
+                host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+            if "primary-ip" in discovery_metadata:
+                host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
             datamodel.write_host(host)
 
 
@@ -1224,6 +1227,10 @@ def add_region(existing_du_url):
                                               discover_target['password'],
                                               discover_target['tenant'])
         if project_id:
+            # get current lists of hosts from datamodel
+            datamodel_hosts = datamodel.get_hosts(discover_target['url'])
+
+            # get  current list of hosts from resmgr
             discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
                                                               discover_target['du_type'],
                                                               project_id,
@@ -1231,22 +1238,36 @@ def add_region(existing_du_url):
                                                               flag_ssh)
             discovered_hostnames = []
             for host in discovered_hosts:
+                # copy user-managed fields from datamodel host record (if exists)
+                for dm_host in datamodel_hosts:
+                    if dm_host['hostname'] == host['hostname']:
+                        if dm_host['fk_host_profile'] != "":
+                            host['fk_host_profile'] = dm_host['fk_host_profile']
+
+                # perform ssh-based discovery for resmgr hosts
+                discovery_metadata = ssh_utils.discover_host(discover_target, host)
+                host['ssh_status'] = discovery_metadata['message']
+                if "interface-list" in discovery_metadata:
+                    host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+                if "primary-ip" in discovery_metadata:
+                    host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+
                 discovered_hostnames.append(host['hostname'])
                 datamodel.write_host(host)
                 num_hosts += 1
 
-            # trigger discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
+            # trigger ssh-based discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
             if flag_ssh:
                 sys.stdout.write("--> Discovering user-defined hosts for region\n")
-                du_hosts = datamodel.get_hosts(discover_target['url'])
-                if du_hosts:
-                    for tmp_host in du_hosts:
+                if datamodel_hosts:
+                    for tmp_host in datamodel_hosts:
                         if not tmp_host['hostname'] in discovered_hostnames:
                             discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
-                            sys.stdout.write("    {}: {}\n".format(tmp_host['hostname'],discovery_metadata))
-
                             tmp_host['ssh_status'] = discovery_metadata['message']
-                            tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+                            if "interface-list" in discovery_metadata:
+                                tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+                            if "primary-ip" in discovery_metadata:
+                                tmp_host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
                             datamodel.write_host(tmp_host)
                             num_hosts += 1
 
