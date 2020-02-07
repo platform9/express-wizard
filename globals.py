@@ -1,11 +1,13 @@
 """Global Variable Defaults"""
 from os.path import expanduser
+import os
 import sys
 
 # globals
 PF9_DIR = "{}/.pf9".format(expanduser("~"))
 CONFIG_DIR = "{}/db".format(PF9_DIR)
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
+HELP_FILE = "{}/help_strings.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
 CLUSTER_FILE = "{}/clusters.conf".format(CONFIG_DIR)
 AUTH_PROFILE_FILE = "{}/auth-profiles.conf".format(CONFIG_DIR)
@@ -45,3 +47,5 @@ bond_modes = [
 
 # discovery settings
 ADD_HOST_VALIDATE_SSH = False
+
+terminal_width = 120

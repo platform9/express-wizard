@@ -70,6 +70,7 @@ setup(
         "pprint",
         "openstacksdk>=0.12.0",
         "cryptography",
+        "ConfigParser",
         "pathlib2;python_version<'3'",
         "pathlib;python_version>'3'",
         express_cli_source,

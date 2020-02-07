@@ -29,6 +29,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, 'lib')))
 try:
     import globals, urllib3, requests, json, prettytable, signal, getpass, argparse, subprocess, time
     import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
+    from help_messages import Help
 except:
     debug("EXCEPT: {}".format(sys.exc_info()))
     except_str = str(sys.exc_info()[1])
@@ -75,25 +76,29 @@ def run_cmd(cmd):
 
 
 def dump_text_file(target_file):
-    BAR = "======================================================================================================"
     try:
         target_fh = open(target_file, 'r')
-        sys.stdout.write('========== {0:^80} ==========\n'.format(target_file))
+        title = "  START OF: {}  ".format(target_file)
+        sys.stdout.write("\n{}\n".format(title.center(globals.terminal_width, '*')))
         sys.stdout.write(target_fh.read())
-        sys.stdout.write('{}\n'.format(BAR))
+        footer = "  END OF: {}  ".format(target_file)
+        sys.stdout.write("{}\n".format(footer.center(globals.terminal_width, '*')))
         target_fh.close()
     except:
         sys.stdout.write("ERROR: failed to open file: {}".format(target_file))
 
 
 def view_log(log_files):
+    # intialize help
+    help = Help()
+
     cnt = 1
     allowed_values = ['q']
     for log_file in log_files:
         sys.stdout.write("{}. {}\n".format(cnt, log_file))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True)
+    user_input = user_io.read_kbd("Select Log", allowed_values, '', True, True, help.menu_interview("select-log"))
     if user_input != "q":
         idx = int(user_input) - 1
         target_log = log_files[idx]
@@ -102,15 +107,22 @@ def view_log(log_files):
 
 
 def get_logs():
+    MAX_LOGS = 10
     log_files = []
+    cnt = 0
     if not os.path.isdir(globals.EXPRESS_LOG_DIR):
         return log_files
 
     for r, d, f in os.walk(globals.EXPRESS_LOG_DIR):
-        for file in f:
+        # traverse list in reverse order (to show newest logs first)
+        for file in f[::-1]:
+            if cnt >= MAX_LOGS:
+                break
+
             if file == ".keep":
                 continue
             log_files.append(file)
+            cnt += 1
 
     return log_files
 
@@ -144,9 +156,8 @@ def dump_database(db_file):
 
 
 def action_header(title):
-    MAX_WIDTH = 132
     title = "  {}  ".format(title)
-    sys.stdout.write("\n{}".format(title.center(MAX_WIDTH, '*')))
+    sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
 
 
 def display_menu2():
@@ -197,10 +208,13 @@ def display_menu0():
 
 
 def menu_level2():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu2()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu2"))
         if user_input == '1':
             action_header("MANAGE AUTHORIZATION PROFILES")
             selected_profile = interview.add_edit_auth_profile()
@@ -256,10 +270,13 @@ def menu_level2():
 
 
 def menu_level1():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu1()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu1"))
         if user_input == '1':
             selected_du = interview.select_du()
             if selected_du:
@@ -297,10 +314,13 @@ def menu_level1():
 
 
 def menu_level0():
+    # intialize help
+    help = Help()
+
     user_input = ""
     while not user_input in ['q', 'Q']:
         display_menu0()
-        user_input = user_io.read_kbd("Enter Selection", [], '', True, True)
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu0"))
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()
@@ -330,7 +350,7 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True)
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, help.menu_interview("add-another-host"))
                         if user_input == "n":
                             flag_more_hosts = False
         elif user_input == '5':
@@ -342,7 +362,7 @@ def menu_level0():
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
                         express_utils.run_express_cli(selected_du)
                     elif selected_du['du_type'] == "KVM":
-                        sys.stdout.write("\nKVM Region: onboarding KVM hyervisors\n")
+                        sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
         elif user_input == '6':
