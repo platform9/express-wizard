@@ -86,7 +86,7 @@ def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
         
         # validate ssh connectivity
         if host_primary_ip == "":
-            ssh_status = "No Primary IP"
+            ssh_status = "no-primary-ip"
         else:
             du_metadata = datamodel.get_du_metadata(du_url)
             if du_metadata:

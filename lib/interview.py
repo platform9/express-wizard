@@ -983,7 +983,7 @@ def add_host(du):
 
             # validate ssh connectivity
             if host['ip'] == "":
-                ssh_status = "No Primary IP"
+                ssh_status = "no-primary-ip"
             else:
                 if globals.SSH_DISCOVERY:
                     du_metadata = datamodel.get_du_metadata(du['url'])
@@ -1003,8 +1003,9 @@ def add_host(du):
             datamodel.write_host(host)
 
             # discover host
-            discovered_interfaces = ssh_utils.discover_host(du, host)
-            host['ssh_status'] = discovered_interfaces['message']
+            discovery_metadata = ssh_utils.discover_host(du, host)
+            host['ssh_status'] = discovery_metadata['message']
+            host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
             datamodel.write_host(host)
 
 
@@ -1241,11 +1242,11 @@ def add_region(existing_du_url):
                 if du_hosts:
                     for tmp_host in du_hosts:
                         if not tmp_host['hostname'] in discovered_hostnames:
-                            sys.stdout.write("    {}: ".format(tmp_host['hostname']))
-                            discovered_interfaces = ssh_utils.discover_host(discover_target, tmp_host)
-                            sys.stdout.write("\n{}\n".format(discovered_interfaces))
+                            discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
+                            sys.stdout.write("    {}: {}\n".format(tmp_host['hostname'],discovery_metadata))
 
-                            tmp_host['ssh_status'] = discovered_interfaces['message']
+                            tmp_host['ssh_status'] = discovery_metadata['message']
+                            tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
                             datamodel.write_host(tmp_host)
                             num_hosts += 1
 

@@ -38,7 +38,7 @@ def search_discovery_data(discovery_stdout, key_name):
     discovery_data = ""
     for line in discovery_stdout:
         if line.startswith(key_name):
-            discovery_data = line
+            discovery_data = line.strip().replace(" ",",")
             break
     return(discovery_data)
 
@@ -76,6 +76,7 @@ def discover_host(du_metadata, host):
             exit_status, stdout = run_cmd(cmd)
             if exit_status == 0:
                 discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
+                discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
                 discover_metadata['message'] = "discovery-complete"
             else:
                 discover_metadata['message'] = "ssh-failed"

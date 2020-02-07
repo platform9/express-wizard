@@ -33,6 +33,7 @@ def create_host_entry():
         'ip': "",
         'uuid': "",
         'ip_interfaces': "",
+        'interface_list': "",
         'du_host_type': "",
         'hostname': "",
         'record_source': "",

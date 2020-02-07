@@ -49,7 +49,8 @@ def build_express_inventory(du,host_entries):
 
     try:
         express_inventory_fh = open(express_inventory, "w")
-        express_inventory_fh.write("# Built by pf9-wizard\n")
+        express_inventory_fh.write("#### Built by pf9-wizard\n")
+        express_inventory_fh.write("# Global Variables (applies to ALL hosts)\n")
         express_inventory_fh.write("[all]\n")
         express_inventory_fh.write("[all:vars]\n")
         express_inventory_fh.write("ansible_user={}\n".format(du['auth_username']))
@@ -60,32 +61,48 @@ def build_express_inventory(du,host_entries):
             express_inventory_fh.write("ansible_ssh_private_key_file={}\n".format(du['auth_ssh_key']))
         express_inventory_fh.write("custom_py_interpreter={}\n".format(globals.WIZARD_PYTHON))
         express_inventory_fh.write("ansible_ssh_common_args='-o StrictHostKeyChecking=no'\n".format(globals.WIZARD_PYTHON))
+
+        express_inventory_fh.write("\n# Global Network Config (applies to ALL hosts unless over-ridden by using Host Profiles)\n")
         express_inventory_fh.write("manage_network=True\n")
         express_inventory_fh.write("bond_ifname={}\n".format(du['bond_ifname']))
         express_inventory_fh.write("bond_mode={}\n".format(du['bond_mode']))
         express_inventory_fh.write("bond_mtu={}\n".format(du['bond_mtu']))
 
         # manage bond stanza
+        express_inventory_fh.write("\n# Network Bond Configuration\n")
         express_inventory_fh.write("[bond_config]\n")
         for host in host_entries:
             if host['sub_if_config'] != "":
                 express_inventory_fh.write("{} bond_sub_interfaces='{}'\n".format(host['hostname'], host['sub_if_config']))
 
         # manage openstack groups
+        express_inventory_fh.write("\n# PMO Inventory Groups & Hosts\n")
         express_inventory_fh.write("[pmo:children]\n")
         express_inventory_fh.write("hypervisors\n")
         express_inventory_fh.write("glance\n")
         express_inventory_fh.write("cinder\n")
 
         # manage hypervisors group
+        express_inventory_fh.write("\n# PMO Hosts\n")
         express_inventory_fh.write("[hypervisors]\n")
         cnt = 0
         for host in host_entries:
+            # skip hosts without primary-ip
+            if host['ip'] == "":
+                continue
+
+            # if fk_host_profile is set, add hast-level ssh attributes
+            auth_override = ""
+            if host['fk_host_profile'] != "":
+                host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
+                if host_profile_metadata:
+                    auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(host_profile_metadata['auth_profile']['auth_ssh_key'],host_profile_metadata['auth_profile']['auth_username'])
+
             if host['nova'] == "y":
                 if cnt < 2:
-                    express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={} dhcp=on snat=on\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
+                    express_inventory_fh.write("{} ansible_host={} {} vm_console_ip={} ha_cluster_ip={} tunnel_ip={} dhcp=on snat=on\n".format(host['hostname'],host['ip'],auth_override,host['ip'],host['ip'],host['ip']))
                 else:
-                    express_inventory_fh.write("{} ansible_host={} vm_console_ip={} ha_cluster_ip={} tunnel_ip={}\n".format(host['hostname'],host['ip'],host['ip'],host['ip'],host['ip']))
+                    express_inventory_fh.write("{} ansible_host={} {} vm_console_ip={} ha_cluster_ip={} tunnel_ip={}\n".format(host['hostname'],host['ip'],auth_override,host['ip'],host['ip'],host['ip']))
                 cnt += 1
 
         # manage glance group
@@ -112,6 +129,7 @@ def build_express_inventory(du,host_entries):
                 express_inventory_fh.write("{}\n".format(host['hostname']))
 
         # manage K8s stanza
+        express_inventory_fh.write("\n# PMK Inventory Groups & Hosts\n")
         express_inventory_fh.write("[pmk:children]\n")
         express_inventory_fh.write("k8s_master\n")
         express_inventory_fh.write("k8s_worker\n")
