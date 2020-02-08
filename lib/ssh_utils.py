@@ -60,10 +60,12 @@ def discover_host(du_metadata, host):
         auth_type = host_profile_metadata['auth_profile']['auth_type']
         ssh_key = host_profile_metadata['auth_profile']['auth_ssh_key']
         ssh_user = host_profile_metadata['auth_profile']['auth_username']
+        flag_host_profile_mapped = True
     else:
         auth_type = du_metadata['auth_type']
         ssh_key = du_metadata['auth_ssh_key']
         ssh_user = du_metadata['auth_username']
+        flag_host_profile_mapped = False
 
     if auth_type == "simple":
         return(discover_metadata)
@@ -84,24 +86,46 @@ def discover_host(du_metadata, host):
             else:
                 sys.stdout.write(", {}".format(interface_ipaddr))
             sys.stdout.flush()
+
+            # try the region-level auth params - if that fails, try each defined auth-profiles
             cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
             exit_status, stdout = run_cmd(cmd)
-            if exit_status != 0:
-                cnt += 1
-                continue
-
-            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,interface_ipaddr,target_script)
-            exit_status, stdout = run_cmd(cmd)
             if exit_status == 0:
-                sys.stdout.write(" - succeeded\n".format(interface_ipaddr))
-                discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
-                discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
-                discover_metadata['message'] = "Complete"
+                # save last discovery settings for discovery to host record
+                discover_metadata['discovery-last-auth'] = "region-auth"
+                discover_metadata['discovery-last-ip'] = interface_ipaddr
             else:
-                sys.stdout.write(" - failed on all interfaces\n".format(interface_ipaddr))
-                discover_metadata['message'] = "Failed"
-            sys.stdout.flush()
-            cnt += 1
+                cnt += 1
+                if flag_host_profile_mapped:
+                    continue
+
+                # try region auth, then try all auth-profiles
+                auth_profile_list = datamodel.get_auth_profile_names()
+                if auth_profile_list:
+                    for auth_profile_name in auth_profile_list:
+                        auth_profile = datamodel.get_auth_profile_metadata(auth_profile_name)
+                        ssh_key = auth_profile['auth_ssh_key']
+                        ssh_user = auth_profile['auth_username']
+                        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
+                        exit_status, stdout = run_cmd(cmd)
+                        if exit_status == 0:
+                            # save last discovery settings for discovery to host record
+                            discover_metadata['discovery-last-auth'] = auth_profile_name
+                            discover_metadata['discovery-last-ip'] = interface_ipaddr
+                            break
+
+        cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,interface_ipaddr,target_script)
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status == 0:
+            sys.stdout.write(" - succeeded\n".format(interface_ipaddr))
+            discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
+            discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
+            discover_metadata['message'] = "Complete"
+        else:
+            sys.stdout.write(" - failed on all interfaces\n".format(interface_ipaddr))
+            discover_metadata['message'] = "Failed"
+        sys.stdout.flush()
+        cnt += 1
     else:
         discover_metadata['message'] = "Failed"
             

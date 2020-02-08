@@ -418,7 +418,8 @@ def main():
             os.remove(globals.ROLE_PROFILE_FILE)
         if os.path.isfile(globals.HOST_PROFILE_FILE):
             os.remove(globals.HOST_PROFILE_FILE)
-        sys.exit(0)
+        if not args.jsonImport:
+            sys.exit(0)
 
     # export datamodel
     if args.export:

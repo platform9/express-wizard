@@ -1053,6 +1053,10 @@ def add_host(du):
                 host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
             if "primary-ip" in discovery_metadata:
                 host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+            if 'discovery-last-auth' in discovery_metadata:
+                host['discovery_last_auth'] = discovery_metadata['discovery-last-auth']
+            if 'discovery-last-ip' in discovery_metadata:
+                host['discovery_last_ip'] = discovery_metadata['discovery-last-ip']
             datamodel.write_host(host)
 
 
