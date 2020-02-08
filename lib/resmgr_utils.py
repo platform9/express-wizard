@@ -84,24 +84,6 @@ def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
                 if len(discovered_ips_list) == 1:
                     host_primary_ip = discovered_ips_list[0]
         
-        # validate ssh connectivity
-        if host_primary_ip == "":
-            ssh_status = "no-primary-ip"
-        else:
-            du_metadata = datamodel.get_du_metadata(du_url)
-            if du_metadata:
-                if flag_validate_ssh:
-                    discovered_interfaces = ssh_utils.discover_host(du_metadata, host_primary_ip)
-                    ssh_status = ssh_utils.validate_login(du_metadata, host_primary_ip)
-                    if ssh_status == True:
-                        ssh_status = "OK"
-                    else:
-                        ssh_status = "Failed"
-                else:
-                    ssh_status = "Unvalidated"
-            else:
-                ssh_status = "Unvalidated"
-
         host_record = datamodel.create_host_entry()
         host_record['du_url'] = du_url
         host_record['du_type'] = du_type
@@ -111,7 +93,7 @@ def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):
         host_record['du_host_type'] = host_type
         host_record['hostname'] = host['info']['hostname']
         host_record['record_source'] = "Discovered"
-        host_record['ssh_status'] = ssh_status
+        host_record['ssh_status'] = ""
         host_record['sub_if_config'] = ""
         host_record['pf9-kube'] = role_kube
         host_record['nova'] = role_nova

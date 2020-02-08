@@ -50,9 +50,9 @@ def discover_host(du_metadata, host):
     ssh_args = "-o StrictHostKeyChecking=no -o ConnectTimeout=5"
 
     sys.stdout.write("    {}: ".format(host['hostname']))
-    discover_metadata['message'] = "discovery-started"
+    discover_metadata['message'] = "Initializing"
     if not globals.SSH_DISCOVERY:
-        discover_metadata['message'] = "discovery-disabled"
+        discover_metadata['message'] = "Disabled by Policy"
         return(discover_metadata)
 
     host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
@@ -71,7 +71,14 @@ def discover_host(du_metadata, host):
         sys.stdout.write("trying ")
         sys.stdout.flush()
         cnt = 0
-        for interface_ipaddr in host['ip_interfaces'].split(","):
+        ip_list = []
+        if host['ip'] != "":
+            ip_list.append(host['ip'])
+        else:
+            for interface_ipaddr in host['ip_interfaces'].split(","):
+                ip_list.append(interface_ipaddr)
+
+        for interface_ipaddr in ip_list:
             if cnt == 0:
                 sys.stdout.write("{}".format(interface_ipaddr))
             else:
@@ -89,19 +96,19 @@ def discover_host(du_metadata, host):
                 sys.stdout.write(" - succeeded\n".format(interface_ipaddr))
                 discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
                 discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
-                discover_metadata['message'] = "discovery-complete"
+                discover_metadata['message'] = "Complete"
             else:
                 sys.stdout.write(" - failed on all interfaces\n".format(interface_ipaddr))
-                discover_metadata['message'] = "discovery-failed"
+                discover_metadata['message'] = "Failed"
             sys.stdout.flush()
             cnt += 1
     else:
-        discover_metadata['message'] = "scp-failed"
+        discover_metadata['message'] = "Failed"
             
     # catch the case where SCP fails on all interfaces
-    if discover_metadata['message'] == "discovery-started":
+    if discover_metadata['message'] == "Initializing":
         sys.stdout.write(" - failed on all interfaces\n")
-        discover_metadata['message'] = "discovery-failed"
+        discover_metadata['message'] = "Failed"
 
     return(discover_metadata)
 

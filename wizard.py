@@ -350,8 +350,8 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, help.menu_interview("add-another-host"))
-                        if user_input == "n":
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True, help.menu_interview("add-another-host"))
+                        if user_input in ['n']:
                             flag_more_hosts = False
         elif user_input == '5':
             action_header("ONBOARD HOSTS")
@@ -361,10 +361,16 @@ def menu_level0():
                     if selected_du['du_type'] == "Kubernetes":
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
                         express_utils.run_express_cli(selected_du)
+                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                        if user_input == 'y':
+                            datamodel.discover_region(selected_du)
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
+                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                        if user_input == 'y':
+                            datamodel.discover_region(selected_du)
         elif user_input == '6':
             action_header("SHOW REGION")
             selected_du = interview.select_du()

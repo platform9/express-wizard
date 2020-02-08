@@ -3,6 +3,11 @@ import sys
 import json
 import globals
 import ssh_utils
+import du_utils
+import datamodel
+import resmgr_utils
+import pmk_utils
+from encrypt import Encryption
 
 def create_du_entry():
     du_record = {
@@ -752,4 +757,89 @@ def get_aggregate_host_profile(host_profile_name):
         host_profile_metadata['role_profile']['node_type'] = role_profile['node_type']
 
     return(host_profile_metadata)
+
+
+def discover_region_hosts(discover_target):
+    num_hosts = 0
+    project_id, token = du_utils.login_du(discover_target['url'],
+                                          discover_target['username'],
+                                          discover_target['password'],
+                                          discover_target['tenant'])
+    if project_id:
+        # get current lists of hosts from datamodel
+        datamodel_hosts = datamodel.get_hosts(discover_target['url'])
+
+        # get  current list of hosts from resmgr
+        discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
+                                                          discover_target['du_type'],
+                                                          project_id,
+                                                          token,
+                                                          True)
+        discovered_hostnames = []
+        for host in discovered_hosts:
+            # copy user-managed fields from datamodel host record (if exists)
+            for dm_host in datamodel_hosts:
+                if dm_host['hostname'] == host['hostname']:
+                    if dm_host['fk_host_profile'] != "":
+                        host['fk_host_profile'] = dm_host['fk_host_profile']
+
+            # perform ssh-based discovery for resmgr hosts
+            discovery_metadata = ssh_utils.discover_host(discover_target, host)
+            host['ssh_status'] = discovery_metadata['message']
+            if "interface-list" in discovery_metadata:
+                host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+            if "primary-ip" in discovery_metadata:
+                host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+
+            discovered_hostnames.append(host['hostname'])
+            datamodel.write_host(host)
+            num_hosts += 1
+
+        # trigger ssh-based discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
+        sys.stdout.write("--> Discovering user-defined hosts for region\n")
+        if datamodel_hosts:
+            for tmp_host in datamodel_hosts:
+                if not tmp_host['hostname'] in discovered_hostnames:
+                    discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
+                    tmp_host['ssh_status'] = discovery_metadata['message']
+                    if "interface-list" in discovery_metadata:
+                        tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+                    if "primary-ip" in discovery_metadata:
+                        tmp_host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+                    datamodel.write_host(tmp_host)
+                    num_hosts += 1
+
+    return(num_hosts)
+
+
+def discover_region_clusters(discover_target):
+    num_clusters_discovered = 0
+    num_clusters_created = 0
+    if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
+        sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],
+                                                                               discover_target['url']))
+        encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        if project_id:
+            # discover existing clusters
+            discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
+            # get existing/user-defined clusters for region
+            defined_clusters = datamodel.get_clusters(discover_target['url'])
+
+            # create any missing clusters
+            for cluster in defined_clusters:
+                cluster_flag = datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters)
+                if not datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters):
+                    pmk_utils.create_cluster(discover_target['url'], project_id, token, cluster)
+                    num_clusters_created += 1
+                num_clusters_discovered += 1
+
+            if num_clusters_created > 0:
+                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
+            for cluster in discovered_clusters:
+                datamodel.write_cluster(cluster)
+
+    return(num_clusters_created,num_clusters_discovered)
 

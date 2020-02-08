@@ -148,7 +148,8 @@ class Help:
             "menu1": self.help_config.get('menu_interview', 'menu1'),
             "menu2": self.help_config.get('menu_interview', 'menu2'),
             "select-log": self.help_config.get('menu_interview', 'select-log'),
-            "add-another-host": self.help_config.get('menu_interview', 'add-another-host')
+            "add-another-host": self.help_config.get('menu_interview', 'add-another-host'),
+            "run-region-discovery": self.help_config.get('menu_interview', 'run-region-discovery')
         }
 
         if not question in help_strings:
@@ -160,6 +161,7 @@ class Help:
     def region_interview(self,question):
         help_strings = {
             "add-region": self.help_config.get('region_interview', 'add-region'),
+            "region-op": self.help_config.get('region_interview', 'region-op'),
             "discover-region": self.help_config.get('region_interview', 'discover-region'),
             "select-region": self.help_config.get('region_interview', 'select-region'),
             "confirm-region-type": self.help_config.get('region_interview', 'confirm-region-type'),

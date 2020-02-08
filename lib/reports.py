@@ -211,20 +211,26 @@ def report_host_info(host_entries):
     # display KVM hosts
     if du_metadata['du_type'] == "KVM":
         host_table = PrettyTable()
-        host_table.field_names = ["Hostname","Primary IP","Host Template","Discovery Status","Source","Net Interfaces","IP Interfaces"]
+        host_table.field_names = ["Hostname","Primary IP","Host Template","Discovery Status","Source","IP Interfaces"]
         host_table.title = "KVM Hosts"
         host_table.align["Hostname"] = "l"
         host_table.align["Primary IP"] = "l"
         host_table.align["Host Template"] = "l"
         host_table.align["SSH Auth"] = "l"
         host_table.align["Source"] = "l"
-        host_table.align["Net Interfaces"] = "l"
         host_table.align["IP Interfaces"] = "l"
         num_kvm_rows = 0
         for host in host_entries:
             if host['du_host_type'] != "kvm":
                 continue
-            host_table.add_row([host['hostname'],host['ip'],host['fk_host_profile'],host['ssh_status'],host['record_source'],host['interface_list'],host['ip_interfaces']])
+            host_table.add_row(
+                [host['hostname'],
+                host['ip'],
+                host['fk_host_profile'],
+                host['ssh_status'],
+                host['record_source'],
+                host['ip_interfaces']]
+            )
             num_kvm_rows += 1
         if num_kvm_rows > 0:
             sys.stdout.write("\n------ KVM Hosts ------\n")
@@ -254,10 +260,11 @@ def report_host_info(host_entries):
 
     # print K8s nodes
     host_table = PrettyTable()
-    host_table.field_names = ["HOSTNAME","Primary IP","Discovery Status","Source","Node Type","Cluster Name","Attached"]
+    host_table.field_names = ["HOSTNAME","Primary IP","Host Template","Discovery Status","Source","Node Type","Cluster Name","Attached"]
     host_table.title = "Kubernetes Hosts"
     host_table.align["HOSTNAME"] = "l"
     host_table.align["Primary IP"] = "l"
+    host_table.align["Host Template"] = "l"
     host_table.align["SSH Auth"] = "l"
     host_table.align["Source"] = "l"
     host_table.align["Node Type"] = "l"
@@ -272,7 +279,7 @@ def report_host_info(host_entries):
         else:
             cluster_assigned = host['cluster_name']
 
-        host_table.add_row([host['hostname'], host['ip'], host['ssh_status'], host['record_source'], host['node_type'], cluster_assigned, host['cluster_attach_status']])
+        host_table.add_row([host['hostname'], host['ip'], host['fk_host_profile'], host['ssh_status'], host['record_source'], host['node_type'], cluster_assigned, host['cluster_attach_status']])
         num_k8s_rows += 1
     if num_k8s_rows > 0:
         sys.stdout.write("\n------ Kubernetes Nodes ------\n")
@@ -280,7 +287,7 @@ def report_host_info(host_entries):
 
     # print unassigned hosts
     unassigned_table = PrettyTable()
-    unassigned_table.field_names = ["HOSTNAME","Primary IP","Discovery Status","Source","IP Interfaces"]
+    unassigned_table.field_names = ["HOSTNAME","Primary IP","Host Template","Discovery Status","Source","IP Interfaces"]
     unassigned_table.title = "Unassigned Hosts"
     unassigned_table.align["HOSTNAME"] = "l"
     unassigned_table.align["Primary IP"] = "l"
