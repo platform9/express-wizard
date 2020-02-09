@@ -151,8 +151,8 @@ def get_host_metadata(du, project_id, token):
         if target == fk_host_profile:
             menu_default = cnt
         cnt += 1
-    user_input = user_io.read_kbd("Enter Selection", allowed_values, menu_default, True, True, help.host_interview("host-template"))
-    if user_input == 'q':
+<   user_input = user_io.read_kbd("Enter Selection", allowed_values, menu_default, True, True, help.host_interview("host-template"))
+=   if user_input == 'q':
         return ''
     else:
         if type(user_input) is int or user_input.isdigit():
