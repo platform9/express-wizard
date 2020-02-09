@@ -807,7 +807,6 @@ def discover_region_hosts(discover_target):
             num_hosts += 1
 
         # trigger ssh-based discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
-        sys.stdout.write("--> Discovering user-defined hosts for region\n")
         if datamodel_hosts:
             for tmp_host in datamodel_hosts:
                 if not tmp_host['hostname'] in discovered_hostnames:

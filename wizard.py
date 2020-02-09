@@ -370,7 +370,14 @@ def menu_level0():
                         express_utils.run_express(selected_du, host_entries)
                         user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
                         if user_input == 'y':
-                            datamodel.discover_region(selected_du)
+                            sys.stdout.write("\nPerforming Discovery\n")
+                            sys.stdout.write("--> Discovering hosts:\n")
+                            num_hosts = datamodel.discover_region_hosts(selected_du)
+                            sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+                            if selected_du['du_type'] == "Kubernetes":
+                                sys.stdout.write("--> Discovering clusters:\n")
+                                num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(selected_du)
+                                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
         elif user_input == '6':
             action_header("SHOW REGION")
             selected_du = interview.select_du()
