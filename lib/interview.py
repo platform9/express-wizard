@@ -1029,16 +1029,13 @@ def add_host(du):
             if host['ip'] == "":
                 ssh_status = "no-primary-ip"
             else:
-                if globals.SSH_DISCOVERY:
-                    du_metadata = datamodel.get_du_metadata(du['url'])
-                    if du_metadata:
-                        ssh_status = ssh_utils.validate_login(du_metadata, host['ip'])
-                        if ssh_status == True:
-                            ssh_status = "OK"
-                        else:
-                            ssh_status = "Failed"
+                du_metadata = datamodel.get_du_metadata(du['url'])
+                if du_metadata:
+                    ssh_status = ssh_utils.validate_login(du_metadata, host['ip'])
+                    if ssh_status == True:
+                        ssh_status = "OK"
                     else:
-                        ssh_status = "Unvalidated"
+                        ssh_status = "Failed"
                 else:
                     ssh_status = "Unvalidated"
 

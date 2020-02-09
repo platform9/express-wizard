@@ -45,7 +45,4 @@ bond_modes = [
     "Adaptive Load-Balancing (ALB)"
 ]
 
-# discovery settings
-SSH_DISCOVERY = True
-
 terminal_width = 120
