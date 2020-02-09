@@ -578,6 +578,7 @@ def write_host(host):
     else:
         update_hosts = []
         flag_found = False
+        
         for h in current_hosts:
             if h['hostname'] == host['hostname'] and h['uuid'] == host['uuid']:
                 update_hosts.append(host)
@@ -784,6 +785,10 @@ def discover_region_hosts(discover_target):
                 if dm_host['hostname'] == host['hostname']:
                     if dm_host['fk_host_profile'] != "":
                         host['fk_host_profile'] = dm_host['fk_host_profile']
+                    if dm_host['discovery_last_auth'] != "":
+                        host['discovery_last_auth'] = dm_host['discovery_last_auth']
+                    if dm_host['discovery_last_ip'] != "":
+                        host['discovery_last_ip'] = dm_host['discovery_last_ip']
 
             # perform ssh-based discovery for resmgr hosts
             discovery_metadata = ssh_utils.discover_host(discover_target, host)

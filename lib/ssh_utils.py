@@ -44,36 +44,66 @@ def search_discovery_data(discovery_stdout, key_name):
 
 
 def discover_host(du_metadata, host):
-    discover_metadata = {}
     source_script = "/tmp/ssh_discovery.sh"
     target_script = "/tmp/ssh_discovery.sh"
     ssh_args = "-o StrictHostKeyChecking=no -o ConnectTimeout=5"
 
     sys.stdout.write("    {}: ".format(host['hostname']))
-    discover_metadata['message'] = "Initializing"
+    discover_metadata = {}
+
     if not globals.SSH_DISCOVERY:
         discover_metadata['message'] = "Disabled by Policy"
         return(discover_metadata)
 
+    discover_metadata['message'] = "Initializing"
     host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
     if host_profile_metadata:
         auth_type = host_profile_metadata['auth_profile']['auth_type']
         ssh_key = host_profile_metadata['auth_profile']['auth_ssh_key']
         ssh_user = host_profile_metadata['auth_profile']['auth_username']
-        flag_host_profile_mapped = True
     else:
         auth_type = du_metadata['auth_type']
         ssh_key = du_metadata['auth_ssh_key']
         ssh_user = du_metadata['auth_username']
-        flag_host_profile_mapped = False
 
+    # try last known-good auth profile
+    if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
+        last_ip = host['discovery_last_ip']
+
+        if host['discovery_last_auth'] == "region-auth":
+            last_key = du_metadata['auth_ssh_key']
+            last_user = du_metadata['auth_username']
+        else:
+            auth_profile = datamodel.get_auth_profile_metadata(host['discovery_last_auth'])
+            if auth_profile:
+                last_key = auth_profile['auth_ssh_key']
+                last_user = auth_profile['auth_username']
+
+        sys.stdout.write("trying {} ({}/{})".format(last_ip,last_user,last_key))
+        sys.stdout.flush()
+        cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,last_key,source_script,last_user,last_ip,target_script)
+        exit_status, stdout = run_cmd(cmd)
+        if exit_status == 0:
+            cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,last_key,last_user,last_ip,target_script)
+            exit_status, stdout = run_cmd(cmd)
+            if exit_status == 0:
+                discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
+                discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
+                discover_metadata['discovery-last-auth'] = auth_profile['auth_name']
+                discover_metadata['discovery-last-ip'] = last_ip
+                discover_metadata['message'] = "Complete"
+                sys.stdout.write("- succeeded\n")
+                sys.stdout.flush()
+                return(discover_metadata)
+
+    # attempt to scp discovery script, the ssh to execute it
+    ip_list = []
     if auth_type == "simple":
         return(discover_metadata)
     elif du_metadata['auth_type'] == "sshkey":
         sys.stdout.write("trying ")
         sys.stdout.flush()
         cnt = 0
-        ip_list = []
         if host['ip'] != "":
             ip_list.append(host['ip'])
         else:
@@ -96,10 +126,9 @@ def discover_host(du_metadata, host):
                 discover_metadata['discovery-last-ip'] = interface_ipaddr
             else:
                 cnt += 1
-                if flag_host_profile_mapped:
-                    continue
 
                 # try region auth, then try all auth-profiles
+                cnt += 1
                 auth_profile_list = datamodel.get_auth_profile_names()
                 if auth_profile_list:
                     for auth_profile_name in auth_profile_list:
@@ -117,7 +146,7 @@ def discover_host(du_metadata, host):
         cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,ssh_key,ssh_user,interface_ipaddr,target_script)
         exit_status, stdout = run_cmd(cmd)
         if exit_status == 0:
-            sys.stdout.write(" - succeeded\n".format(interface_ipaddr))
+            sys.stdout.write(" - succeeded\n")
             discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
             discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
             discover_metadata['message'] = "Complete"
