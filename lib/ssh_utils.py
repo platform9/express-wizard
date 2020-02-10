@@ -46,7 +46,7 @@ def search_discovery_data(discovery_stdout, key_name):
 def discover_host(du_metadata, host):
     source_script = "{}/../scripts/ssh_discovery.sh".format(os.path.dirname(os.path.realpath(__file__))) 
     target_script = "/tmp/ssh_discovery.sh"
-    ssh_args = "-o StrictHostKeyChecking=no -o ConnectTimeout=5"
+    ssh_args = "-o StrictHostKeyChecking=no -o ConnectTimeout=5 -o BatchMode=yes"
     discover_metadata = {}
     cnt = 0
 
