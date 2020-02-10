@@ -29,9 +29,9 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-        sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, '/../lib')))
-        from encrypt import Encryption
+        #SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+        #sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, '/../lib')))
+        from ../lib/encrypt import Encryption
 
         # make sure keyfile does not exist
         tmpfile = "/tmp/keyfile.tmp"
