@@ -143,6 +143,10 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("[k8s_master]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "master":
+                # skip hosts that are already attached to a cluster
+                if host['cluster_attach_status'] == "ok":
+                    continue
+
                 auth_override = ""
                 if host['fk_host_profile'] != "":
                     host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
@@ -160,6 +164,10 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("[k8s_worker]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "worker":
+                # skip hosts that are already attached to a cluster
+                if host['cluster_attach_status'] == "ok":
+                    continue
+
                 auth_override = ""
                 if host['fk_host_profile'] != "":
                     host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
