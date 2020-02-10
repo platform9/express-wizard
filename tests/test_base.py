@@ -23,4 +23,10 @@ class TestWizardBaseLine(TestCase):
         output = popen(['wizard', '--help'], stdout=PIPE).communicate()[0]
         self.assertTrue('usage:' in str(output))
        
+    def test_encryption(self):
+        """Test wizard encryption class"""
+        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
+        print(self.log)
+        output = "B"
+        self.assertTrue(output == 'A')
         
