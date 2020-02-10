@@ -16,8 +16,9 @@ class Help:
         help_config = configparser.ConfigParser()
 
     def __init__(self):
+        HELP_FILE = "{}/../conf/help_strings.conf".format(os.path.dirname(os.path.realpath(__file__)))
         try:
-            self.help_config.read(globals.HELP_FILE)
+            self.help_config.read(HELP_FILE)
         except Exception as ex:
             sys.stdout.write("ERROR: failed to initialize help subsystem, failed to parse: {}\n".format(globals.HELP_FILE))
             sys.stdout.write("ConfigParser.Exception: {}\n".format(ex.message))
