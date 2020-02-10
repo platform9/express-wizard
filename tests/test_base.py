@@ -6,6 +6,9 @@ import inspect
 from unittest import TestCase
 from subprocess import PIPE, Popen as popen
 
+# added for test_encryption()
+from encrypt import Encryption
+
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
     def test_entrypoints(self):
@@ -27,6 +30,18 @@ class TestWizardBaseLine(TestCase):
         """Test wizard encryption class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
-        output = "B"
-        self.assertTrue(output == 'A')
+
+        # make sure keyfile does not exist
+        tmpfile = "/tmp/keyfile.tmp"
+        if os.path.isfile(tmpfile):
+            try:
+                os.remove(tmpfile)
+            except:
+                self.assertTrue(False)
+
+        encryption = Encryption(tmpfile)
+        original_string = "This is a test string"
+        encrypted_string = encryption.encrypt_password(original_string)
+        unencrypted_string = encryption.decrypt_password(encrypted_string)
+        self.assertTrue(unencrypted_string == original_string)
         
