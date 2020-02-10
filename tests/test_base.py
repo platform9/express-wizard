@@ -7,6 +7,11 @@ import inspect
 from unittest import TestCase
 from subprocess import PIPE, Popen as popen
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+LIB_DIR = SCRIPT_DIR + "/../lib"
+sys.path.append(LIB_DIR)
+from encrypt import Encryption
+
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
     def test_entrypoints(self):
@@ -28,11 +33,6 @@ class TestWizardBaseLine(TestCase):
         """Test wizard encryption class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
-
-        #SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
-        #sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, '/../lib')))
-        sys.path.append(os.path.abspath('../lib')
-        from encrypt import Encryption
 
         # make sure keyfile does not exist
         tmpfile = "/tmp/keyfile.tmp"
