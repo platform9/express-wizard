@@ -363,7 +363,14 @@ def menu_level0():
                         express_utils.run_express_cli(selected_du)
                         user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
                         if user_input == 'y':
-                            datamodel.discover_region(selected_du)
+                            sys.stdout.write("\nPerforming Discovery\n")
+                            sys.stdout.write("--> Discovering hosts:\n")
+                            num_hosts = datamodel.discover_region_hosts(selected_du)
+                            sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+                            if selected_du['du_type'] == "Kubernetes":
+                                sys.stdout.write("--> Discovering clusters:\n")
+                                num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(selected_du)
+                                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
