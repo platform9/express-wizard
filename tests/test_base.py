@@ -31,7 +31,8 @@ class TestWizardBaseLine(TestCase):
 
         #SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
         #sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, '/../lib')))
-        from ../lib/encrypt import Encryption
+        sys.path.append(os.path.abspath('../lib')
+        from encrypt import Encryption
 
         # make sure keyfile does not exist
         tmpfile = "/tmp/keyfile.tmp"
