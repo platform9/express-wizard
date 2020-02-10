@@ -7,6 +7,7 @@ import du_utils
 import datamodel
 import resmgr_utils
 import pmk_utils
+from lock import Lock
 from encrypt import Encryption
 
 def create_du_entry():
@@ -542,6 +543,12 @@ def write_cluster(cluster):
         except:
             fail("failed to create directory: {}".format(globals.CONFIG_DIR))
 
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.CLUSTER_FILE_LOCK)
+
     current_clusters = get_clusters(None)
     if len(current_clusters) == 0:
         current_clusters.append(cluster)
@@ -561,6 +568,9 @@ def write_cluster(cluster):
         with open(globals.CLUSTER_FILE, 'w') as outfile:
             json.dump(update_clusters, outfile)
 
+    # release lock
+    lock.release_lock(globals.CLUSTER_FILE_LOCK)
+
 
 def write_host(host):
     if not os.path.isdir(globals.CONFIG_DIR):
@@ -568,6 +578,12 @@ def write_host(host):
             os.mkdir(globals.CONFIG_DIR)
         except:
             fail("failed to create directory: {}".format(globals.CONFIG_DIR))
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.HOST_FILE_LOCK)
 
     # get all hosts
     current_hosts = get_hosts(None)
@@ -593,9 +609,19 @@ def write_host(host):
         with open(globals.HOST_FILE, 'w') as outfile:
             json.dump(update_hosts, outfile)
 
+    # release lock
+    lock.release_lock(globals.HOST_FILE_LOCK)
+
 
 def write_config(du):
     """Write config to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.CONFIG_FILE_LOCK)
+
     # read du database
     if not os.path.isdir(globals.CONFIG_DIR):
         try:
@@ -622,9 +648,19 @@ def write_config(du):
         with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
 
+    # release lock
+    lock.release_lock(globals.CONFIG_FILE_LOCK)
+
 
 def write_host_profile(host_profile):
     """Write Host Profile file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.HOST_PROFILE_FILE_LOCK)
+
     current_host_profile = get_host_profiles()
     if len(current_host_profile) == 0:
         current_host_profile.append(host_profile)
@@ -644,9 +680,19 @@ def write_host_profile(host_profile):
         with open(globals.HOST_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
 
+    # release lock
+    lock.release_lock(globals.HOST_PROFILE_FILE_LOCK)
+
 
 def write_bond_profile(bond):
     """Write bond file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.BOND_PROFILE_FILE_LOCK)
+
     current_bond = get_bond_profiles()
     if len(current_bond) == 0:
         current_bond.append(bond)
@@ -666,9 +712,19 @@ def write_bond_profile(bond):
         with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
 
+    # release lock
+    lock.release_lock(globals.BOND_PROFILE_FILE_LOCK)
+
 
 def write_role_profile(role):
     """Write role file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.ROLE_PROFILE_FILE_LOCK)
+
     current_role = get_role_profiles()
     if len(current_role) == 0:
         current_role.append(role)
@@ -688,9 +744,19 @@ def write_role_profile(role):
         with open(globals.ROLE_PROFILE_FILE, 'w') as outfile:
             json.dump(update_role, outfile)
 
+    # release lock
+    lock.release_lock(globals.ROLE_PROFILE_FILE_LOCK)
+
 
 def write_auth_profile(auth):
     """Write authorization file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock()
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock(globals.AUTH_PROFILE_FILE_LOCK)
+
     current_profile = get_auth_profiles()
     if len(current_profile) == 0:
         current_profile.append(auth)
@@ -709,6 +775,9 @@ def write_auth_profile(auth):
             update_profile.append(auth)
         with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
+
+    # release lock
+    lock.release_lock(globals.AUTH_PROFILE_FILE_LOCK)
 
 
 def cluster_in_array(target_url,target_name,target_clusters):

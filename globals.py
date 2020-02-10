@@ -6,6 +6,7 @@ import sys
 # globals
 PF9_DIR = "{}/.pf9".format(expanduser("~"))
 CONFIG_DIR = "{}/db".format(PF9_DIR)
+LOCK_DIR = "{}/lock".format(PF9_DIR)
 CONFIG_FILE = "{}/du.conf".format(CONFIG_DIR)
 HELP_FILE = "{}/help_strings.conf".format(CONFIG_DIR)
 HOST_FILE = "{}/hosts.conf".format(CONFIG_DIR)
@@ -15,10 +16,21 @@ BOND_PROFILE_FILE = "{}/bond-profiles.conf".format(CONFIG_DIR)
 ROLE_PROFILE_FILE = "{}/role-profiles.conf".format(CONFIG_DIR)
 HOST_PROFILE_FILE = "{}/host-profiles.conf".format(CONFIG_DIR)
 
+# lock files
+CONFIG_FILE_LOCK = "{}/du.lck".format(LOCK_DIR)
+HOST_FILE_LOCK = "{}/hosts.lck".format(LOCK_DIR)
+CLUSTER_FILE_LOCK = "{}/clusters.lck".format(LOCK_DIR)
+AUTH_PROFILE_FILE_LOCK = "{}/auth-profiles.lck".format(LOCK_DIR)
+BOND_PROFILE_FILE_LOCK = "{}/bond-profiles.lck".format(LOCK_DIR)
+ROLE_PROFILE_FILE_LOCK = "{}/role-profiles.lck".format(LOCK_DIR)
+HOST_PROFILE_FILE_LOCK = "{}/host-profiles.lck".format(LOCK_DIR)
+
+# paths for virtual environment
 PF9_VENV = sys.prefix 
 WIZARD_VENV = "{}/bin/activate".format(PF9_VENV)
 WIZARD_PYTHON = sys.executable 
 
+# paths for express components
 SRC_DIR = "{}/src".format(PF9_DIR)
 EXPRESS_REPO = "https://github.com/platform9/express.git"
 EXPRESS_LOG_DIR = "{}/db/express/log".format(PF9_DIR)

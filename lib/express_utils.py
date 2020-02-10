@@ -97,6 +97,11 @@ def build_express_inventory(du,host_entries):
                 host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
                 if host_profile_metadata:
                     auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(host_profile_metadata['auth_profile']['auth_ssh_key'],host_profile_metadata['auth_profile']['auth_username'])
+            else:
+                if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
+                    last_key = host['discovery_last_auth'].split(',')[0]
+                    last_user = host['discovery_last_auth'].split(',')[1]
+                    auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(last_key,last_user)
 
             if host['nova'] == "y":
                 if cnt < 2:
@@ -138,13 +143,35 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("[k8s_master]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "master":
-                express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
+                auth_override = ""
+                if host['fk_host_profile'] != "":
+                    host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
+                    if host_profile_metadata:
+                        auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(host_profile_metadata['auth_profile']['auth_ssh_key'],host_profile_metadata['auth_profile']['auth_username'])
+                else:
+                    if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
+                        last_key = host['discovery_last_auth'].split(',')[0]
+                        last_user = host['discovery_last_auth'].split(',')[1]
+                        auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(last_key,last_user)
+
+                express_inventory_fh.write("{} ansible_host={} {}\n".format(host['hostname'],host['ip'],auth_override))
 
         # manage K8s_worker stanza
         express_inventory_fh.write("[k8s_worker]\n")
         for host in host_entries:
             if host['pf9-kube'] == "y" and host['node_type'] == "worker":
-                express_inventory_fh.write("{} ansible_host={}\n".format(host['hostname'],host['ip']))
+                auth_override = ""
+                if host['fk_host_profile'] != "":
+                    host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
+                    if host_profile_metadata:
+                        auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(host_profile_metadata['auth_profile']['auth_ssh_key'],host_profile_metadata['auth_profile']['auth_username'])
+                else:
+                    if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
+                        last_key = host['discovery_last_auth'].split(',')[0]
+                        last_user = host['discovery_last_auth'].split(',')[1]
+                        auth_override = "ansible_ssh_private_key_file={} ansible_ssh_user={}".format(last_key,last_user)
+
+                express_inventory_fh.write("{} ansible_host={} {}\n".format(host['hostname'],host['ip'],auth_override))
   
         # close inventory file
         express_inventory_fh.close()
