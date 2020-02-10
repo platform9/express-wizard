@@ -1,6 +1,7 @@
 """General test of wizard.py"""
 
 import os
+import sys
 import logging
 import inspect
 from unittest import TestCase
