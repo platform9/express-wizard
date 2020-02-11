@@ -350,8 +350,8 @@ def menu_level0():
                     flag_more_hosts = True
                     while flag_more_hosts:
                         new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y', 'n'], 'y', True, True, help.menu_interview("add-another-host"))
-                        if user_input == "n":
+                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True, help.menu_interview("add-another-host"))
+                        if user_input in ['n']:
                             flag_more_hosts = False
         elif user_input == '5':
             action_header("ONBOARD HOSTS")
@@ -361,10 +361,30 @@ def menu_level0():
                     if selected_du['du_type'] == "Kubernetes":
                         sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
                         express_utils.run_express_cli(selected_du)
+                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                        if user_input == 'y':
+                            sys.stdout.write("\nPerforming Discovery\n")
+                            sys.stdout.write("--> Discovering hosts:\n")
+                            num_hosts = datamodel.discover_region_hosts(selected_du)
+                            sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+                            if selected_du['du_type'] == "Kubernetes":
+                                sys.stdout.write("--> Discovering clusters:\n")
+                                num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(selected_du)
+                                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
                     elif selected_du['du_type'] == "KVM":
                         sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
                         host_entries = datamodel.get_hosts(selected_du['url'])
                         express_utils.run_express(selected_du, host_entries)
+                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                        if user_input == 'y':
+                            sys.stdout.write("\nPerforming Discovery\n")
+                            sys.stdout.write("--> Discovering hosts:\n")
+                            num_hosts = datamodel.discover_region_hosts(selected_du)
+                            sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+                            if selected_du['du_type'] == "Kubernetes":
+                                sys.stdout.write("--> Discovering clusters:\n")
+                                num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(selected_du)
+                                sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
         elif user_input == '6':
             action_header("SHOW REGION")
             selected_du = interview.select_du()
@@ -383,21 +403,6 @@ def menu_level0():
             None
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
-
-
-def ssh_validate_login(du_metadata, host_ip):
-    if du_metadata['auth_type'] == "simple":
-        return False
-        cmd = "ssh -o StrictHostKeyChecking=no -o PubkeyAuthentication=no {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
-    elif du_metadata['auth_type'] == "sshkey":
-        cmd = "ssh -o StrictHostKeyChecking, no -i {} {}@{} 'echo 201'".format(du_metadata['auth_ssh_key'], du_metadata['auth_username'], host_ip)
-        exit_status, stdout = run_cmd(cmd)
-        if exit_status == 0:
-            return True
-        else:
-            return False
-
-    return False
 
 
 ## main
@@ -427,6 +432,8 @@ def main():
             os.remove(globals.ROLE_PROFILE_FILE)
         if os.path.isfile(globals.HOST_PROFILE_FILE):
             os.remove(globals.HOST_PROFILE_FILE)
+        if not args.jsonImport:
+            sys.exit(0)
 
     # export datamodel
     if args.export:

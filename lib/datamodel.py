@@ -3,6 +3,12 @@ import sys
 import json
 import globals
 import ssh_utils
+import du_utils
+import datamodel
+import resmgr_utils
+import pmk_utils
+from lock import Lock
+from encrypt import Encryption
 
 def create_du_entry():
     du_record = {
@@ -33,6 +39,7 @@ def create_host_entry():
         'ip': "",
         'uuid': "",
         'ip_interfaces': "",
+        'interface_list': "",
         'du_host_type': "",
         'hostname': "",
         'record_source': "",
@@ -47,7 +54,9 @@ def create_host_entry():
         'cluster_name': "",
         'cluster_attach_status': "",
         'cluster_uuid': "",
-        'fk_auth_profile': ""
+        'fk_host_profile': "",
+        'discovery_last_auth': "",
+        'discovery_last_ip': ""
     }
     return(host_record)
 
@@ -118,6 +127,9 @@ def create_cluster_entry():
 def import_region(import_file_path):
     sys.stdout.write("Importing Region (existing data will be over-written) from import file: {}\n".format(import_file_path))
 
+    # for host imports, enforce a minimum set of required keys
+    host_record_required_keys = ["du_url", "du_type", "ip", "du_host_type", "hostname"]
+
     if not os.path.isfile(import_file_path):
         sys.stdout.write("--> failed to open import file: {}\n".format(import_file_path))
         return(None)
@@ -126,49 +138,50 @@ def import_region(import_file_path):
         region_config = json.load(json_file)
 
     required_keys = ['region','hosts','clusters','auth-profiles','bond-profiles','role-profiles','host-profiles']
-    for k in required_keys:
-        if not k in region_config:
-            sys.stdout.write("--> INFO: export data missing dictionary key: {}\n".format(k))
+    for key_name in required_keys:
+        if not key_name in region_config:
+            sys.stdout.write("--> INFO: export data missing dictionary key: {}\n".format(key_name))
+            continue
 
-    if 'region' in region_config:
-        sys.stdout.write("--> importing region configuration\n")
-        write_config(region_config['region'])
-
-    if 'hosts' in region_config:
-        sys.stdout.write("--> importing hosts\n")
-        for target in region_config['hosts']:
-            sys.stdout.write("    {}\n".format(target['hostname']))
-            write_host(target)
-
-    if 'clusters' in region_config:
-        sys.stdout.write("--> importing clusters\n")
-        for target in region_config['clusters']:
-            sys.stdout.write("    {}\n".format(target['name']))
-            write_cluster(target)
-
-    if 'auth-profiles' in region_config:
-        sys.stdout.write("--> importing auth-profiles\n")
-        for target in region_config['auth-profiles']:
-            sys.stdout.write("    {}\n".format(target['auth_name']))
-            write_auth_profile(target)
-
-    if 'bond-profiles' in region_config:
-        sys.stdout.write("--> importing bond-profiles\n")
-        for target in region_config['bond-profiles']:
-            sys.stdout.write("    {}\n".format(target['bond_name']))
-            write_bond_profile(target)
-
-    if 'role-profiles' in region_config:
-        sys.stdout.write("--> importing role-profiles\n")
-        for target in region_config['role-profiles']:
-            sys.stdout.write("    {}\n".format(target['role_name']))
-            write_role_profile(target)
-
-    if 'host-profiles' in region_config:
-        sys.stdout.write("--> importing host-profiles\n")
-        for target in region_config['host-profiles']:
-            sys.stdout.write("    {}\n".format(target['host_profile_name']))
-            write_host_profile(target)
+        if key_name == "region":
+            sys.stdout.write("--> importing region\n")
+            write_config(region_config['region'])
+        elif key_name == "hosts":
+            sys.stdout.write("--> importing hosts\n")
+            for target in region_config['hosts']:
+                sys.stdout.write("    {}\n".format(target['hostname']))
+                host_record = create_host_entry()
+                for req_key in host_record_required_keys:
+                    if not req_key in target:
+                        sys.stdout.write("FATAL: missing required key: {}\n".format(req_key))
+                        sys.exit(0)
+                    host_record[req_key] = target[req_key]
+                write_host(host_record)
+        elif key_name == "clusters":
+            sys.stdout.write("--> importing clusters\n")
+            for target in region_config['clusters']:
+                sys.stdout.write("    {}\n".format(target['name']))
+                write_cluster(target)
+        elif key_name == "auth-profiles":
+            sys.stdout.write("--> importing auth-profiles\n")
+            for target in region_config['auth-profiles']:
+                sys.stdout.write("    {}\n".format(target['auth_name']))
+                write_auth_profile(target)
+        elif key_name == "bond-profiles":
+            sys.stdout.write("--> importing bond-profiles\n")
+            for target in region_config['bond-profiles']:
+                sys.stdout.write("    {}\n".format(target['bond_name']))
+                write_bond_profile(target)
+        elif key_name == "role-profiles":
+            sys.stdout.write("--> importing role-profiles\n")
+            for target in region_config['role-profiles']:
+                sys.stdout.write("    {}\n".format(target['role_name']))
+                write_role_profile(target)
+        elif key_name == "host-profiles":
+            sys.stdout.write("--> importing host-profiles\n")
+            for target in region_config['host-profiles']:
+                sys.stdout.write("    {}\n".format(target['host_profile_name']))
+                write_host_profile(target)
 
 
 def export_region(du_urls):
@@ -530,6 +543,12 @@ def write_cluster(cluster):
         except:
             fail("failed to create directory: {}".format(globals.CONFIG_DIR))
 
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.CLUSTER_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     current_clusters = get_clusters(None)
     if len(current_clusters) == 0:
         current_clusters.append(cluster)
@@ -549,6 +568,9 @@ def write_cluster(cluster):
         with open(globals.CLUSTER_FILE, 'w') as outfile:
             json.dump(update_clusters, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_host(host):
     if not os.path.isdir(globals.CONFIG_DIR):
@@ -556,6 +578,12 @@ def write_host(host):
             os.mkdir(globals.CONFIG_DIR)
         except:
             fail("failed to create directory: {}".format(globals.CONFIG_DIR))
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.HOST_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
 
     # get all hosts
     current_hosts = get_hosts(None)
@@ -566,6 +594,7 @@ def write_host(host):
     else:
         update_hosts = []
         flag_found = False
+        
         for h in current_hosts:
             if h['hostname'] == host['hostname'] and h['uuid'] == host['uuid']:
                 update_hosts.append(host)
@@ -580,9 +609,19 @@ def write_host(host):
         with open(globals.HOST_FILE, 'w') as outfile:
             json.dump(update_hosts, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_config(du):
     """Write config to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.CONFIG_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     # read du database
     if not os.path.isdir(globals.CONFIG_DIR):
         try:
@@ -609,9 +648,19 @@ def write_config(du):
         with open(globals.CONFIG_FILE, 'w') as outfile:
             json.dump(update_config, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_host_profile(host_profile):
     """Write Host Profile file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.HOST_PROFILE_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     current_host_profile = get_host_profiles()
     if len(current_host_profile) == 0:
         current_host_profile.append(host_profile)
@@ -631,9 +680,19 @@ def write_host_profile(host_profile):
         with open(globals.HOST_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_bond_profile(bond):
     """Write bond file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.BOND_PROFILE_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     current_bond = get_bond_profiles()
     if len(current_bond) == 0:
         current_bond.append(bond)
@@ -653,9 +712,19 @@ def write_bond_profile(bond):
         with open(globals.BOND_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_role_profile(role):
     """Write role file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.ROLE_PROFILE_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     current_role = get_role_profiles()
     if len(current_role) == 0:
         current_role.append(role)
@@ -675,9 +744,19 @@ def write_role_profile(role):
         with open(globals.ROLE_PROFILE_FILE, 'w') as outfile:
             json.dump(update_role, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def write_auth_profile(auth):
     """Write authorization file to disk"""
+
+    # initialize locking - NOTE: make sure to release_local() prior to all exceptions/returns)
+    lock = Lock(globals.AUTH_PROFILE_FILE_LOCK)
+
+    # get lock (for concurrent datamodel access across)
+    lock.get_lock()
+
     current_profile = get_auth_profiles()
     if len(current_profile) == 0:
         current_profile.append(auth)
@@ -697,6 +776,9 @@ def write_auth_profile(auth):
         with open(globals.AUTH_PROFILE_FILE, 'w') as outfile:
             json.dump(update_profile, outfile)
 
+    # release lock
+    lock.release_lock()
+
 
 def cluster_in_array(target_url,target_name,target_clusters):
     for cluster in target_clusters:
@@ -714,6 +796,8 @@ def get_cluster_uuid(du_url, cluster_name):
 
 def get_aggregate_host_profile(host_profile_name):
     host_profile_metadata = {}
+    if host_profile_name == "":
+        return(host_profile_metadata)
 
     host_profile = get_host_profile_metadata(host_profile_name)
     auth_profile = get_auth_profile_metadata(host_profile['fk_auth_profile'])
@@ -745,4 +829,96 @@ def get_aggregate_host_profile(host_profile_name):
         host_profile_metadata['role_profile']['node_type'] = role_profile['node_type']
 
     return(host_profile_metadata)
+
+
+def discover_region_hosts(discover_target):
+    num_hosts = 0
+    project_id, token = du_utils.login_du(discover_target['url'],
+                                          discover_target['username'],
+                                          discover_target['password'],
+                                          discover_target['tenant'])
+    if project_id:
+        # get current lists of hosts from datamodel
+        datamodel_hosts = datamodel.get_hosts(discover_target['url'])
+
+        # get  current list of hosts from resmgr
+        discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
+                                                          discover_target['du_type'],
+                                                          project_id,
+                                                          token,
+                                                          True)
+        discovered_hostnames = []
+        for host in discovered_hosts:
+            # copy user-managed fields from datamodel host record (if exists)
+            for dm_host in datamodel_hosts:
+                if dm_host['hostname'] == host['hostname']:
+                    if dm_host['fk_host_profile'] != "":
+                        host['fk_host_profile'] = dm_host['fk_host_profile']
+                    if dm_host['discovery_last_auth'] != "":
+                        host['discovery_last_auth'] = dm_host['discovery_last_auth']
+                    if dm_host['discovery_last_ip'] != "":
+                        host['discovery_last_ip'] = dm_host['discovery_last_ip']
+
+            # perform ssh-based discovery for resmgr hosts
+            discovery_metadata = ssh_utils.discover_host(discover_target, host)
+            host['ssh_status'] = discovery_metadata['message']
+            if "interface-list" in discovery_metadata:
+                host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+            if "primary-ip" in discovery_metadata:
+                host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+            if 'discovery-last-auth' in discovery_metadata:
+                host['discovery_last_auth'] = discovery_metadata['discovery-last-auth']
+            if 'discovery-last-ip' in discovery_metadata:
+                host['discovery_last_ip'] = discovery_metadata['discovery-last-ip']
+
+            discovered_hostnames.append(host['hostname'])
+            datamodel.write_host(host)
+            num_hosts += 1
+
+        # trigger ssh-based discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
+        if datamodel_hosts:
+            for tmp_host in datamodel_hosts:
+                if not tmp_host['hostname'] in discovered_hostnames:
+                    discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
+                    tmp_host['ssh_status'] = discovery_metadata['message']
+                    if "interface-list" in discovery_metadata:
+                        tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
+                    if "primary-ip" in discovery_metadata:
+                        tmp_host['ip'] = discovery_metadata['primary-ip'].split("=")[1]
+                    datamodel.write_host(tmp_host)
+                    num_hosts += 1
+
+    return(num_hosts)
+
+
+def discover_region_clusters(discover_target):
+    num_clusters_discovered = 0
+    num_clusters_created = 0
+    if discover_target['du_type'] in ['Kubernetes','KVM/Kubernetes']:
+        sys.stdout.write("--> Discovering clusters for {} region: {}\n".format(discover_target['du_type'],
+                                                                               discover_target['url']))
+        encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+        project_id, token = du_utils.login_du(discover_target['url'],discover_target['username'],discover_target['password'],discover_target['tenant'])
+        if project_id:
+            # discover existing clusters
+            discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
+            # get existing/user-defined clusters for region
+            defined_clusters = datamodel.get_clusters(discover_target['url'])
+
+            # create any missing clusters
+            for cluster in defined_clusters:
+                cluster_flag = datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters)
+                if not datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters):
+                    pmk_utils.create_cluster(discover_target['url'], project_id, token, cluster)
+                    num_clusters_created += 1
+                num_clusters_discovered += 1
+
+            if num_clusters_created > 0:
+                discovered_clusters = pmk_utils.discover_du_clusters(discover_target['url'], discover_target['du_type'], project_id, token)
+
+            for cluster in discovered_clusters:
+                datamodel.write_cluster(cluster)
+
+    return(num_clusters_created,num_clusters_discovered)
 
