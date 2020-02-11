@@ -6,6 +6,7 @@ import ssh_utils
 import du_utils
 import datamodel
 import resmgr_utils
+import express_utils
 import pmk_utils
 from lock import Lock
 from encrypt import Encryption
@@ -155,7 +156,9 @@ def import_region(import_file_path):
                     if not req_key in target:
                         sys.stdout.write("FATAL: missing required key: {}\n".format(req_key))
                         sys.exit(0)
-                    host_record[req_key] = target[req_key]
+                for key in host_record.keys():
+                    if key in target:
+                        host_record[key] = target[key]
                 write_host(host_record)
         elif key_name == "clusters":
             sys.stdout.write("--> importing clusters\n")
@@ -182,6 +185,33 @@ def import_region(import_file_path):
             for target in region_config['host-profiles']:
                 sys.stdout.write("    {}\n".format(target['host_profile_name']))
                 write_host_profile(target)
+
+    # perform actions (if defined in import data)
+    if 'actions' in region_config:
+        sys.stdout.write("\n========== Performing Actions ========== \n")
+        for action in region_config['actions']:
+            # validate action (from user json)
+            if not 'operation' in action:
+                sys.stdout.write("ERROR: missing metadata in json: {}".format('operation'))
+                sys.exit(0)
+            elif not 'region-name' in action:
+                sys.stdout.write("ERROR: missing metadata in json: {}".format('region-name'))
+                sys.exit(0)
+
+            # validate region
+            du = get_du_metadata(action['region-name'])
+            if not du:
+                sys.stdout.write("ERROR: region not found: {}".format(action['region-name']))
+                sys.exit(0)
+
+            if action['operation'] == 'discover-region':
+                sys.stdout.write("\n[ Discover Region : {}]\n".format(action['region-name']))
+                discover_region(du)
+            elif action['operation'] == 'onboard-region':
+                sys.stdout.write("\n[ Onboard Region: {}]\n".format(action['region-name']))
+                express_utils.run_express_cli(du, action)
+            else:
+                sys.stdout.write("ERROR: invalid action: {}\n".format(action['operation']))
 
 
 def export_region(du_urls):
@@ -830,6 +860,16 @@ def get_aggregate_host_profile(host_profile_name):
 
     return(host_profile_metadata)
 
+
+def discover_region(du):
+    sys.stdout.write("\nPerforming Discovery\n")
+    sys.stdout.write("--> Discovering hosts:\n")
+    num_hosts = datamodel.discover_region_hosts(du)
+    sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
+    if du['du_type'] == "Kubernetes":
+        sys.stdout.write("--> Discovering clusters:\n")
+        num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(du)
+        sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
 
 def discover_region_hosts(discover_target):
     num_hosts = 0

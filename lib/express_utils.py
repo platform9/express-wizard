@@ -329,12 +329,15 @@ def create_pmk_cluster(du, cluster):
             tail_log(c)
 
 
-def invoke_express(express_config,express_inventory,target_inventory,role_flag):
+def invoke_express(express_config,express_inventory,target_inventory,role_flag,silent_flag=False):
     # intialize help
     help = Help()
 
     sys.stdout.write("\nRunning PF9-Express\n")
-    user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 's', True, True, help.onboard_interview("express-prereqs"))
+    if silent_flag:
+        user_input = "s"
+    else:
+        user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 's', True, True, help.onboard_interview("express-prereqs"))
     if user_input == 'q':
         return()
     if user_input in ['y','n']:
@@ -345,7 +348,10 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag):
         else:
             wait_for_job(p)
 
-    user_input = user_io.read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True, help.onboard_interview("run-express"))
+    if silent_flag:
+        user_input = "y"
+    else:
+        user_input = user_io.read_kbd("--> Running PF9-Express, do you want to tail the log", ['q','y','n'], 'n', True, True, help.onboard_interview("run-express"))
     if user_input == 'q':
         return()
     if role_flag == 1:
@@ -413,10 +419,80 @@ def invoke_express_cli(nodes, cluster_name, node_type):
         wait_for_job(c)
 
 
-def run_express_cli(du):
+def run_express_cli(du, onboard_params=None):
     # intialize help
     help = Help()
 
+    # automated onboarding
+    if onboard_params:
+        sys.stdout.write("\nrun_express_cli() : performing automated onboarding\n")
+        sys.stdout.write("--> onboard_params = \n{}\n\n".format(onboard_params))
+
+        # validate import json
+        required_keys = ['region-name']
+        for rkey in required_keys:
+            if not rkey in onboard_params:
+                sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format(rkey))
+                return()
+
+        # determine type of onboarding (PMO -v- PMK)
+        if 'cluster-name' in onboard_params:
+            onboarding_type = "PMK"
+        else:
+            onboarding_type = "PMO"
+
+        # perform automated onboarding
+        if onboarding_type == "PMK":
+            selected_cluster = datamodel.get_cluster_record(onboard_params['region-name'],onboard_params['cluster-name'])
+            if selected_cluster:
+                if 'masters' in onboard_params and onboard_params['masters'] in ['ALL','all','All']:
+                    master_entries = datamodel.get_unattached_masters(selected_cluster)
+                    if not master_entries:
+                        sys.stdout.write("\nINFO: there are no unattached masters to attach to this cluster\n")
+                    else:
+                        reports.report_host_info(master_entries)
+                        flag_installed = install_express(du)
+                        if flag_installed == True:
+                            express_config = build_express_config(du)
+                            if express_config:
+                                express_inventory = build_express_inventory(du,master_entries)
+                                if express_inventory:
+                                    try:
+                                        shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                                    except:
+                                        sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                        return()
+
+                                    sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
+                                    invoke_express(express_config,express_inventory,"k8s_master",1,silent_flag=True)
+                                    sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                                    invoke_express_cli(master_entries,selected_cluster['name'],"master")
+
+                if 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
+                    worker_entries = datamodel.get_unattached_workers(selected_cluster)
+                    if not worker_entries:
+                        sys.stdout.write("\nINFO: there are no unattached workers to attach to this cluster\n")
+                    else:
+                        reports.report_host_info(worker_entries)
+                        flag_installed = install_express(du)
+                        if flag_installed == True:
+                            express_config = build_express_config(du)
+                            if express_config:
+                                express_inventory = build_express_inventory(du,worker_entries)
+                                if express_inventory:
+                                    try:
+                                        shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                                    except:
+                                        sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                        return()
+
+                                    sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
+                                    invoke_express(express_config,express_inventory,"k8s_worker",1,silent_flag=True)
+                                    sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                                    invoke_express_cli(worker_entries,selected_cluster['name'],"worker")
+        return()
+
+    # interview-based onboarding
     selected_cluster = interview.select_target_cluster(du['url'])
     if selected_cluster:
         user_input = user_io.read_kbd("\nAttach Master Nodes:", ['y','n','q'], 'y', True, True, help.onboard_interview("attach-masters"))
