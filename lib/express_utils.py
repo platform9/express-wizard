@@ -441,7 +441,25 @@ def run_express_cli(du, onboard_params=None):
         else:
             onboarding_type = "PMO"
 
-        # perform automated onboarding
+        # perform automated onboarding - PMO
+        if onboarding_type == "PMO":
+            if not 'pmo-inventory' in onboard_params:
+                sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format('pmo-inventory'))
+                return()
+
+            host_entries = datamodel.get_hosts(du['url'])
+            if not host_entries:
+                sys.stdout.write("\nINFO: there are no KVM hosts to onboard\n")
+            else:
+                flag_installed = install_express(du)
+                if flag_installed == True:
+                    express_config = build_express_config(du)
+                    if express_config:
+                        express_inventory = build_express_inventory(du,host_entries)
+                        if express_inventory:
+                            invoke_express(express_config, express_inventory, onboard_params['pmo-inventory'], 1, silent_flag=True)
+
+        # perform automated onboarding - PMK
         if onboarding_type == "PMK":
             selected_cluster = datamodel.get_cluster_record(onboard_params['region-name'],onboard_params['cluster-name'])
             if selected_cluster:
