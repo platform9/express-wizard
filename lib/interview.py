@@ -725,15 +725,7 @@ def get_du_creds(existing_du_url):
         return(du_metadata)
 
     if DISCOVER_REGION:
-        sys.stdout.write("\nPerforming Discovery of Hosts\n")
-        sys.stdout.write("--> Discovering hosts for {} region: {}\n".format(du_settings['du_type'], du_settings['url']))
-        num_hosts = datamodel.discover_region_hosts(du_settings)
-        sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
-
-        # perform cluster discovery
-        sys.stdout.write("\nPerforming Cluster Discovery (and provisioning for user-defined clusters)\n")
-        num_clusters_created, num_clusters_discovered  = datamodel.discover_region_clusters(du_settings)
-        sys.stdout.write("    # of clusters discovered/created: {}/{}\n".format(num_clusters_discovered, num_clusters_created))
+        datamodel.discover_region(du_settings)
         return(None)
 
 
@@ -1199,6 +1191,7 @@ def add_region(existing_du_url):
 
     if len(sub_regions) <2 and du['url'].replace('https://','') in sub_regions:
         sys.stdout.write("\nINFO: No Sub-Regions Have Been Detected\n\n")
+        du['region'] = du_name_list[0]
         discover_targets.append(du)
     else:
         sys.stdout.write("\nThe Following Sub-Regions Have Been Detected:\n\n")

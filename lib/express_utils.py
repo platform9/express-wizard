@@ -393,7 +393,6 @@ def invoke_express_cli(nodes, cluster_name, node_type):
     sys.stdout.write("\nRunning PF9-Express CLI\n")
     user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
     sys.stdout.flush()
-    sys.stdout.write("\n\n>>>> DBG: just flushed stdout after reading from keyboard with timeout\n\n")
     if user_input == 'q':
         return()
 
