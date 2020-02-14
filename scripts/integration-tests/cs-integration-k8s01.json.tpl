@@ -14,7 +14,6 @@
           "region-name": "https://cs-integration-k8s01.platform9.horse"
       }
   ],
-  "host-profiles": [],
   "region": {
     "username": "soleng",
     "auth_type": "sshkey",
