@@ -2,23 +2,21 @@
   "actions": [
       {
           "operation": "discover-region",
-          "region-name": "https://pmkft-1581453652-84909.platform9.io"
+          "region-name": "https://cs-integration-k8s01.platform9.horse"
       },
       {
           "operation": "onboard-region",
-          "region-name": "https://pmkft-1581453652-84909.platform9.io",
-          "cluster-name": "wizard-int02",
-          "masters": "ALL",
-          "workers": "ALL"
+          "region-name": "https://cs-integration-k8s01.platform9.horse",
+          "pmo-inventory": "all"
       },
       {
           "operation": "discover-region",
-          "region-name": "https://pmkft-1581453652-84909.platform9.io"
+          "region-name": "https://cs-integration-k8s01.platform9.horse"
       }
   ],
   "host-profiles": [],
   "region": {
-    "username": "dwrightco1@gmail.com",
+    "username": "soleng",
     "auth_type": "sshkey",
     "bond_ifname": "",
     "bond_mode": "",
@@ -28,8 +26,8 @@
     "dns_list": "",
     "password": "gAAAAABeQZmcLodSISuZWMCNjMJWOCTNiGZmTomWtWSx2TG7eFyd7qcVqdWt_ZQI3ozQiK-Eril2jj5_-cq6xeDRsyv9PHaoMQ==",
     "auth_password": "",
-    "url": "https://pmkft-1581453652-84909.platform9.io",
-    "region": "RegionOne",
+    "url": "https://cs-integration-k8s01.platform9.horse",
+    "region": "k8s01",
     "region_proxy": "",
     "git_branch": "master",
     "auth_ssh_key": "~/.ssh/id_rsa",
@@ -38,7 +36,7 @@
   "clusters": [
     {
       "name": "wizard-int02",
-      "du_url": "https://pmkft-1581453652-84909.platform9.io",
+      "du_url": "https://cs-integration-k8s01.platform9.horse",
       "record_source": "User-Defined",
       "containers_cidr": "192.168.0.0/16",
       "services_cidr": "192.169.0.0/16",
@@ -54,11 +52,11 @@
   "hosts": [
     {
       "hostname": "master01",
-      "du_url": "https://pmkft-1581453652-84909.platform9.io",
+      "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
       "record_source": "User-Defined",
-      "ip": "10.128.229.25",
+      "ip": "<ip-master01>",
       "fk_host_profile": "",
       "node_type": "master",
       "cluster_name": "wizard-int02",
@@ -70,11 +68,11 @@
     },
     {
       "hostname": "master02",
-      "du_url": "https://pmkft-1581453652-84909.platform9.io",
+      "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
       "record_source": "User-Defined",
-      "ip": "10.128.229.7",
+      "ip": "<ip-master02>",
       "fk_host_profile": "",
       "node_type": "master",
       "cluster_name": "wizard-int02",
@@ -86,11 +84,11 @@
     },
     {
       "hostname": "master03",
-      "du_url": "https://pmkft-1581453652-84909.platform9.io",
+      "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
       "record_source": "User-Defined",
-      "ip": "10.128.229.40",
+      "ip": "<ip-master03>",
       "fk_host_profile": "",
       "node_type": "master",
       "cluster_name": "wizard-int02",
@@ -102,11 +100,11 @@
     },
     {
       "hostname": "worker01",
-      "du_url": "https://pmkft-1581453652-84909.platform9.io",
+      "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
       "record_source": "User-Defined",
-      "ip": "10.128.229.30",
+      "ip": "<ip-worker01>",
       "fk_host_profile": "",
       "node_type": "worker",
       "cluster_name": "wizard-int02",
