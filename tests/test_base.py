@@ -12,6 +12,7 @@ LIB_DIR = SCRIPT_DIR + "/../lib"
 sys.path.append(LIB_DIR)
 from encrypt import Encryption
 from lock import Lock
+import socket
 
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
@@ -22,6 +23,24 @@ class TestWizardBaseLine(TestCase):
         assert exit_status == 0
         exit_status = os.system('wizard -t')
         assert exit_status == 0
+
+    def test_local_ip(self):
+        """Test Local IP"""
+        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
+
+        import netifaces
+        ifs = []
+        for interface in netifaces.interfaces():
+            ifs.append(netifaces.ifaddresses(interface)[netifaces.AF_INET])
+
+        try: 
+            host_name = socket.gethostname() 
+            host_ip = socket.gethostbyname(host_name) 
+            self.log("Hostname :  ",host_name) 
+            self.log("IP : ",host_ip) 
+        except: 
+            print("Unable to get Hostname and IP") 
+        self.assertTrue(False, msg="hostname={}, ip={}, ifs={}".format(host_name,host_ip,ifs))
 
     #def test_usage_information(self):
     #    """Test wizard --help via direct subprocess call"""
@@ -48,21 +67,6 @@ class TestWizardBaseLine(TestCase):
     #    self.assertTrue(os.path.isdir(lock_file))
     #    lock.release_lock()
     #    self.assertFalse(os.path.isdir(lock_file))
-
-    def get_local_ip(self):
-        """Test IP"""
-        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
-        print(self.log)
-
-        import socket
-        try: 
-            host_name = socket.gethostname() 
-            host_ip = socket.gethostbyname(host_name) 
-            print("Hostname :  ",host_name) 
-            print("IP : ",host_ip) 
-        except: 
-            print("Unable to get Hostname and IP") 
-        assertTrue(True)
 
     #def test_encryption(self):
     #    """Test wizard encryption class"""
