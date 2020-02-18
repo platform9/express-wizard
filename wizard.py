@@ -433,6 +433,44 @@ def main():
     if args.test:
         sys.exit(0)
 
+    # DBG
+    try:
+        import ConfigParser
+    except ImportError:
+        import configparser
+
+    if sys.version_info[0] == 2:
+        cicd_config = ConfigParser.ConfigParser()
+    else:
+        cicd_config = configparser.ConfigParser()
+
+    CICD_CONF = "{}/scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__)))
+    try:
+        cicd_config.read(CICD_CONF)
+    except Exception as ex:
+        sys.stdout.write("ERROR: failed to initialize CI-CD, failed to parse: {}\n".format(CICD_CONF))
+        sys.exit(1)
+
+    du = datamodel.get_du_metadata(cicd_config.get('source_region','du_url'))
+
+    from openstack_utils import Openstack
+    openstack = Openstack(du)
+    instance_uuid, instance_msg = openstack.launch_instance()
+    print("--> instance_uuid = {}".format(instance_uuid))
+    print("--> instance_msg = {}".format(instance_msg))
+
+    #instance_uuid = "41a75e2f-0fbb-432a-a5ef-741908625094"
+    if instance_uuid:
+        instance_is_active = openstack.wait_for_instance(instance_uuid)
+        if instance_is_active:
+            fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)
+            if fip_ip and fip_id:
+                fip_status = openstack.assign_fip_to_instance(instance_uuid, fip_ip)
+                print("fip_status = {}".format(fip_status))
+    else:
+        print("instance_msg={}".format(instance_msg))
+    sys.exit(0)
+
     # main menu loop
     menu_level0()
 

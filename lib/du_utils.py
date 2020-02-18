@@ -136,3 +136,4 @@ def get_du_type(du_url, du_user, du_password, du_tenant):
         else:
             region_type = "VMware"
     return region_type
+
