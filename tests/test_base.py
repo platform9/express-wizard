@@ -75,15 +75,17 @@ class TestWizardBaseLine(TestCase):
     #    unencrypted_string = encryption.decrypt_password(encrypted_string)
     #    self.assertTrue(unencrypted_string == original_string)
         
-    def get_du_url(self):
-        CICD_CONF = "{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__)))
+    def get_cicd_config_path(self):
+        return("{}/scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__))))
+
+    def get_du_url(self, config_file):
         if sys.version_info[0] == 2:
             cicd_config = ConfigParser.ConfigParser()
         else:
             cicd_config = configparser.ConfigParser()
 
         try:
-            cicd_config.read(CICD_CONF)
+            cicd_config.read(config_file)
             return(cicd_config.get('source_region','du_url'))
         except Exception as ex:
             return(False)
@@ -94,8 +96,12 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
+        # validate config file exists
+        config_file = self.get_cicd_config_path()
+        assertTrue(os.path.isfile(config_file))
+
         # read config file: scripts/integration-tests/integration-tests.conf
-        du_url = self.get_du_url()
+        du_url = self.get_du_url(config_file)
         self.assertTrue(du_url)
         du = datamodel.get_du_metadata(du_url)
         self.assertTrue(du)
