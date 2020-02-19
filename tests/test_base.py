@@ -14,6 +14,11 @@ import datamodel
 from encrypt import Encryption
 from lock import Lock
 from openstack_utils import Openstack
+try:
+    import ConfigParser
+except ImportError:
+    import configparser
+
 
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
@@ -70,18 +75,43 @@ class TestWizardBaseLine(TestCase):
     #    unencrypted_string = encryption.decrypt_password(encrypted_string)
     #    self.assertTrue(unencrypted_string == original_string)
         
+    def get_du_url(self):
+        CICD_CONF = "{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__)))
+        if sys.version_info[0] == 2:
+            cicd_config = ConfigParser.ConfigParser()
+        else:
+            cicd_config = configparser.ConfigParser()
+
+        try:
+            cicd_config.read(CICD_CONF)
+            return(cicd_config.get('source_region','du_url'))
+        except Exception as ex:
+            return(False)
+
+
     def test_launch_instances(self):
         """Launch OpenStack Instances (On-Boarding Targets)"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        # get du
-        cicd_du = "cs-integration.platform9.horse"
-        du = datamodel.get_du_metadata(cicd_du)
-        print(du)
+        # read config file: scripts/integration-tests/integration-tests.conf
+        du_url = self.get_du_url()
+        self.assertTrue(du_url)
+        du = datamodel.get_du_metadata(du_url)
+        self.assertTrue(du)
 
-        # define spec for isntances being launched
-        instance_spec = {
-        }
+        # launch instance and wait for it to become active
+        from openstack_utils import Openstack
         openstack = Openstack(du)
-        openstack.launch_instance(instance_spec)
+        instance_uuid, instance_msg = openstack.launch_instance()
+        self.assertTrue(instance_uuid)
+        instance_is_active = openstack.wait_for_instance(instance_uuid)
+        self.assertTrue(instance_is_active)
+
+        # assign floating IP to instance
+        fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)
+        self.assertTrue(fip_ip)
+        fip_status = openstack.assign_fip_to_instance(instance_uuid, fip_ip)
+        self.assertTrue(fip_status)
+
+
