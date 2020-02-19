@@ -390,7 +390,6 @@ def menu_level0():
         else:
             sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
 
-
 ## main
 def main():
     args = _parse_args()
