@@ -98,7 +98,7 @@ class TestWizardBaseLine(TestCase):
 
         # validate config file exists
         config_file = self.get_cicd_config_path()
-        assertTrue(os.path.isfile(config_file))
+        self.assertTrue(os.path.isfile(config_file))
 
         # read config file: scripts/integration-tests/integration-tests.conf
         du_url = self.get_du_url(config_file)
