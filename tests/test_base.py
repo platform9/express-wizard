@@ -149,18 +149,18 @@ class TestWizardBaseLine(TestCase):
 
             # initialize ENCRYPTION_KEY_FILE
             ENCRYPTION_KEY_FILE = self.get_keyfile_path()
-            try:
-                data_file_fh = open(ENCRYPTION_KEY_FILE, "w")
-                data_file_fh.write("{}".format(ENCRYPTION_KEY))
-                data_file_fh.close()
-            except:
-                self.log.warning("ERROR: failed to write file: {}".format(ENCRYPTION_KEY_FILE))
-                self.assertTrue(False)
+            #try:
+            #    data_file_fh = open(ENCRYPTION_KEY_FILE, "w")
+            #    data_file_fh.write("{}".format(ENCRYPTION_KEY))
+            #    data_file_fh.close()
+            #except:
+            #    self.log.warning("ERROR: failed to write file: {}".format(ENCRYPTION_KEY_FILE))
+            #    self.assertTrue(False)
+            os.system('echo "{}" > {}'.format(ENCRYPTION_KEY,ENCRYPTION_KEY_FILE))
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
             # DBG: cat keygile
             exit_status = os.system("echo '-------------'; cat {}; echo '-------------'".format(ENCRYPTION_KEY_FILE))
-            assert exit_status == 7
 
             # call wizard (to import region)
             exit_status = os.system("wizard -i --jsonImport {}".format(self.get_region_importdata_path()))
