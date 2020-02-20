@@ -160,6 +160,9 @@ class TestWizardBaseLine(TestCase):
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
             # DBG
+            exit_status = os.system("echo '--- env ---------'; env ; echo '-------------'")
+
+            # DBG
             exit_status = os.system("echo '--- {} ----------'; cat {}; echo ; echo '-------------'".format(ENCRYPTION_KEY_FILE,ENCRYPTION_KEY_FILE))
 
             # DBG
