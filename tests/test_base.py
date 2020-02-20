@@ -85,6 +85,10 @@ class TestWizardBaseLine(TestCase):
         from os.path import expanduser
         return("{}/.pf9/db/.keyfile".format(expanduser("~")))
 
+    def get_pf9home_path(self):
+        from os.path import expanduser
+        return("{}/.pf9".format(expanduser("~")))
+
     def get_du_url(self, config_file):
         if sys.version_info[0] == 2:
             cicd_config = ConfigParser.ConfigParser()
@@ -114,6 +118,24 @@ class TestWizardBaseLine(TestCase):
         if not ENCRYPTION_KEY:
             self.log.warning("ENCRYPTION_KEY: environment variable not defined - skipping Integration Tests")
         else:
+            # initialize pf9_home
+            pf9_home = self.get_pf9home_path()
+            if not os.path.isdir(pf9_home):
+                try:
+                    os.mkdir(pf9_home)
+                except:
+                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_home))
+                    self.assertTrue(False)
+
+            # initialize pf9_home_db
+            pf9_home_db = "{}/db".format(pf9_home)
+            if not os.path.isdir(pf9_home_db):
+                try:
+                    os.mkdir(pf9_home_db)
+                except:
+                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_home_db))
+                    self.assertTrue(False)
+
             # initialize ENCRYPTION_KEY_FILE
             try:
                 data_file_fh = open(self.get_keyfile_path(), "w")
