@@ -136,6 +136,15 @@ class TestWizardBaseLine(TestCase):
                     self.log.warning("ERROR: failed to create directory: {}".format(pf9_home_db))
                     self.assertTrue(False)
 
+            # initialize pf9_lockdir
+            pf9_lockdir = "{}/lock".format(pf9_home)
+            if not os.path.isdir(pf9_lockdir):
+                try:
+                    os.mkdir(pf9_lockdir)
+                except:
+                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_lockdir))
+                    self.assertTrue(False)
+
             # initialize ENCRYPTION_KEY_FILE
             ENCRYPTION_KEY_FILE = self.get_keyfile_path()
             try:
