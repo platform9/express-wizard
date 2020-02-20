@@ -126,7 +126,7 @@ class TestWizardBaseLine(TestCase):
 
             # call wizard (to import region)
             exit_status = os.system("wizard -i --jsonImport {}".format(self.get_region_importdata_path()))
-            self.assert(exit_status == 0)
+            assert exit_status == 0
 
             # read config file: scripts/integration-tests/integration-tests.conf
             du_url = self.get_du_url(config_file)
