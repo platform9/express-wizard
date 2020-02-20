@@ -117,6 +117,8 @@ class TestWizardBaseLine(TestCase):
         ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
         if not ENCRYPTION_KEY:
             self.log.warning("ENCRYPTION_KEY: environment variable not defined - skipping Integration Tests")
+        elif ENCRYPTION_KEY == "[secure]":
+            self.log.warning("ENCRYPTION_KEY: set to [secure] (triggered by Pull Request) - skipping Integration Tests")
         else:
             # initialize pf9_home
             pf9_home = self.get_pf9home_path()
