@@ -159,7 +159,7 @@ class TestWizardBaseLine(TestCase):
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
             # DBG: cat keygile
-            exit_status = os.system("cat {}".format(ENCRYPTION_KEY_FILE))
+            exit_status = os.system("echo '-------------'; cat {}; echo '-------------'".format(ENCRYPTION_KEY_FILE))
             assert exit_status == 7
 
             # call wizard (to import region)
