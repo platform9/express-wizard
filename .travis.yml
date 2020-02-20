@@ -1,9 +1,11 @@
 language: python
 python:
-  - "2.7"
-  - "3.7"
-
+- '2.7'
+- '3.7'
 install:
-    - pip install -e .[test]
+- pip install -e .[test]
 script:
-    - python setup.py test
+- python setup.py test
+env:
+  global:
+    secure: Hhz/FcPN705LIRYm0fDCnr4l2pUl7uIhC5cChJUm2Rmjs7jaydNYfVdqtxxMeHerA7edErvcrPD/Xt8EQWrvexwxJs6G0+pvXITk1v0kDF71yCMm526tOI+HYNL7hPdWgCqeoDtcWp6B1M/dXvbjt6vCejhMFo9uidYfqvPW8JeMBYAgfvFcxsHz1J47K9M4gK3apCsdyccrUuMxBsMhzjwDdW3dlgNzZwYiyv//34JQj6U/Q9rXo3l3/evDln6pYA8MvkEfTsGG3QfsMl/KiqXwmyR+Zep9ntrgMr/pLBLLL5S8w47tOuOghplX/dHnfUIPEzYHDm/Qe+xDURdN8VTTFaDSrtQHc8Y84KFU/PckjFxoF2MMQVe06wbqxTZLKE4LecIJM+fDn0F70IQUY8M/rfLBsRL1FVKdDU6Tl+OMV/hIUM0dhnr1Oidly3r9g1u1+YFqFq3gg3imKr55DbMI8um5tPFCPPsiCrRAOTo3nyg8m8TjiW+ttA3RyxUfhGw9uyu5Tr10GfwRvsnyxuD8v02aOq1yshAA8m8apmXvM13KKvKRoVcPsRVRfFGKX6TuB7VlRrtCQwYSWPM2SyTGS3dC9Un7ea0nradsIhN+uxLr5OpB4OUxMWSahVD1+WXY3+F3cw3niX003qV2Ks9PPd2HeMV8ShxLpH7RqxY=

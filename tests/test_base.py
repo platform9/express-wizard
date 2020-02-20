@@ -102,6 +102,9 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
+        # validate KEYFILE (a secret managed by Travis-CI)
+        self.log.warning("KEYFILE={}".format(KEYFILE))
+
         # read config file: scripts/integration-tests/integration-tests.conf
         du_url = self.get_du_url(config_file)
         self.log.warning("du_url={}".format(du_url))
