@@ -78,6 +78,13 @@ class TestWizardBaseLine(TestCase):
     def get_cicd_config_path(self):
         return("{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__))))
 
+    def get_region_importdata_path(self):
+        return("{}/../scripts/integration-tests/cloud.platform9.net".format(os.path.dirname(os.path.realpath(__file__))))
+
+    def get_keyfile_path(self):
+        from os.path import expanduser
+        return("{}/.pf9/db/.keyfile".format(expanduser("~")))
+
     def get_du_url(self, config_file):
         if sys.version_info[0] == 2:
             cicd_config = ConfigParser.ConfigParser()
@@ -102,17 +109,23 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        self.log.warning("ENCRYPTION_KEY = {}".format(os.environ.get('ENCRYPTION_KEY'))
-
-        # check if encrypted variables were included when invoked
-        if os.environ.get('TRAVIS_SECURE_ENV_VARS'):
-            self.log.warning("INFO: received encrypted data")
-
-        # validate KEYFILE (a secret managed by Travis-CI)
-        KEYFILE = os.environ.get('KEYFILE')
-        if not KEYFILE:
-            self.log.warning("KEYFILE: environment variable not defined - skipping Integration Tests")
+        # validate ENCRYPTION_KEY (a secret managed by Travis-CI)
+        ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
+        if not ENCRYPTION_KEY:
+            self.log.warning("ENCRYPTION_KEY: environment variable not defined - skipping Integration Tests")
         else:
+            # initialize ENCRYPTION_KEY_FILE
+            data_file = self.get_keyfile_path()
+            try:
+                data_file_fh = open(data_file, "w")
+                data_file_fh.write("{}".format(ENCRYPTION_KEY))
+                data_file_fh.close()
+            self.assertTrue(os.path.isfile(data_file))
+
+            # call wizard (to import region)
+            exit_status = os.system("wizard -i --jsonImport {}".format(self.get_region_importdata_path()))
+            self.assert(exit_status == 0)
+
             # read config file: scripts/integration-tests/integration-tests.conf
             du_url = self.get_du_url(config_file)
             self.log.warning("du_url={}".format(du_url))
