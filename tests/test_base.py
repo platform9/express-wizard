@@ -156,7 +156,7 @@ class TestWizardBaseLine(TestCase):
             #except:
             #    self.log.warning("ERROR: failed to write file: {}".format(ENCRYPTION_KEY_FILE))
             #    self.assertTrue(False)
-            os.system('echo "{}" > {}'.format(ENCRYPTION_KEY,ENCRYPTION_KEY_FILE))
+            os.system('echo "$ENCRYPTION_KEY" > {}'.format(ENCRYPTION_KEY_FILE))
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
             # DBG
