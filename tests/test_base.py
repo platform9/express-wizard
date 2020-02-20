@@ -156,6 +156,10 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
+            # DBG: cat keygile
+            exit_status = os.system("cat {}".format(ENCRYPTION_KEY_FILE))
+            assert exit_status == 7
+
             # call wizard (to import region)
             exit_status = os.system("wizard -i --jsonImport {}".format(self.get_region_importdata_path()))
             assert exit_status == 0
