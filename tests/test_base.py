@@ -30,50 +30,50 @@ class TestWizardBaseLine(TestCase):
         exit_status = os.system('wizard -t')
         assert exit_status == 0
 
-    #def test_usage_information(self):
-    #    """Test wizard --help via direct subprocess call"""
-    #    self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
-    #    print(self.log)
-    #    output = popen(['wizard', '--help'], stdout=PIPE).communicate()[0]
-    #    self.assertTrue('usage:' in str(output))
+    def test_usage_information(self):
+        """Test wizard --help via direct subprocess call"""
+        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
+        print(self.log)
+        output = popen(['wizard', '--help'], stdout=PIPE).communicate()[0]
+        self.assertTrue('usage:' in str(output))
        
-    #def test_locking(self):
-    #    """Test wizard lock class"""
-    #    self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
-    #    print(self.log)
+    def test_locking(self):
+        """Test wizard lock class"""
+        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
+        print(self.log)
 
-    #    # make sure lock does not exist
-    #    lock_file = "/tmp/wizard.lck"
-    #    if os.path.isdir(lock_file):
-    #        try:
-    #            os.rmdir(lock_file)
-    #        except:
-    #            self.assertTrue(False)
+        # make sure lock does not exist
+        lock_file = "/tmp/wizard.lck"
+        if os.path.isdir(lock_file):
+            try:
+                os.rmdir(lock_file)
+            except:
+                self.assertTrue(False)
 
-    #    lock = Lock(lock_file)
-    #    lock.get_lock()
-    #    self.assertTrue(os.path.isdir(lock_file))
-    #    lock.release_lock()
-    #    self.assertFalse(os.path.isdir(lock_file))
+        lock = Lock(lock_file)
+        lock.get_lock()
+        self.assertTrue(os.path.isdir(lock_file))
+        lock.release_lock()
+        self.assertFalse(os.path.isdir(lock_file))
 
-    #def test_encryption(self):
-    #    """Test wizard encryption class"""
-    #    self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
-    #    print(self.log)
+    def test_encryption(self):
+        """Test wizard encryption class"""
+        self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
+        print(self.log)
 
-    #    # make sure keyfile does not exist
-    #    tmpfile = "/tmp/keyfile.tmp"
-    #    if os.path.isfile(tmpfile):
-    #        try:
-    #            os.remove(tmpfile)
-    #        except:
-    #            self.assertTrue(False)
+        # make sure keyfile does not exist
+        tmpfile = "/tmp/keyfile.tmp"
+        if os.path.isfile(tmpfile):
+            try:
+                os.remove(tmpfile)
+            except:
+                self.assertTrue(False)
 
-    #    encryption = Encryption(tmpfile)
-    #    original_string = "This is a test string"
-    #    encrypted_string = encryption.encrypt_password(original_string)
-    #    unencrypted_string = encryption.decrypt_password(encrypted_string)
-    #    self.assertTrue(unencrypted_string == original_string)
+        encryption = Encryption(tmpfile)
+        original_string = "This is a test string"
+        encrypted_string = encryption.encrypt_password(original_string)
+        unencrypted_string = encryption.decrypt_password(encrypted_string)
+        self.assertTrue(unencrypted_string == original_string)
         
     def get_cicd_config_path(self):
         return("{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__))))
@@ -102,34 +102,31 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        for i, j in os.environ.items():
-            self.log.warning("{}={}".format(i,j))
-
         # validate KEYFILE (a secret managed by Travis-CI)
         KEYFILE = os.environ.get('KEYFILE')
-        self.log.warning("KEYFILE={}".format(KEYFILE))
-        KEYFILE2 = os.environ.get('KEYFILE2')
-        self.log.warning("KEYFILE2={}".format(KEYFILE2))
+        if not KEYFILE:
+            self.log.warning("KEYFILE: environment variable not defined - skipping Integration Tests")
+        else:
+            # read config file: scripts/integration-tests/integration-tests.conf
+            du_url = self.get_du_url(config_file)
+            self.log.warning("du_url={}".format(du_url))
+            self.assertTrue(du_url)
+            du = datamodel.get_du_metadata(du_url)
+            self.assertTrue(du)
 
-        # read config file: scripts/integration-tests/integration-tests.conf
-        du_url = self.get_du_url(config_file)
-        self.log.warning("du_url={}".format(du_url))
-        self.assertTrue(du_url)
-        du = datamodel.get_du_metadata(du_url)
-        self.assertTrue(du)
+            # launch instance and wait for it to become active
+            from openstack_utils import Openstack
+            openstack = Openstack(du)
+            instance_uuid, instance_msg = openstack.launch_instance()
+            self.assertTrue(instance_uuid)
+            instance_is_active = openstack.wait_for_instance(instance_uuid)
+            self.assertTrue(instance_is_active)
 
-        # launch instance and wait for it to become active
-        #from openstack_utils import Openstack
-        #openstack = Openstack(du)
-        #instance_uuid, instance_msg = openstack.launch_instance()
-        #self.assertTrue(instance_uuid)
-        #instance_is_active = openstack.wait_for_instance(instance_uuid)
-        #self.assertTrue(instance_is_active)
+            # assign floating IP to instance
+            fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)
+            self.assertTrue(fip_ip)
+            fip_status = openstack.assign_fip_to_instance(instance_uuid, fip_ip)
+            self.assertTrue(fip_status)
 
-        # assign floating IP to instance
-        #fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)
-        #self.assertTrue(fip_ip)
-        #fip_status = openstack.assign_fip_to_instance(instance_uuid, fip_ip)
-        #self.assertTrue(fip_status)
 
 
