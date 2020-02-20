@@ -48,6 +48,7 @@ def _parse_args():
     ap.add_argument("--test", "-t", help = "Test Express-Wizard Build and Install", action = "store_true")
     ap.add_argument('--jsonImport', "-j", help="Path to import file (JSON format, see '--export' function)", required=False)
     ap.add_argument("--export", "-e", help = "Name of region to export", required = False, nargs = 1)
+    ap.add_argument("--encryptionKey", "-k", help = "Encryption key for decrytping secure data", required = False, nargs = 1)
     ap.add_argument("--debug", "-d", help = "Debug Mode", action = "store", nargs = 1)
     return ap.parse_args()
 
@@ -424,6 +425,23 @@ def main():
     if args.export:
         datamodel.export_region(args.export)
         sys.exit(0)
+    if args.encryptionKey:
+        # remove keyfile (if exists)
+        if os.path.isfile(globals.ENCRYPTION_KEY_FILE):
+            try:
+                os.remove(globals.ENCRYPTION_KEY_FILE)
+            except:
+                sys.stdout.write("ERROR: failed to remove keyfile: {}".format(globals.ENCRYPTION_KEY_FILE))
+                sys.exit(1)
+
+        # write user-supplied encryption key to keyfile
+        try:
+            data_file_fh = open(globals.ENCRYPTION_KEY_FILE, "w")
+            data_file_fh.write("{}".format(args.encryptionKey[0]))
+            data_file_fh.close()
+        except:
+            sys.stdout.write("ERROR: failed to initialize keyfile for encryption: {}".format(globals.ENCRYPTION_KEY_FILE))
+            sys.exit(1)
     if args.jsonImport:
         datamodel.import_region(args.jsonImport)
         sys.exit(0)

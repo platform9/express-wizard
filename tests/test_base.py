@@ -159,18 +159,12 @@ class TestWizardBaseLine(TestCase):
             os.system('echo "$ENCRYPTION_KEY" > {}'.format(ENCRYPTION_KEY_FILE))
             self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
-            # DBG
-            exit_status = os.system("echo '--- env ---------'; env ; echo '-------------'")
+            # call wizard (to import region)
+            exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),ENCRYPTION_KEY))
+            assert exit_status == 0
 
             # DBG
             exit_status = os.system("echo '--- {} ----------'; cat {}; echo ; echo '-------------'".format(ENCRYPTION_KEY_FILE,ENCRYPTION_KEY_FILE))
-
-            # DBG
-            exit_status = os.system("echo '--- {} ----------'; cat {}; echo ; echo '-------------'".format(self.get_region_importdata_path(),self.get_region_importdata_path()))
-
-            # call wizard (to import region)
-            exit_status = os.system("wizard -i --jsonImport {}".format(self.get_region_importdata_path()))
-            assert exit_status == 0
 
             # read config file: scripts/integration-tests/integration-tests.conf
             du_url = self.get_du_url(config_file)
