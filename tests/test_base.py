@@ -103,6 +103,7 @@ class TestWizardBaseLine(TestCase):
         self.assertTrue(os.path.isfile(config_file))
 
         # validate KEYFILE (a secret managed by Travis-CI)
+        KEYFILE = os.environ.get('KEYFILE')
         self.log.warning("KEYFILE={}".format(KEYFILE))
 
         # read config file: scripts/integration-tests/integration-tests.conf
