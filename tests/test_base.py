@@ -102,6 +102,12 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
+        self.log.warning("ENCRYPTION_KEY = {}".format(os.environ.get('ENCRYPTION_KEY'))
+
+        # check if encrypted variables were included when invoked
+        if os.environ.get('TRAVIS_SECURE_ENV_VARS'):
+            self.log.warning("INFO: received encrypted data")
+
         # validate KEYFILE (a secret managed by Travis-CI)
         KEYFILE = os.environ.get('KEYFILE')
         if not KEYFILE:
