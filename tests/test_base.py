@@ -105,6 +105,8 @@ class TestWizardBaseLine(TestCase):
         # validate KEYFILE (a secret managed by Travis-CI)
         KEYFILE = os.environ.get('KEYFILE')
         self.log.warning("KEYFILE={}".format(KEYFILE))
+        KEYFILE2 = os.environ.get('KEYFILE2')
+        self.log.warning("KEYFILE2={}".format(KEYFILE2))
 
         # read config file: scripts/integration-tests/integration-tests.conf
         du_url = self.get_du_url(config_file)
