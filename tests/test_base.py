@@ -115,11 +115,13 @@ class TestWizardBaseLine(TestCase):
             self.log.warning("ENCRYPTION_KEY: environment variable not defined - skipping Integration Tests")
         else:
             # initialize ENCRYPTION_KEY_FILE
-            data_file = self.get_keyfile_path()
             try:
-                data_file_fh = open(data_file, "w")
+                data_file_fh = open(self.get_keyfile_path(), "w")
                 data_file_fh.write("{}".format(ENCRYPTION_KEY))
                 data_file_fh.close()
+            except:
+                self.log.warning("ERROR: failed to write file: {}".format(self.get_keyfile_path()))
+                self.assertTrue(False)
             self.assertTrue(os.path.isfile(data_file))
 
             # call wizard (to import region)
