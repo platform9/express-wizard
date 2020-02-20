@@ -102,6 +102,9 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
+        for i, j in os.environ.items():
+            self.log.warning("{}={}".format(i,j))
+
         # validate KEYFILE (a secret managed by Travis-CI)
         KEYFILE = os.environ.get('KEYFILE')
         self.log.warning("KEYFILE={}".format(KEYFILE))
