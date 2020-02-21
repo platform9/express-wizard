@@ -195,7 +195,7 @@ class TestWizardBaseLine(TestCase):
             instance_num = 0
             instance_uuids = []
             while instance_num < num_instances_pmo:
-                instance_name = "cs-int-pmo{}".format(instance_num)
+                instance_name = "cs-int-pmo{}".format(str(instance_num).zfill(2))
                 instance_uuid, instance_msg = openstack.launch_instance(instance_name)
                 self.assertTrue(instance_uuid)
                 instance_uuids.append(instance_uuid)

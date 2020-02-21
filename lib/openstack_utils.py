@@ -55,7 +55,7 @@ class Openstack:
             }
         }
 
-        sys.stdout.write("launching instance:\n")
+        sys.stdout.write("launching instance: {}\n".format(instance_name))
         try:
             api_endpoint = "nova/v2.1/{}/servers".format(self.project_id)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
