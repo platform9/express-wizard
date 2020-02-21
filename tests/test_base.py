@@ -237,10 +237,9 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
 
             # assign floating IP to instance
-            fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)
-            self.assertTrue(fip_ip)
-            fip_status = openstack.assign_fip_to_instance(instance_uuid, fip_ip)
-            self.assertTrue(fip_status)
-
-
+            for tmp_uuid in instance_uuids:
+                fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
+                self.assertTrue(fip_ip)
+                fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
+                self.assertTrue(fip_status)
 
