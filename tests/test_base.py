@@ -102,6 +102,32 @@ class TestWizardBaseLine(TestCase):
             return(False)
 
 
+    def get_num_instances_pmk(self, config_file):
+        if sys.version_info[0] == 2:
+            cicd_config = ConfigParser.ConfigParser()
+        else:
+            cicd_config = configparser.ConfigParser()
+
+        try:
+            cicd_config.read(config_file)
+            return(cicd_config.get('source_region','num_instances_pmk'))
+        except Exception as ex:
+            return(False)
+
+
+    def get_num_instances_pmo(self, config_file):
+        if sys.version_info[0] == 2:
+            cicd_config = ConfigParser.ConfigParser()
+        else:
+            cicd_config = configparser.ConfigParser()
+
+        try:
+            cicd_config.read(config_file)
+            return(cicd_config.get('source_region','num_instances_pmo'))
+        except Exception as ex:
+            return(False)
+
+
     def test_launch_instances(self):
         """Launch OpenStack Instances (On-Boarding Targets)"""
         logging.basicConfig()
@@ -113,13 +139,6 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        # validate ENCRYPTION_KEY (a secret managed by Travis-CI)
-        #ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
-        #if not ENCRYPTION_KEY:
-        #    self.log.warning("ENCRYPTION_KEY: environment variable not defined - skipping Integration Tests")
-        #elif ENCRYPTION_KEY == "[secure]":
-        #    self.log.warning("ENCRYPTION_KEY: set to [secure] (triggered by Pull Request) - skipping Integration Tests")
-        #else:
         STATIC_ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if STATIC_ENCRYPTION_KEY != "":
             # initialize pf9_home
@@ -149,39 +168,73 @@ class TestWizardBaseLine(TestCase):
                     self.log.warning("ERROR: failed to create directory: {}".format(pf9_lockdir))
                     self.assertTrue(False)
 
-            # initialize ENCRYPTION_KEY_FILE
-            ENCRYPTION_KEY_FILE = self.get_keyfile_path()
-            #try:
-            #    data_file_fh = open(ENCRYPTION_KEY_FILE, "w")
-            #    data_file_fh.write("{}".format(ENCRYPTION_KEY))
-            #    data_file_fh.close()
-            #except:
-            #    self.log.warning("ERROR: failed to write file: {}".format(ENCRYPTION_KEY_FILE))
-            #    self.assertTrue(False)
-            #os.system('echo "$ENCRYPTION_KEY" > {}'.format(ENCRYPTION_KEY_FILE))
-            #self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
-
             # call wizard (to import region)
             exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),STATIC_ENCRYPTION_KEY))
             assert exit_status == 0
-
-            # DBG
-            exit_status = os.system("echo '--- {} ----------'; cat {}; echo ; echo '-------------'".format(ENCRYPTION_KEY_FILE,ENCRYPTION_KEY_FILE))
 
             # read config file: scripts/integration-tests/integration-tests.conf
             du_url = self.get_du_url(config_file)
             self.log.warning("du_url={}".format(du_url))
             self.assertTrue(du_url)
+            num_instances_pmo = int(self.get_num_instances_pmo(config_file))
+            self.log.warning("num_instances_pmo={}".format(num_instances_pmo))
+            self.assertTrue(num_instances_pmo)
+            num_instances_pmk = int(self.get_num_instances_pmk(config_file))
+            self.log.warning("num_instances_pmk={}".format(num_instances_pmk))
+            self.assertTrue(num_instances_pmk)
+
+            # get du record
             du = datamodel.get_du_metadata(du_url)
             self.assertTrue(du)
 
-            # launch instance and wait for it to become active
+            # instantiate openstack library
             from openstack_utils import Openstack
             openstack = Openstack(du)
-            instance_uuid, instance_msg = openstack.launch_instance()
-            self.assertTrue(instance_uuid)
-            instance_is_active = openstack.wait_for_instance(instance_uuid)
-            self.assertTrue(instance_is_active)
+
+            # launch PMO instances
+            instance_num = 0
+            instance_uuids = []
+            while instance_num < num_instances_pmo:
+                instance_name = "cs-int-pmo{}".format(instance_num)
+                instance_uuid, instance_msg = openstack.launch_instance(instance_name)
+                self.assertTrue(instance_uuid)
+                instance_uuids.append(instance_uuid)
+                instance_num += 1
+
+            # timeout loop : wait for instances to boot
+            booted_instances = []
+            TIMEOUT = 5
+            POLL_INTERVAL = 15
+            timeout = int(time.time()) + (60 * TIMEOUT)
+            flag_all_active = False
+            while True:
+                # loop over all instances and get status
+                for tmp_uuid in instance_uuids:
+                    instance_status = openstack.get_instance_status(tmp_uuid)
+                    if instance_status == "ACTIVE":
+                        if not tmp_uuid in booted_instances:
+                            booted_instances.append(tmp_uuid)
+                    time.sleep(1)
+
+                # check if all instances have become active
+                tmp_flag = True
+                for tmp_uuid in instance_uuids:
+                    if not tmp_uuid in booted_instances:
+                        tmp_flag = False
+                        break
+
+                if tmp_flag:
+                    flag_all_active = True
+                    break
+                elif int(time.time()) > timeout:
+                    break
+                else:
+                    time.sleep(POLL_INTERVAL)
+
+            # enforce TIMEOUT
+            if not flag_all_active:
+                self.log.warning("TIMEOUT: waiting for all instances to become active")
+                self.assertTrue(False)
 
             # assign floating IP to instance
             fip_ip, fip_id = openstack.get_floating_ip(instance_uuid)

@@ -35,14 +35,14 @@ class Openstack:
 
         return(None)
 
-    def launch_instance(self):
+    def launch_instance(self, instance_name):
         """Launch an Openstack Instance"""
 
         instance_uuid = None
         instance_msg = "instance launched successfully"
         instance_spec = {
             "server" : {
-                "name" : "cs-int01",
+                "name" : instance_name,
                 "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
                 "imageRef" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
                 "key_name" : "danwright-mac01",
