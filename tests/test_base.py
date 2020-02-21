@@ -193,10 +193,10 @@ class TestWizardBaseLine(TestCase):
             openstack = Openstack(du)
 
             # launch PMO instances
-            instance_num = 0
+            instance_num = 1
             instance_uuids = []
-            while instance_num < num_instances_pmo:
-                instance_name = "cs-int-pmo{}".format(str(instance_num).zfill(2))
+            while instance_num <= num_instances_pmo:
+                instance_name = "ci-kvm{}".format(str(instance_num).zfill(2))
                 instance_uuid, instance_msg = openstack.launch_instance(instance_name)
                 self.assertTrue(instance_uuid)
                 instance_uuids.append(instance_uuid)
