@@ -121,7 +121,7 @@ class TestWizardBaseLine(TestCase):
         #    self.log.warning("ENCRYPTION_KEY: set to [secure] (triggered by Pull Request) - skipping Integration Tests")
         #else:
         ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
-        if ENCRYPTION_KEY := "":
+        if ENCRYPTION_KEY != "":
             # initialize pf9_home
             pf9_home = self.get_pf9home_path()
             if not os.path.isdir(pf9_home):
