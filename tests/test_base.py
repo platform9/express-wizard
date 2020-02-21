@@ -238,9 +238,14 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
 
             # assign floating IP to instance
+            uuid_fip_map = {}
             for tmp_uuid in instance_uuids:
                 fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
                 self.assertTrue(fip_ip)
                 fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
                 self.assertTrue(fip_status)
+                uuid_fip_map.update({tmp_uuid:fip_ip})
 
+            # log uuid-to-fip mappings
+            for tmp_uuid in instance_uuids:
+                self.log.warning("Floating-IP Map: {} = {}".format(tmp_uuid,uuid_fip_map[tmp_uuid]))
