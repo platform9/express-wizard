@@ -162,7 +162,7 @@ class TestWizardBaseLine(TestCase):
             #self.assertTrue(os.path.isfile(ENCRYPTION_KEY_FILE))
 
             # call wizard (to import region)
-            exit_status = os.system("wizard -i --jsonImport {} -k $STATIC_ENCRYPTION_KEY".format(self.get_region_importdata_path()))
+            exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),STATIC_ENCRYPTION_KEY))
             assert exit_status == 0
 
             # DBG
