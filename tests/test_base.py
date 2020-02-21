@@ -82,6 +82,12 @@ class TestWizardBaseLine(TestCase):
     def get_region_importdata_path(self):
         return("{}/../scripts/integration-tests/cloud.platform9.net".format(os.path.dirname(os.path.realpath(__file__))))
 
+    def get_pmo_importdata_path(self):
+        return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
+
+    def get_pmk_importdata_path(self):
+        return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
+
     def get_keyfile_path(self):
         from os.path import expanduser
         return("{}/.pf9/db/.keyfile".format(expanduser("~")))
@@ -239,13 +245,43 @@ class TestWizardBaseLine(TestCase):
 
             # assign floating IP to instance
             uuid_fip_map = {}
+            POLL_INTERVAL_FIP = 10
             for tmp_uuid in instance_uuids:
                 fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
                 self.assertTrue(fip_ip)
                 fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
                 self.assertTrue(fip_status)
                 uuid_fip_map.update({tmp_uuid:fip_ip})
+                tmp.sleep(POLL_INTERVAL_FIP)
 
-            # log uuid-to-fip mappings
-            for tmp_uuid in instance_uuids:
-                self.log.warning("Floating-IP Map: {} = {}".format(tmp_uuid,uuid_fip_map[tmp_uuid]))
+            # parameterize pmo import template
+            pmo_import_file = self.get_pmo_importdata_path()
+            try:
+                file = open(pmo_import_file, 'r')
+                template_data = file.read()
+                instance_num = 1
+                for tmp_uuid in instance_uuids:
+                    ip_tag = "<ip-kvm{}>".format(str(instance_num).zfill(2))
+                    self.log.warning("Parameterizing {} : {} = {}".format(ip_tag,uuid_fip_map[tmp_uuid],tmp_uuid))
+                    template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
+                    instance_num += 1
+            except:
+                self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
+                self.assertTrue(False)
+
+            # write parameterized template to tmpfile
+            try:
+                tmpfile = "/tmp/pf9-pmo-import.json"
+                tmpfile_fh = open(tmpfile, 'w') :
+                file.write(template_data)
+            except:
+                self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
+                self.assertTrue(False)
+
+            # DBG
+            exit_status = os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile))
+
+            # call wizard (to on-board region)
+            exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
+            assert exit_status == 0
+

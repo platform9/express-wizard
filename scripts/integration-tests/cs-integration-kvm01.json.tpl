@@ -34,7 +34,7 @@
   },
   "hosts": [
     {
-      "hostname": "kvm01",
+      "hostname": "ci-kvm01",
       "du_url": "https://cs-integration.platform9.horse",
       "du_type": "kvm",
       "du_host_type": "kvm",
@@ -48,7 +48,7 @@
       "designate": "n"
     },
     {
-      "hostname": "kvm02",
+      "hostname": "ci-kvm02",
       "du_url": "https://cs-integration.platform9.horse",
       "du_type": "kvm",
       "du_host_type": "kvm",
@@ -58,34 +58,6 @@
       "pf9-kube": "n",
       "nova": "y",
       "glance": "y",
-      "cinder": "n",
-      "designate": "n"
-    },
-    {
-      "hostname": "kvm03",
-      "du_url": "https://cs-integration.platform9.horse",
-      "du_type": "kvm",
-      "du_host_type": "kvm",
-      "record_source": "User-Defined",
-      "ip": "<ip-kvm03>",
-      "fk_host_profile": "CentOS - Hypervisor",
-      "pf9-kube": "n",
-      "nova": "y",
-      "glance": "n",
-      "cinder": "n",
-      "designate": "n"
-    },
-    {
-      "hostname": "kvm04",
-      "du_url": "https://cs-integration.platform9.horse",
-      "du_type": "kvm",
-      "du_host_type": "kvm",
-      "record_source": "User-Defined",
-      "ip": "<ip-kvm04>",
-      "fk_host_profile": "CentOS - Hypervisor",
-      "pf9-kube": "n",
-      "nova": "y",
-      "glance": "n",
       "cinder": "n",
       "designate": "n"
     }
