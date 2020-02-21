@@ -272,7 +272,7 @@ class TestWizardBaseLine(TestCase):
             # write parameterized template to tmpfile
             try:
                 tmpfile = "/tmp/pf9-pmo-import.json"
-                tmpfile_fh = open(tmpfile, 'w') :
+                tmpfile_fh = open(tmpfile, 'w')
                 file.write(template_data)
             except:
                 self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
