@@ -257,7 +257,7 @@ class TestWizardBaseLine(TestCase):
                 fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
                 self.assertTrue(fip_status)
                 uuid_fip_map.update({tmp_uuid:fip_ip})
-                tmp.sleep(POLL_INTERVAL_FIP)
+                time.sleep(POLL_INTERVAL_FIP)
 
             # parameterize pmo import template
             pmo_import_file = self.get_pmo_importdata_path()
