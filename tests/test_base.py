@@ -134,7 +134,7 @@ class TestWizardBaseLine(TestCase):
         except Exception as ex:
             return(False)
 
-    def delete_all_instances(du, instance_uuids):
+    def delete_all_instances(self, du, instance_uuids):
         from openstack_utils import Openstack
         openstack = Openstack(du)
 
