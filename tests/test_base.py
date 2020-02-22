@@ -23,7 +23,7 @@ except ImportError:
 
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
-    def test_entrypoints(self):
+    def xtest_entrypoints(self):
         """Test wizard entry points"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         exit_status = os.system('wizard --test')
@@ -31,14 +31,14 @@ class TestWizardBaseLine(TestCase):
         exit_status = os.system('wizard -t')
         assert exit_status == 0
 
-    def test_usage_information(self):
+    def xtest_usage_information(self):
         """Test wizard --help via direct subprocess call"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
         output = popen(['wizard', '--help'], stdout=PIPE).communicate()[0]
         self.assertTrue('usage:' in str(output))
        
-    def test_locking(self):
+    def xtest_locking(self):
         """Test wizard lock class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
@@ -57,7 +57,7 @@ class TestWizardBaseLine(TestCase):
         lock.release_lock()
         self.assertFalse(os.path.isdir(lock_file))
 
-    def test_encryption(self):
+    def xtest_encryption(self):
         """Test wizard encryption class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
@@ -273,17 +273,12 @@ class TestWizardBaseLine(TestCase):
                 instance_num = 1
                 for tmp_uuid in instance_uuids:
                     ip_tag = "<ip-kvm{}>".format(str(instance_num).zfill(2))
-                    self.log.warning("Parameterizing {} : {} = {}".format(ip_tag,uuid_fip_map[tmp_uuid],tmp_uuid))
-                    template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
+                    new_template = template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
+                    template_data = new_template
                     instance_num += 1
             except:
                 self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
                 self.assertTrue(False)
-
-            # DBG:
-            self.log.warning("----- template_data ----------------------------------------------")
-            self.log.warning(template_data)
-            self.log.warning("------------------------------------------------------------------")
 
             # write parameterized template to tmpfile
             try:
@@ -296,6 +291,7 @@ class TestWizardBaseLine(TestCase):
 
             # DBG
             exit_status = self.log.warning(os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile)))
+            self.assertTrue(False)
 
             # call wizard (to on-board region)
             exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
