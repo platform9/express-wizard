@@ -134,6 +134,10 @@ class TestWizardBaseLine(TestCase):
         except Exception as ex:
             return(False)
 
+    def delete_all_instances(instance_uuids)
+        for tmp_uuid in instance_uuids:
+            self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
+            openstack.delete_instance(tmp_uuid)
 
     def test_launch_instances(self):
         """Launch OpenStack Instances (On-Boarding Targets)"""
@@ -241,6 +245,7 @@ class TestWizardBaseLine(TestCase):
             # enforce TIMEOUT
             if not flag_all_active:
                 self.log.warning("TIMEOUT: waiting for all instances to become active")
+                self.delete_all_instances(instance_uuids)
                 self.assertTrue(False)
 
             # assign floating IP to instance
@@ -286,7 +291,5 @@ class TestWizardBaseLine(TestCase):
             #assert exit_status == 0
 
             # cleanup (delete instances)
-            for tmp_uuid in instance_uuids:
-                self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
-                openstack.delete_instance(tmp_uuid)
+            self.delete_all_instances(instance_uuids)
 
