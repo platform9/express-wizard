@@ -290,11 +290,11 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
 
             # DBG
-            exit_status = os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile))
+            exit_status = self.log.warning(os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile)))
 
             # call wizard (to on-board region)
-            #exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
-            #assert exit_status == 0
+            exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
+            assert exit_status == 0
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
