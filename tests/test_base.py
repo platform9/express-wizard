@@ -134,7 +134,7 @@ class TestWizardBaseLine(TestCase):
         except Exception as ex:
             return(False)
 
-    def delete_all_instances(instance_uuids)
+    def delete_all_instances(instance_uuids):
         for tmp_uuid in instance_uuids:
             self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
             openstack.delete_instance(tmp_uuid)
