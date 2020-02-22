@@ -289,10 +289,6 @@ class TestWizardBaseLine(TestCase):
                 self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
                 self.assertTrue(False)
 
-            # DBG
-            exit_status = self.log.warning(os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile)))
-            self.assertTrue(False)
-
             # call wizard (to on-board region)
             exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
             assert exit_status == 0
