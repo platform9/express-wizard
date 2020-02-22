@@ -104,7 +104,6 @@ class Openstack:
 
         # delete instance
         delete_response = requests.delete(target_delete_url,headers=headers,verify=False)
-        print "HTTP Code = {}".format(delete_response.status_code)
         if delete_response.status_code == 204:
             return(False)
         else:
