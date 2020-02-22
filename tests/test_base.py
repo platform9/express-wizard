@@ -284,7 +284,7 @@ class TestWizardBaseLine(TestCase):
             try:
                 tmpfile = "/tmp/pf9-pmo-import.json"
                 tmpfile_fh = open(tmpfile, 'w')
-                file.write(template_data)
+                tmpfile_fh.write(template_data)
             except:
                 self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
                 self.assertTrue(False)
