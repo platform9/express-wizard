@@ -203,6 +203,7 @@ class TestWizardBaseLine(TestCase):
             openstack = Openstack(du)
 
             # launch PMO instances
+            SLEEP_LAUNCH = 2
             instance_num = 1
             instance_uuids = []
             while instance_num <= num_instances_pmo:
@@ -211,6 +212,7 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(instance_uuid)
                 instance_uuids.append(instance_uuid)
                 instance_num += 1
+                time.sleep(SLEEP_LAUNCH)
 
             # timeout loop : wait for instances to boot
             booted_instances = []
@@ -245,6 +247,7 @@ class TestWizardBaseLine(TestCase):
             # enforce TIMEOUT
             if not flag_all_active:
                 self.log.warning("TIMEOUT: waiting for all instances to become active")
+                self.log.warning("instance_uuids = {}".format(instance_uuids))
                 self.delete_all_instances(instance_uuids)
                 self.assertTrue(False)
 
