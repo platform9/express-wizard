@@ -76,6 +76,41 @@ class Openstack:
         return(instance_uuid,instance_msg)
 
 
+    def delete_instance(self, target_uuid):
+        """Delete an Openstack Instance"""
+
+        # get server record
+        api_endpoint = "nova/v2.1/{}/servers/{}".format(self.project_id,target_uuid)
+        headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
+        pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers)
+        if pf9_response.status_code != 200:
+            return(False)
+        tmp_server = json.loads(pf9_response.text)
+        target_delete_url = tmp_server['server']['links'][0]['href']
+
+        # check for attached volumes
+        api_endpoint = "nova/v2.1/{}/servers/{}/os-volume_attachments".format(self.project_id,target_uuid)
+        pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint),verify=False, headers=headers)
+        if pf9_response.status_code == 200:
+            tmp_server = json.loads(pf9_response.text)
+            if len(tmp_server['volumeAttachments']) > 0:
+                for vol_metadata in tmp_server['volumeAttachments']:
+                  api_endpoint = "{}/nova/v2.1/{}/servers/{}/os-volume_attachments/{}".format(self.du_url,self.project_id,target_uuid,vol_metadata['volumeId'])
+                  delete_vol = requests.delete(api_endpoint,headers=headers,verify=False)
+                  if delete_vol.status_code != 202:
+                      return(False)
+        else:
+            return(False)
+
+        # delete instance
+        delete_response = requests.delete(target_delete_url,headers=headers,verify=False)
+        print "HTTP Code = {}".format(delete_response.status_code)
+        if delete_response.status_code == 204:
+            return(False)
+        else:
+            return(True)
+
+
     def wait_for_instance(self, instance_uuid):
         TIMEOUT = 3
         POLL_INTERVAL = 10

@@ -282,6 +282,11 @@ class TestWizardBaseLine(TestCase):
             exit_status = os.system("echo '------------------' ; cat {} ; echo '----------------------'".format(tmpfile))
 
             # call wizard (to on-board region)
-            exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
-            assert exit_status == 0
+            #exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
+            #assert exit_status == 0
+
+            # cleanup (delete instances)
+            for tmp_uuid in instance_uuids:
+                self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
+                openstack.delete_instance(tmp_uuid)
 
