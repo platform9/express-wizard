@@ -280,6 +280,11 @@ class TestWizardBaseLine(TestCase):
                 self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
                 self.assertTrue(False)
 
+            # DBG:
+            self.log.warning("----- template_data ----------------------------------------------")
+            self.log.warning(template_data)
+            self.log.warning("------------------------------------------------------------------")
+
             # write parameterized template to tmpfile
             try:
                 tmpfile = "/tmp/pf9-pmo-import.json"
