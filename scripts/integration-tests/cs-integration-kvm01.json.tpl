@@ -29,7 +29,7 @@
     "region": "kvm01",
     "region_proxy": "",
     "git_branch": "master",
-    "auth_ssh_key": "~/.ssh/id_rsa",
+    "auth_ssh_key": "/tmp/id_rsa",
     "bond_mtu": "9000"
   },
   "hosts": [
@@ -228,14 +228,14 @@
       "auth_name": "CentOS SSH Access (Key-based)",
       "auth_password": "",
       "auth_username": "centos",
-      "auth_ssh_key": "~/.ssh/id_rsa"
+      "auth_ssh_key": "/tmp/id_rsa"
     },
     {
       "auth_type": "sshkey",
       "auth_name": "Ubuntu SSH Access (Key-based)",
       "auth_password": "",
       "auth_username": "ubuntu",
-      "auth_ssh_key": "~/.ssh/id_rsa"
+      "auth_ssh_key": "/tmp/id_rsa"
     }
   ]
 }
