@@ -142,6 +142,23 @@ class TestWizardBaseLine(TestCase):
             self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
             openstack.delete_instance(tmp_uuid)
 
+    def run_cmd(cmd):
+        cmd_stdout = ""
+        tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
+        cmd_exitcode = os.system("{} > {} 2>&1".format(cmd, tmpfile))
+
+        # read output of command
+        if os.path.isfile(tmpfile):
+            try:
+                fh_tmpfile = open(tmpfile, 'r')
+                cmd_stdout = fh_tmpfile.readlines()
+            except:
+                None
+
+        os.remove(tmpfile)
+        return cmd_exitcode, cmd_stdout
+
+
     def test_launch_instances(self):
         """Launch OpenStack Instances (On-Boarding Targets)"""
         logging.basicConfig()
@@ -298,10 +315,15 @@ class TestWizardBaseLine(TestCase):
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(False)
 
+            # DBG:
+            exit_status, stdout = run_cmd("cat {}".format(tmpfile))
+            self.log.warning("====================================================================")
+            self.log.warning("exit_status = {}".format(exit_status))
+            self.log.warning("====== /tmp/pf9-pmo-import.json ====================================")
+            self.log.warning(stdout)
+            self.log.warning("====================================================================")
+
             # call wizard (to on-board region)
-            self.log.warning("===== /tmp/pf9-pmo-import.json ====================================")
-            self.log.warning(os.system("cat {}".format(tmpfile)))
-            self.log.warning("===================================================================")
             exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
             if exit_status != 0:
                 self.delete_all_instances(du,instance_uuids)
