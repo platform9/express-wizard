@@ -259,9 +259,16 @@ class TestWizardBaseLine(TestCase):
             POLL_INTERVAL_FIP = 10
             for tmp_uuid in instance_uuids:
                 fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
-                self.assertTrue(fip_ip)
+                if not fip_ip:
+                    self.delete_all_instances(du,instance_uuids)
+                    self.assertTrue(fip_ip)
+                if not fip_id:
+                    self.delete_all_instances(du,instance_uuids)
+                    self.assertTrue(fip_id)
                 fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
-                self.assertTrue(fip_status)
+                if not fip_status:
+                    self.delete_all_instances(du,instance_uuids)
+                    self.assertTrue(fip_status)
                 uuid_fip_map.update({tmp_uuid:fip_ip})
                 time.sleep(POLL_INTERVAL_FIP)
 
@@ -278,6 +285,7 @@ class TestWizardBaseLine(TestCase):
                     instance_num += 1
             except:
                 self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
+                self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(False)
 
             # write parameterized template to tmpfile
@@ -287,11 +295,17 @@ class TestWizardBaseLine(TestCase):
                 tmpfile_fh.write(template_data)
             except:
                 self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
+                self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(False)
 
             # call wizard (to on-board region)
+            self.log.warning("===== /tmp/pf9-pmo-import.json ====================================")
+            self.log.warning(os.system("cat {}".format(tmpfile)))
+            self.log.warning("===================================================================")
             exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
-            assert exit_status == 0
+            if exit_status != 0:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(False)
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
