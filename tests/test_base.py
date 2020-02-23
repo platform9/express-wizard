@@ -296,10 +296,6 @@ class TestWizardBaseLine(TestCase):
                 with open(pmo_import_file) as json_file:
                     import_json = json.load(json_file)
 
-            self.log.warning("=== before: import_json ====================================================")
-            self.log.warning(import_json)
-            self.log.warning("====================================================================")
-
             # parameterize pmo import template
             instance_num = 1
             for tmp_uuid in instance_uuids:
@@ -309,35 +305,10 @@ class TestWizardBaseLine(TestCase):
                         tmp_host['ip'] = uuid_fip_map[tmp_uuid]
                 instance_num += 1
 
-            self.log.warning("=== after: import_json ====================================================")
-            self.log.warning(import_json)
-            self.log.warning("====================================================================")
-            self.assertTrue(False)
-
-            #pmo_import_file = self.get_pmo_importdata_path()
-            #try:
-            #    file = open(pmo_import_file, 'r')
-            #    template_data = file.read()
-            #    instance_num = 1
-            #    for tmp_uuid in instance_uuids:
-            #        ip_tag = "<ip-kvm{}>".format(str(instance_num).zfill(2))
-            #        new_template = template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
-            #        template_data = new_template
-            #        instance_num += 1
-            #except:
-            #    self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
-            #    self.delete_all_instances(du,instance_uuids)
-            #    self.assertTrue(False)
-
             # write parameterized template to tmpfile
-            try:
-                tmpfile = "/tmp/pf9-pmo-import.json"
-                tmpfile_fh = open(tmpfile, 'w')
-                tmpfile_fh.write(template_data)
-            except:
-                self.log.warning("ERROR: failed to write import file: {}".format(tmpfile))
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(False)
+            tmpfile = "/tmp/pf9-pmo-import.json"
+            with open(tmpfile, 'w') as outfile:
+                json.dump(import_json, outfile)
 
             # DBG:
             exit_status, stdout = self.run_cmd("cat {}".format(tmpfile))
