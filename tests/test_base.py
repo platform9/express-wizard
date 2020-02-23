@@ -166,6 +166,15 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
+        exit_status, stdout = self.run_cmd("ls -l /tmp/id_rsa".format(tmpfile))
+        self.log.warning("======== ls -l /tmp/id_rsa ============================")
+        self.log.warning(stdout)
+        exit_status, stdout = self.run_cmd("cat /tmp/id_rsa".format(tmpfile))
+        self.log.warning("======== cat /tmp/id_rsa ============================")
+        self.log.warning(stdout)
+        self.log.warning("=====================================================")
+        self.assertTrue(False)
+
         # validate config file exists
         config_file = self.get_cicd_config_path()
         self.log.warning("config_file={}\n".format(config_file))
