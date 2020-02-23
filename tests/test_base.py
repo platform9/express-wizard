@@ -310,19 +310,16 @@ class TestWizardBaseLine(TestCase):
             with open(tmpfile, 'w') as outfile:
                 json.dump(import_json, outfile)
 
-            # DBG:
-            exit_status, stdout = self.run_cmd("cat {}".format(tmpfile))
-            self.log.warning("====================================================================")
-            self.log.warning("exit_status = {}".format(exit_status))
-            self.log.warning("====== /tmp/pf9-pmo-import.json ====================================")
-            self.log.warning(stdout)
-            self.log.warning("====================================================================")
-
             # call wizard (to on-board region)
-            exit_status = os.system("wizard --jsonImport {}".format(tmpfile))
-            if exit_status != 0:
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(False)
+            exit_status, stdout = run_cmd("wizard --jsonImport {}".format(tmpfile))
+            if exit_status == 0:
+                self.log.warning("ON-BOARDING STATUS : PASSED")
+            else:
+                self.log.warning("ON-BOARDING STATUS : FAILED")
+
+            # display import log
+            self.log.warning("================ Region Import Log ================")
+            self.log.warning(stdout)
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
