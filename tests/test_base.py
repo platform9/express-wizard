@@ -318,8 +318,10 @@ class TestWizardBaseLine(TestCase):
                 self.log.warning("ON-BOARDING STATUS : FAILED")
 
             # display import log
-            self.log.warning("================ Region Import Log ================")
-            self.log.warning(stdout)
+            self.log.warning("================ START: Region Import Log ================")
+            for line in stdout:
+                self.log.warning(line.strip())
+            self.log.warning("================ END: Region Import Log ================")
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
