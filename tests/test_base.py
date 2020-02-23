@@ -12,6 +12,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.
 LIB_DIR = SCRIPT_DIR + "/../lib"
 sys.path.append(LIB_DIR)
 import datamodel
+import json
 from encrypt import Encryption
 from lock import Lock
 from openstack_utils import Openstack
