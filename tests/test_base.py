@@ -142,7 +142,7 @@ class TestWizardBaseLine(TestCase):
             self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
             openstack.delete_instance(tmp_uuid)
 
-    def run_cmd(cmd):
+    def run_cmd(self,cmd):
         cmd_stdout = ""
         tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
         cmd_exitcode = os.system("{} > {} 2>&1".format(cmd, tmpfile))
@@ -316,7 +316,7 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
 
             # DBG:
-            exit_status, stdout = run_cmd("cat {}".format(tmpfile))
+            exit_status, stdout = self.run_cmd("cat {}".format(tmpfile))
             self.log.warning("====================================================================")
             self.log.warning("exit_status = {}".format(exit_status))
             self.log.warning("====== /tmp/pf9-pmo-import.json ====================================")
