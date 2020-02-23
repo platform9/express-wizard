@@ -311,7 +311,7 @@ class TestWizardBaseLine(TestCase):
                 json.dump(import_json, outfile)
 
             # call wizard (to on-board region)
-            exit_status, stdout = run_cmd("wizard --jsonImport {}".format(tmpfile))
+            exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
             if exit_status == 0:
                 self.log.warning("ON-BOARDING STATUS : PASSED")
             else:
