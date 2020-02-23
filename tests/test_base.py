@@ -289,21 +289,44 @@ class TestWizardBaseLine(TestCase):
                 uuid_fip_map.update({tmp_uuid:fip_ip})
                 time.sleep(POLL_INTERVAL_FIP)
 
-            # parameterize pmo import template
+            # read pmo import template
             pmo_import_file = self.get_pmo_importdata_path()
-            try:
-                file = open(pmo_import_file, 'r')
-                template_data = file.read()
-                instance_num = 1
-                for tmp_uuid in instance_uuids:
-                    ip_tag = "<ip-kvm{}>".format(str(instance_num).zfill(2))
-                    new_template = template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
-                    template_data = new_template
-                    instance_num += 1
-            except:
-                self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(False)
+            if os.path.isfile(pmo_import_file):
+                with open(pmo_import_file) as json_file:
+                    import_json = json.load(json_file)
+
+            self.log.warning("=== before: import_json ====================================================")
+            self.log.warning(import_json)
+            self.log.warning("====================================================================")
+
+            # parameterize pmo import template
+            instance_num = 1
+            for tmp_uuid in instance_uuids:
+                ci_hostname = "ci-kvm{}".format(str(instance_num).zfill(2))
+                for tmp_host in import_json['hosts']:
+                    if tmp_host['hostname'] == ci_hostname:
+                        tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+                instance_num += 1
+
+            self.log.warning("=== after: import_json ====================================================")
+            self.log.warning(import_json)
+            self.log.warning("====================================================================")
+            self.assertTrue(False)
+
+            #pmo_import_file = self.get_pmo_importdata_path()
+            #try:
+            #    file = open(pmo_import_file, 'r')
+            #    template_data = file.read()
+            #    instance_num = 1
+            #    for tmp_uuid in instance_uuids:
+            #        ip_tag = "<ip-kvm{}>".format(str(instance_num).zfill(2))
+            #        new_template = template_data.replace(ip_tag,uuid_fip_map[tmp_uuid])
+            #        template_data = new_template
+            #        instance_num += 1
+            #except:
+            #    self.log.warning("ERROR: failed to read import file to: {}".format(pmo_import_file))
+            #    self.delete_all_instances(du,instance_uuids)
+            #    self.assertTrue(False)
 
             # write parameterized template to tmpfile
             try:
