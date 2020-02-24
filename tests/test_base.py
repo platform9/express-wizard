@@ -329,7 +329,16 @@ class TestWizardBaseLine(TestCase):
             exit_status, stdout = self.run_cmd(cmd)
             self.log.warning("------------------------------------------------------")
             for l in stdout:
-                self.log.warning(l)
+                self.log.warning(l.strip())
+            self.log.warning("------------------------------------------------------")
+
+            # DBG:
+            cmd = "cat {}".format(tmpfile)
+            self.log.warning("running: {}".format(cmd))
+            exit_status, stdout = self.run_cmd(cmd)
+            self.log.warning("------------------------------------------------------")
+            for l in stdout:
+                self.log.warning(l.strip())
             self.log.warning("------------------------------------------------------")
 
             # call wizard (to on-board region)
