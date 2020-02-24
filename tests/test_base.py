@@ -331,15 +331,6 @@ class TestWizardBaseLine(TestCase):
                 self.assertTrue(False)
 
             # DBG:
-            cmd = "ls -l {}".format(self.get_region_sshkey_path())
-            self.log.warning("running: {}".format(cmd))
-            exit_status, stdout = self.run_cmd(cmd)
-            self.log.warning("------------------------------------------------------")
-            for l in stdout:
-                self.log.warning(l.strip())
-            self.log.warning("------------------------------------------------------")
-
-            # DBG:
             cmd = "cat {} | python -m json.tool".format(tmpfile)
             self.log.warning("running: {}".format(cmd))
             exit_status, stdout = self.run_cmd(cmd)
