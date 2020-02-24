@@ -182,7 +182,7 @@ class Openstack:
         return(False)
 
 
-    def launch_in_nstances(num_instances,instance_basename):
+    def launch_in_nstances(self,num_instances,instance_basename):
         SLEEP_BETWEEN_LAUNCH = 2
         instance_num = 1
         instance_uuids = []
