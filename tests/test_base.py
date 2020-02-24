@@ -174,17 +174,9 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        k = self.get_region_sshkey_path()
-        cmd = "cat {}".format(self.get_region_sshkey_path())
-        self.log.warning("DBG: running: {}".format(cmd))
-        exit_status, stdout = self.run_cmd(cmd)
-        for l in stdout:
-            self.log.warning(l)
-        self.log.warning("--- early exit ---")
-        self.assertTrue(False)
-
-        STATIC_ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
-        if STATIC_ENCRYPTION_KEY != "":
+        #STATIC_ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
+        STATIC_ENCRYPTION_KEY = os.environ.get('EMS_KEY')
+        if STATIC_ENCRYPTION_KEY:
             # initialize pf9_home
             pf9_home = self.get_pf9home_path()
             if not os.path.isdir(pf9_home):
@@ -311,10 +303,19 @@ class TestWizardBaseLine(TestCase):
             # parameterize pmo import template
             instance_num = 1
             for tmp_uuid in instance_uuids:
+                # parameterize IP for kvm nodes
                 ci_hostname = "ci-kvm{}".format(str(instance_num).zfill(2))
                 for tmp_host in import_json['hosts']:
                     if tmp_host['hostname'] == ci_hostname:
                         tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+
+                # parameterize ssh-keypath in region
+                import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+                # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
+                for tmp_auth in import_json['auth-profiles']:
+                    tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
+
                 instance_num += 1
 
             # write parameterized template to tmpfile
