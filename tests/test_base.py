@@ -174,7 +174,6 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        #STATIC_ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         STATIC_ENCRYPTION_KEY = os.environ.get('EMS_KEY')
         if STATIC_ENCRYPTION_KEY:
             # initialize pf9_home
@@ -323,20 +322,31 @@ class TestWizardBaseLine(TestCase):
             with open(tmpfile, 'w') as outfile:
                 json.dump(import_json, outfile)
 
+            # DBG:
+            self.log.warning("region_sshkey_path = {}".format(self.get_region_sshkey_path()))
+            cmd = "cat {}".format(self.get_region_sshkey_path())
+            self.log.warning("running: {}".format(cmd))
+            exit_status, stdout = self.run_cmd(cmd)
+            self.log.warning("------------------------------------------------------")
+            for l in stdout:
+                self.log.warning(l)
+            self.log.warning("------------------------------------------------------")
+
             # call wizard (to on-board region)
-            self.log.warning("INFO: starting region import (w/auto-deploy)...")
-            exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
-            if exit_status == 0:
-                self.log.warning("ON-BOARDING STATUS : PASSED")
-            else:
-                self.log.warning("ON-BOARDING STATUS : FAILED")
+            #self.log.warning("INFO: starting region import (w/auto-deploy)...")
+            #exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+            #if exit_status == 0:
+            #    self.log.warning("ON-BOARDING STATUS : PASSED")
+            #else:
+            #    self.log.warning("ON-BOARDING STATUS : FAILED")
 
             # display import log
-            self.log.warning("================ START: Region Import Log ================")
-            for line in stdout:
-                self.log.warning(line.strip())
-            self.log.warning("================ END: Region Import Log ================")
+            #self.log.warning("================ START: Region Import Log ================")
+            #for line in stdout:
+            #    self.log.warning(line.strip())
+            #self.log.warning("================ END: Region Import Log ================")
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
+            self.log.warning("CD-CD : COMPLETE (reached the end of the script within asserting)")
 
