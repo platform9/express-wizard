@@ -188,7 +188,7 @@ class Openstack:
         instance_uuids = []
         while instance_num <= num_instances:
             instance_name = "{}{}".format(instance_basename,str(instance_num).zfill(2))
-            instance_uuid, instance_msg = launch_instance(instance_name)
+            instance_uuid, instance_msg = self.launch_instance(instance_name)
             if instance_uuid:
                 instance_uuids.append(instance_uuid)
             instance_num += 1

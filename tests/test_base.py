@@ -171,13 +171,20 @@ class TestWizardBaseLine(TestCase):
 
         # validate config file exists
         config_file = self.get_cicd_config_path()
-        self.log.warning("config_file={}\n".format(config_file))
+        self.log.warning("***********************************")
+        self.log.warning("**** STARTING INTEGRATION TEST ****")
+        self.log.warning("***********************************")
         self.assertTrue(os.path.isfile(config_file))
 
+        self.log.warning(">>> Getting Encryption Key")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
-        if EMS_VAULT_KEY:
+        if not EMS_VAULT_KEY:
+            self.log.warning("Failed to get key for decryption from environment")
+            self.assertTrue(os.path.isfile(config_file))
+        else:
             # initialize pf9_home
             pf9_home = self.get_pf9home_path()
+            self.log.warning(">>> initializing {}".format(pf9_home))
             if not os.path.isdir(pf9_home):
                 try:
                     os.mkdir(pf9_home)
@@ -187,6 +194,7 @@ class TestWizardBaseLine(TestCase):
 
             # initialize pf9_home_db
             pf9_home_db = "{}/db".format(pf9_home)
+            self.log.warning(">>> initializing {}".format(pf9_home_db))
             if not os.path.isdir(pf9_home_db):
                 try:
                     os.mkdir(pf9_home_db)
@@ -196,6 +204,7 @@ class TestWizardBaseLine(TestCase):
 
             # initialize pf9_lockdir
             pf9_lockdir = "{}/lock".format(pf9_home)
+            self.log.warning(">>> initializing {}".format(pf9_lockdir))
             if not os.path.isdir(pf9_lockdir):
                 try:
                     os.mkdir(pf9_lockdir)
@@ -204,19 +213,23 @@ class TestWizardBaseLine(TestCase):
                     self.assertTrue(False)
 
             # call wizard (to import region)
-            exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY))
-            assert exit_status == 0
+            cmd = "wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY)
+            self.log.warning(">>> running: {}".format(cmd))
+            exit_status, stdout = self.run_cmd(cmd)
+            for l in stdout:
+                self.log.warning(l.strip())
+            if exit_status != 0:
+                self.assertTrue(False)
 
             # read config file: scripts/integration-tests/integration-tests.conf
+            self.log.warning("*** Starting PMO Integration Test ***")
+            self.log.warning(">>> Launching Openstack Instances for PMO Integration Test:")
             du_url = self.get_du_url(config_file)
-            self.log.warning("du_url={}".format(du_url))
             self.assertTrue(du_url)
+            self.log.warning("du_url = {}".format(du_url))
             num_instances_pmo = int(self.get_num_instances_pmo(config_file))
-            self.log.warning("num_instances_pmo={}".format(num_instances_pmo))
+            self.log.warning("num_instances_pmo = {}".format(num_instances_pmo))
             self.assertTrue(num_instances_pmo)
-            num_instances_pmk = int(self.get_num_instances_pmk(config_file))
-            self.log.warning("num_instances_pmk={}".format(num_instances_pmk))
-            self.assertTrue(num_instances_pmk)
 
             # get du record
             du = datamodel.get_du_metadata(du_url)
@@ -234,6 +247,7 @@ class TestWizardBaseLine(TestCase):
             if len(instance_uuids) < num_instances_pmo:
                 self.log.warning("ERROR: failed to launch Openstack {} instances".format(num_instances_pmo))
                 self.assertTrue(False)
+            self.log.warning("INFO: launched {} instances successfully - waiting for them to boot...".format(num_instances_pmo))
                 
 
             # timeout loop : wait for instances to boot
@@ -272,8 +286,10 @@ class TestWizardBaseLine(TestCase):
                 self.log.warning("instance_uuids = {}".format(instance_uuids))
                 self.delete_all_instances(du, instance_uuids)
                 self.assertTrue(False)
+            self.log.warning("INFO: all instances have completed booting")
 
             # assign floating IP to instance
+            self.log.warning(">>> Adding Floating IP Interfaces (Public) to Instances")
             uuid_fip_map = {}
             POLL_INTERVAL_FIP = 10
             for tmp_uuid in instance_uuids:
@@ -289,9 +305,11 @@ class TestWizardBaseLine(TestCase):
                     self.delete_all_instances(du,instance_uuids)
                     self.assertTrue(fip_status)
                 uuid_fip_map.update({tmp_uuid:fip_ip})
+                self.log.warning("Added {} to {}".format(fip_ip,tmp_uuid))
                 time.sleep(POLL_INTERVAL_FIP)
 
             # read pmo import template
+            self.log.warning(">>> Parameterizing Import Template for PMO Integration Test")
             pmo_import_file = self.get_pmo_importdata_path()
             if os.path.isfile(pmo_import_file):
                 with open(pmo_import_file) as json_file:
@@ -328,22 +346,14 @@ class TestWizardBaseLine(TestCase):
                 self.log.warning("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
                 self.assertTrue(False)
 
-            # DBG:
-            cmd = "cat {} | python -m json.tool".format(tmpfile)
-            self.log.warning("running: {}".format(cmd))
-            exit_status, stdout = self.run_cmd(cmd)
-            self.log.warning("------------------------------------------------------")
-            for l in stdout:
-                self.log.warning(l.strip())
-            self.log.warning("------------------------------------------------------")
-
             # call wizard (to on-board region)
-            self.log.warning("INFO: starting region import (w/auto-deploy)...")
+            self.log.warning(">>> Parameterizing Import Template for PMO Integration Test")
+            self.log.warning(">>> Starting PMO Integration Test (Importing Region)")
             exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
             if exit_status == 0:
-                self.log.warning("ON-BOARDING STATUS : PASSED")
+                self.log.warning("INTEGRAION TEST STATUS : PASSED")
             else:
-                self.log.warning("ON-BOARDING STATUS : FAILED")
+                self.log.warning("INTEGRAION TEST STATUS : FAILED")
 
             # display import log
             self.log.warning("================ START: Region Import Log ================")
