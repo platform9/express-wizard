@@ -83,6 +83,9 @@ class TestWizardBaseLine(TestCase):
     def get_region_importdata_path(self):
         return("{}/../scripts/integration-tests/cloud.platform9.net".format(os.path.dirname(os.path.realpath(__file__))))
 
+    def get_region_sshkey_path(self):
+        return("{}/../id_rsa".format(os.path.dirname(os.path.realpath(__file__))))
+
     def get_pmo_importdata_path(self):
         return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
 
@@ -166,19 +169,19 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        exit_status, stdout = self.run_cmd("ls -l /tmp/id_rsa".format(tmpfile))
-        self.log.warning("======== ls -l /tmp/id_rsa ============================")
-        self.log.warning(stdout)
-        exit_status, stdout = self.run_cmd("cat /tmp/id_rsa".format(tmpfile))
-        self.log.warning("======== cat /tmp/id_rsa ============================")
-        self.log.warning(stdout)
-        self.log.warning("=====================================================")
-        self.assertTrue(False)
-
         # validate config file exists
         config_file = self.get_cicd_config_path()
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
+
+        k = self.get_region_sshkey_path()
+        cmd = "cat {}".format(self.get_region_sshkey_path())
+        self.log.warning("DBG: running: {}".format(cmd))
+        exit_status, stdout = self.run_cmd(cmd)
+        for l in stdout:
+            self.log.warning(l)
+        self.log.warning("--- early exit ---")
+        self.assertTrue(False)
 
         STATIC_ENCRYPTION_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if STATIC_ENCRYPTION_KEY != "":
