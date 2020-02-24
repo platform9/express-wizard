@@ -335,7 +335,7 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag,s
 
     sys.stdout.write("\nRunning PF9-Express\n")
     if silent_flag:
-        user_input = "s"
+        user_input = "y"
     else:
         user_input = user_io.read_kbd("--> Installing PF9-Express Prerequisites, do you want to tail the log (enter 's' to skip)", ['q','y','n','s'], 's', True, True, help.onboard_interview("express-prereqs"))
     if user_input == 'q':

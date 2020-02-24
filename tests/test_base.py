@@ -24,7 +24,7 @@ except ImportError:
 
 class TestWizardBaseLine(TestCase):
     """Wizard baseline tests"""
-    def xtest_entrypoints(self):
+    def test_entrypoints(self):
         """Test wizard entry points"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         exit_status = os.system('wizard --test')
@@ -32,14 +32,14 @@ class TestWizardBaseLine(TestCase):
         exit_status = os.system('wizard -t')
         assert exit_status == 0
 
-    def xtest_usage_information(self):
+    def test_usage_information(self):
         """Test wizard --help via direct subprocess call"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
         output = popen(['wizard', '--help'], stdout=PIPE).communicate()[0]
         self.assertTrue('usage:' in str(output))
        
-    def xtest_locking(self):
+    def test_locking(self):
         """Test wizard lock class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
@@ -58,7 +58,7 @@ class TestWizardBaseLine(TestCase):
         lock.release_lock()
         self.assertFalse(os.path.isdir(lock_file))
 
-    def xtest_encryption(self):
+    def test_encryption(self):
         """Test wizard encryption class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
@@ -174,8 +174,8 @@ class TestWizardBaseLine(TestCase):
         self.log.warning("config_file={}\n".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        STATIC_ENCRYPTION_KEY = os.environ.get('EMS_KEY')
-        if STATIC_ENCRYPTION_KEY:
+        EMS_VAULT_KEY = os.environ.get('EMS_KEY')
+        if EMS_VAULT_KEY:
             # initialize pf9_home
             pf9_home = self.get_pf9home_path()
             if not os.path.isdir(pf9_home):
@@ -204,7 +204,7 @@ class TestWizardBaseLine(TestCase):
                     self.assertTrue(False)
 
             # call wizard (to import region)
-            exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),STATIC_ENCRYPTION_KEY))
+            exit_status = os.system("wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY))
             assert exit_status == 0
 
             # read config file: scripts/integration-tests/integration-tests.conf
@@ -227,16 +227,14 @@ class TestWizardBaseLine(TestCase):
             openstack = Openstack(du)
 
             # launch PMO instances
-            SLEEP_LAUNCH = 2
-            instance_num = 1
-            instance_uuids = []
-            while instance_num <= num_instances_pmo:
-                instance_name = "ci-kvm{}".format(str(instance_num).zfill(2))
-                instance_uuid, instance_msg = openstack.launch_instance(instance_name)
-                self.assertTrue(instance_uuid)
-                instance_uuids.append(instance_uuid)
-                instance_num += 1
-                time.sleep(SLEEP_LAUNCH)
+            instance_uuids = openstack.launch_in_nstances(num_instances_pmo,"ci-kvm")
+            if not instance_uuids:
+                self.log.warning("ERROR: failed to launch Openstack {} instances".format(num_instances_pmo))
+                self.assertTrue(False)
+            if len(instance_uuids) < num_instances_pmo:
+                self.log.warning("ERROR: failed to launch Openstack {} instances".format(num_instances_pmo))
+                self.assertTrue(False)
+                
 
             # timeout loop : wait for instances to boot
             booted_instances = []
