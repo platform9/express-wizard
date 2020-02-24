@@ -322,9 +322,16 @@ class TestWizardBaseLine(TestCase):
             with open(tmpfile, 'w') as outfile:
                 json.dump(import_json, outfile)
 
+            # set permissions on sskkey
+            try:
+                self.log.warning("")
+                os.chmod(self.get_region_sshkey_path(), 0o400)
+            except:
+                self.log.warning("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
+                self.assertTrue(False)
+
             # DBG:
-            self.log.warning("region_sshkey_path = {}".format(self.get_region_sshkey_path()))
-            cmd = "cat {}".format(self.get_region_sshkey_path())
+            cmd = "ls -l {}".format(self.get_region_sshkey_path())
             self.log.warning("running: {}".format(cmd))
             exit_status, stdout = self.run_cmd(cmd)
             self.log.warning("------------------------------------------------------")
