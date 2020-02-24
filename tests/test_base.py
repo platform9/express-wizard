@@ -333,7 +333,7 @@ class TestWizardBaseLine(TestCase):
             self.log.warning("------------------------------------------------------")
 
             # DBG:
-            cmd = "cat {}".format(tmpfile)
+            cmd = "cat {} | python -m json.tool".format(tmpfile)
             self.log.warning("running: {}".format(cmd))
             exit_status, stdout = self.run_cmd(cmd)
             self.log.warning("------------------------------------------------------")
@@ -342,18 +342,18 @@ class TestWizardBaseLine(TestCase):
             self.log.warning("------------------------------------------------------")
 
             # call wizard (to on-board region)
-            #self.log.warning("INFO: starting region import (w/auto-deploy)...")
-            #exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
-            #if exit_status == 0:
-            #    self.log.warning("ON-BOARDING STATUS : PASSED")
-            #else:
-            #    self.log.warning("ON-BOARDING STATUS : FAILED")
+            self.log.warning("INFO: starting region import (w/auto-deploy)...")
+            exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+            if exit_status == 0:
+                self.log.warning("ON-BOARDING STATUS : PASSED")
+            else:
+                self.log.warning("ON-BOARDING STATUS : FAILED")
 
             # display import log
-            #self.log.warning("================ START: Region Import Log ================")
-            #for line in stdout:
-            #    self.log.warning(line.strip())
-            #self.log.warning("================ END: Region Import Log ================")
+            self.log.warning("================ START: Region Import Log ================")
+            for line in stdout:
+                self.log.warning(line.strip())
+            self.log.warning("================ END: Region Import Log ================")
 
             # cleanup (delete instances)
             self.delete_all_instances(du,instance_uuids)
