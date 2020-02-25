@@ -370,15 +370,18 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        cmd = "cat {}".format(tmpfile)
+        self.log.info("================ START: Region Import File ================")
+        cmd = "cat {} | python -m json.tool".format(tmpfile)
         exit_status, stdout = self.run_cmd(cmd)
         for l in stdout:
             self.log.info(l.strip())
+        self.log.info("================ END: Region Import File ================")
 
         # call wizard (to on-board region)
-        #self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
+        #cmd = "wizard --jsonImport {}".format(tmpfile)
         #self.log.info(">>> Starting PMK Integration Test (Importing Region)")
-        #exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+        #self.log.info("running: {}".format(cmd))
+        #exit_status, stdout = self.run_cmd(cmd)
         #if exit_status == 0:
         #    self.log.info("INTEGRAION TEST STATUS : PASSED")
         #else:
