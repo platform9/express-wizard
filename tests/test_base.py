@@ -274,7 +274,6 @@ class TestWizardBaseLine(TestCase):
             json.dump(import_json, outfile)
 
         # call wizard (to on-board region)
-        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
         self.log.info(">>> Starting PMO Integration Test (Importing Region)")
         exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
         if exit_status == 0:
@@ -371,20 +370,25 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
+        cmd = "cat {}".format(tmpfile)
+        exit_status, stdout = self.run_cmd(cmd)
+        for l in stdout:
+            self.log.info(l.strip())
+
         # call wizard (to on-board region)
-        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
-        self.log.info(">>> Starting PMK Integration Test (Importing Region)")
-        exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
-        if exit_status == 0:
-            self.log.info("INTEGRAION TEST STATUS : PASSED")
-        else:
-            self.log.info("INTEGRAION TEST STATUS : FAILED")
+        #self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
+        #self.log.info(">>> Starting PMK Integration Test (Importing Region)")
+        #exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+        #if exit_status == 0:
+        #    self.log.info("INTEGRAION TEST STATUS : PASSED")
+        #else:
+        #    self.log.info("INTEGRAION TEST STATUS : FAILED")
 
         # display import log
-        self.log.info("================ START: Region Import Log ================")
-        for line in stdout:
-            self.log.info(line.strip())
-        self.log.info("================ END: Region Import Log ================")
+        #self.log.info("================ START: Region Import Log ================")
+        #for line in stdout:
+        #    self.log.info(line.strip())
+        #self.log.info("================ END: Region Import Log ================")
 
         # cleanup (delete instances)
         self.delete_all_instances(du,instance_uuids)
