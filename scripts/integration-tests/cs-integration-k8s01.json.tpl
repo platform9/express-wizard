@@ -34,14 +34,14 @@
   },
   "clusters": [
     {
-      "name": "wizard-int02",
+      "name": "ci-cluster01",
       "du_url": "https://cs-integration-k8s01.platform9.horse",
       "record_source": "User-Defined",
       "containers_cidr": "192.168.0.0/16",
       "services_cidr": "192.169.0.0/16",
       "master_vip_iface": "ens160",
-      "master_vip_ipv4": "10.128.229.99",
-      "metallb_cidr": "10.128.229.94-10.128.229.98",
+      "master_vip_ipv4": "172.20.8.244",
+      "metallb_cidr": "172.20.8.240-172.20.8.243",
       "app_catalog_enabled": 0,
       "allow_workloads_on_master": 0,
       "privileged": 1,
