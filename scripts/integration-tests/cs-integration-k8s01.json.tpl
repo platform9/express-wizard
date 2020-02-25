@@ -29,7 +29,7 @@
     "region": "k8s01",
     "region_proxy": "",
     "git_branch": "master",
-    "auth_ssh_key": "~/.ssh/id_rsa",
+    "auth_ssh_key": "<ssh-keypath>",
     "bond_mtu": ""
   },
   "clusters": [
@@ -50,7 +50,7 @@
   ],
   "hosts": [
     {
-      "hostname": "master01",
+      "hostname": "ci-k8s01",
       "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
@@ -66,7 +66,7 @@
       "designate": "n"
     },
     {
-      "hostname": "master02",
+      "hostname": "ci-k8s02",
       "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
@@ -82,7 +82,7 @@
       "designate": "n"
     },
     {
-      "hostname": "master03",
+      "hostname": "ci-k8s03",
       "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
@@ -98,7 +98,7 @@
       "designate": "n"
     },
     {
-      "hostname": "worker01",
+      "hostname": "ci-k8s04",
       "du_url": "https://cs-integration-k8s01.platform9.horse",
       "du_type": "Kubernetes",
       "du_host_type": "kubernetes",
@@ -280,14 +280,14 @@
       "auth_name": "CentOS SSH Access (Key-based)",
       "auth_password": "",
       "auth_username": "centos",
-      "auth_ssh_key": "~/.ssh/id_rsa"
+      "auth_ssh_key": "<ssh-keypath>"
     },
     {
       "auth_type": "sshkey",
       "auth_name": "Ubuntu SSH Access (Key-based)",
       "auth_password": "",
       "auth_username": "ubuntu",
-      "auth_ssh_key": "~/.ssh/id_rsa"
+      "auth_ssh_key": "<ssh-keypath>"
     }
   ]
 }

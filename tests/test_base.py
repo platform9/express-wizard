@@ -90,7 +90,7 @@ class TestWizardBaseLine(TestCase):
         return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
 
     def get_pmk_importdata_path(self):
-        return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
+        return("{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
 
     def get_keyfile_path(self):
         from os.path import expanduser
@@ -194,23 +194,18 @@ class TestWizardBaseLine(TestCase):
         return(True)
 
 
-    def test_pmo(self, config_file):
-        # read config file
-        du_url = self.get_du_url(config_file)
+    def test_pmo(self, config_file, du, openstack):
+        self.log.info("\n****************************************")
+        self.log.info("**** STARTING PMO INTEGRATION TESTS ****")
+        self.log.info("****************************************")
+
         num_instances = int(self.get_num_instances_pmo(config_file))
 
-        # get du record
-        du = datamodel.get_du_metadata(du_url)
-        self.assertTrue(du)
-
-        # instantiate openstack library
-        from openstack_utils import Openstack
-        openstack = Openstack(du)
-
         # launch instances
+        ci_hostname = "ci-kvm"
         self.log.info(">>> Launching {} Openstack Instances for PMO Integration Test:".format(num_instances))
-        self.log.info("du_url = {}".format(du_url))
-        instance_uuids = openstack.launch_n_instances(num_instances,"ci-kvm")
+        self.log.info("du_url = {}".format(du['url']))
+        instance_uuids = openstack.launch_n_instances(num_instances,ci_hostname)
         if not instance_uuids:
             self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
             self.assertTrue(False)
@@ -248,43 +243,35 @@ class TestWizardBaseLine(TestCase):
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
-        # read pmo import template
+        # read PMO import template
         self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
-        pmo_import_file = self.get_pmo_importdata_path()
-        if os.path.isfile(pmo_import_file):
-            with open(pmo_import_file) as json_file:
+        target_import_file = self.get_pmo_importdata_path()
+        if os.path.isfile(target_import_file):
+            with open(target_import_file) as json_file:
                 import_json = json.load(json_file)
 
         # parameterize pmo import template
         instance_num = 1
         for tmp_uuid in instance_uuids:
-            # parameterize IP for kvm nodes
-            ci_hostname = "ci-kvm{}".format(str(instance_num).zfill(2))
+            # parameterize IP address
+            target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
             for tmp_host in import_json['hosts']:
-                if tmp_host['hostname'] == ci_hostname:
+                if tmp_host['hostname'] == target_hostname:
                     tmp_host['ip'] = uuid_fip_map[tmp_uuid]
 
-            # parameterize ssh-keypath in region
-            import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
-
-            # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
-            for tmp_auth in import_json['auth-profiles']:
-                tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
-
             instance_num += 1
+
+        # parameterize ssh-keypath in region
+        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+        # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
+        for tmp_auth in import_json['auth-profiles']:
+            tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
 
         # write parameterized template to tmpfile
         tmpfile = "/tmp/pf9-pmo-import.json"
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
-
-        # set permissions on sskkey
-        try:
-            self.log.info("")
-            os.chmod(self.get_region_sshkey_path(), 0o400)
-        except:
-            self.log.info("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
-            self.assertTrue(False)
 
         # call wizard (to on-board region)
         self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
@@ -305,6 +292,103 @@ class TestWizardBaseLine(TestCase):
         self.delete_all_instances(du,instance_uuids)
 
 
+    def test_pmk(self, config_file, du, openstack):
+        self.log.info("\n****************************************")
+        self.log.info("**** STARTING PMK INTEGRATION TESTS ****")
+        self.log.info("****************************************")
+
+        num_instances = int(self.get_num_instances_pmk(config_file))
+
+        # launch instances
+        ci_hostname = "ci-k8s"
+        self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
+        self.log.info("du_url = {}".format(du['url']))
+        instance_uuids = openstack.launch_n_instances(num_instances,ci_hostname)
+        if not instance_uuids:
+            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
+            self.assertTrue(False)
+        if len(instance_uuids) < num_instances:
+            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
+            self.assertTrue(False)
+        self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
+            
+
+        # wait for instances to boot
+        boot_status = openstack.wait_for_instances(instance_uuids)
+        if not boot_status:
+            self.log.info("TIMEOUT: waiting for all instances to become active")
+            self.delete_all_instances(du, instance_uuids)
+            self.assertTrue(False)
+        self.log.info("all instances booted successfully")
+
+        # assign floating IP to instance
+        self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
+        uuid_fip_map = {}
+        POLL_INTERVAL_FIP = 10
+        for tmp_uuid in instance_uuids:
+            fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
+            if not fip_ip:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_ip)
+            if not fip_id:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_id)
+            fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
+            if not fip_status:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_status)
+            uuid_fip_map.update({tmp_uuid:fip_ip})
+            self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
+            time.sleep(POLL_INTERVAL_FIP)
+
+        # read PMK import template
+        self.log.info(">>> Parameterizing Import Template for PMK Integration Test")
+        target_import_file = self.get_pmk_importdata_path()
+        if os.path.isfile(target_import_file):
+            with open(target_import_file) as json_file:
+                import_json = json.load(json_file)
+
+        # parameterize PMK import template
+        instance_num = 1
+        for tmp_uuid in instance_uuids:
+            # parameterize IP address
+            target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
+            for tmp_host in import_json['hosts']:
+                if tmp_host['hostname'] == target_hostname:
+                    tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+
+            instance_num += 1
+
+        # parameterize ssh-keypath in region
+        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+        # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
+        for tmp_auth in import_json['auth-profiles']:
+            tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
+
+        # write parameterized template to tmpfile
+        tmpfile = "/tmp/pf9-pmk-import.json"
+        with open(tmpfile, 'w') as outfile:
+            json.dump(import_json, outfile)
+
+        # call wizard (to on-board region)
+        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
+        self.log.info(">>> Starting PMK Integration Test (Importing Region)")
+        exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+        if exit_status == 0:
+            self.log.info("INTEGRAION TEST STATUS : PASSED")
+        else:
+            self.log.info("INTEGRAION TEST STATUS : FAILED")
+
+        # display import log
+        self.log.info("================ START: Region Import Log ================")
+        for line in stdout:
+            self.log.info(line.strip())
+        self.log.info("================ END: Region Import Log ================")
+
+        # cleanup (delete instances)
+        self.delete_all_instances(du,instance_uuids)
+
 
     def test_integration(self):
         """Run Integration Tests"""
@@ -312,7 +396,7 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        self.log.info("************************************")
+        self.log.info("\n************************************")
         self.log.info("**** STARTING INTEGRATION TESTS ****")
         self.log.info("************************************")
 
@@ -343,8 +427,29 @@ class TestWizardBaseLine(TestCase):
         if exit_status != 0:
             self.assertTrue(False)
 
+        # read du_url (from config file)
+        du_url = self.get_du_url(config_file)
+
+        # get du record
+        du = datamodel.get_du_metadata(du_url)
+        self.assertTrue(du)
+
+        # instantiate openstack library
+        from openstack_utils import Openstack
+        openstack = Openstack(du)
+
+        # set permissions on sskkey
+        try:
+            os.chmod(self.get_region_sshkey_path(), 0o400)
+        except:
+            self.log.info("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
+            self.assertTrue(False)
+
         # run integration test: PMO
-        self.test_pmo(config_file)
+        #self.test_pmo(config_file, du, openstack)
+
+        # run integration test: PMK
+        self.test_pmk(config_file, du, openstack)
 
         # end of integration test
         self.log.info("CI-CD : COMPLETE (reached the end of the script within asserting)")
