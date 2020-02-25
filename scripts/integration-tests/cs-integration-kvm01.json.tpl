@@ -28,7 +28,7 @@
     "url": "https://cs-integration.platform9.horse",
     "region": "kvm01",
     "region_proxy": "",
-    "git_branch": "master",
+    "git_branch": "wizard-test",
     "auth_ssh_key": "<ssh-keypath>",
     "bond_mtu": "9000"
   },
