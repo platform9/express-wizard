@@ -378,20 +378,20 @@ class TestWizardBaseLine(TestCase):
         self.log.info("================ END: Region Import File ================")
 
         # call wizard (to on-board region)
-        #cmd = "wizard --jsonImport {}".format(tmpfile)
-        #self.log.info(">>> Starting PMK Integration Test (Importing Region)")
-        #self.log.info("running: {}".format(cmd))
-        #exit_status, stdout = self.run_cmd(cmd)
-        #if exit_status == 0:
-        #    self.log.info("INTEGRAION TEST STATUS : PASSED")
-        #else:
-        #    self.log.info("INTEGRAION TEST STATUS : FAILED")
+        cmd = "wizard --jsonImport {}".format(tmpfile)
+        self.log.info(">>> Starting PMK Integration Test (Importing Region)")
+        self.log.info("running: {}".format(cmd))
+        exit_status, stdout = self.run_cmd(cmd)
+        if exit_status == 0:
+            self.log.info("INTEGRAION TEST STATUS : PASSED")
+        else:
+            self.log.info("INTEGRAION TEST STATUS : FAILED")
 
         # display import log
-        #self.log.info("================ START: Region Import Log ================")
-        #for line in stdout:
-        #    self.log.info(line.strip())
-        #self.log.info("================ END: Region Import Log ================")
+        self.log.info("================ START: Region Import Log ================")
+        for line in stdout:
+            self.log.info(line.strip())
+        self.log.info("================ END: Region Import Log ================")
 
         # cleanup (delete instances)
         self.delete_all_instances(du,instance_uuids)
