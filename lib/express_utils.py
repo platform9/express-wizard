@@ -509,7 +509,6 @@ def run_express_cli(du, onboard_params=None):
                                         return()
 
                                     sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                                    #invoke_express(express_config,express_inventory,"k8s_master",1,silent_flag=True)
                                     invoke_express_cli_nodeprep(master_entries)
                                     sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                                     invoke_express_cli(master_entries,selected_cluster['name'],"master")
@@ -533,7 +532,6 @@ def run_express_cli(du, onboard_params=None):
                                         return()
 
                                     sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                                    #invoke_express(express_config,express_inventory,"k8s_worker",1,silent_flag=True)
                                     invoke_express_cli_nodeprep(worker_entries)
                                     sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                                     invoke_express_cli(worker_entries,selected_cluster['name'],"worker")
