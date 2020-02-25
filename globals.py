@@ -45,6 +45,9 @@ EXPRESS_WIZARD_BRANCH = "master"
 EXPRESS_BRANCH = "master"
 ENCRYPTION_KEY_FILE = "{}/.keyfile".format(CONFIG_DIR)
 
+# Cluster Discovery
+CREATE_MISSING_CLUSTERS = True
+
 # define map for bond modes
 bond_modes = [
     "Round-Robin",

@@ -950,8 +950,9 @@ def discover_region_clusters(discover_target):
             for cluster in defined_clusters:
                 cluster_flag = datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters)
                 if not datamodel.cluster_in_array(cluster['du_url'], cluster['name'], discovered_clusters):
-                    pmk_utils.create_cluster(discover_target['url'], project_id, token, cluster)
-                    num_clusters_created += 1
+                    if globals.CREATE_MISSING_CLUSTERS:
+                        pmk_utils.create_cluster(discover_target['url'], project_id, token, cluster)
+                        num_clusters_created += 1
                 num_clusters_discovered += 1
 
             if num_clusters_created > 0:

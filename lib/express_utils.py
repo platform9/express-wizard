@@ -386,6 +386,34 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag,s
         wait_for_job(p)
 
 
+def invoke_express_cli_nodeprep(nodes):
+    # intialize help
+    help = Help()
+
+    sys.stdout.write("\nRunning PF9-Express CLI\n")
+    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
+    sys.stdout.flush()
+    if user_input == 'q':
+        return()
+
+    # build command args
+    command_args = [globals.EXPRESS_CLI,'cluster','prep-node']
+    for node in nodes:
+        command_args.append("-i")
+        command_args.append(node['ip'])
+    cmd = ""
+    for c in command_args:
+        cmd = "{} {}".format(cmd,c)
+    sys.stdout.write("Running: {}\n".format(cmd))
+    c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+    if user_input == 'y':
+        sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
+        tail_log(c)
+    else:
+        wait_for_job(c)
+
+
 def invoke_express_cli(nodes, cluster_name, node_type):
     # intialize help
     help = Help()
@@ -434,7 +462,7 @@ def run_express_cli(du, onboard_params=None):
                 sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format(rkey))
                 return()
 
-        # determine type of onboarding (PMO -v- PMK)
+        # determine type of onboarding (PMO or PMK)
         if 'cluster-name' in onboard_params:
             onboarding_type = "PMK"
         else:
@@ -480,8 +508,9 @@ def run_express_cli(du, onboard_params=None):
                                         sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                                         return()
 
-                                    sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
-                                    invoke_express(express_config,express_inventory,"k8s_master",1,silent_flag=True)
+                                    sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                                    #invoke_express(express_config,express_inventory,"k8s_master",1,silent_flag=True)
+                                    invoke_express_cli_nodeprep(master_entries)
                                     sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                                     invoke_express_cli(master_entries,selected_cluster['name'],"master")
 
@@ -503,8 +532,9 @@ def run_express_cli(du, onboard_params=None):
                                         sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                                         return()
 
-                                    sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
-                                    invoke_express(express_config,express_inventory,"k8s_worker",1,silent_flag=True)
+                                    sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                                    #invoke_express(express_config,express_inventory,"k8s_worker",1,silent_flag=True)
+                                    invoke_express_cli_nodeprep(worker_entries)
                                     sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                                     invoke_express_cli(worker_entries,selected_cluster['name'],"worker")
         return()
