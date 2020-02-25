@@ -143,7 +143,7 @@ class TestWizardBaseLine(TestCase):
         openstack = Openstack(du)
 
         for tmp_uuid in instance_uuids:
-            self.log.warning("INFO: deleting instance: {}".format(tmp_uuid))
+            self.log.info("INFO: deleting instance: {}".format(tmp_uuid))
             openstack.delete_instance(tmp_uuid)
 
     def run_cmd(self,cmd):
@@ -162,206 +162,189 @@ class TestWizardBaseLine(TestCase):
         os.remove(tmpfile)
         return cmd_exitcode, cmd_stdout
 
-
-    def test_launch_instances(self):
+    def launch_instances(self, num_instances):
         """Launch OpenStack Instances (On-Boarding Targets)"""
+        None
+
+    def init_express_basedir(self):
+        # initialize pf9_home
+        pf9_home = self.get_pf9home_path()
+        if not os.path.isdir(pf9_home):
+            try:
+                os.mkdir(pf9_home)
+            except:
+                return(False)
+
+        # initialize pf9_home_db
+        pf9_home_db = "{}/db".format(pf9_home)
+        if not os.path.isdir(pf9_home_db):
+            try:
+                os.mkdir(pf9_home_db)
+            except:
+                return(False)
+
+        # initialize pf9_lockdir
+        pf9_lockdir = "{}/lock".format(pf9_home)
+        if not os.path.isdir(pf9_lockdir):
+            try:
+                os.mkdir(pf9_lockdir)
+            except:
+                return(False)
+
+        return(True)
+
+
+    def test_pmo(self, config_file):
+        # read config file
+        du_url = self.get_du_url(config_file)
+        num_instances = int(self.get_num_instances_pmo(config_file))
+
+        # get du record
+        du = datamodel.get_du_metadata(du_url)
+        self.assertTrue(du)
+
+        # instantiate openstack library
+        from openstack_utils import Openstack
+        openstack = Openstack(du)
+
+        # launch instances
+        self.log.info(">>> Launching {} Openstack Instances for PMO Integration Test:".format(num_instances))
+        self.log.info("du_url = {}".format(du_url))
+        instance_uuids = openstack.launch_n_instances(num_instances,"ci-kvm")
+        if not instance_uuids:
+            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
+            self.assertTrue(False)
+        if len(instance_uuids) < num_instances:
+            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
+            self.assertTrue(False)
+        self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
+            
+
+        # wait for instances to boot
+        boot_status = openstack.wait_for_instances(instance_uuids)
+        if not boot_status:
+            self.log.info("TIMEOUT: waiting for all instances to become active")
+            self.delete_all_instances(du, instance_uuids)
+            self.assertTrue(False)
+        self.log.info("all instances booted successfully")
+
+        # assign floating IP to instance
+        self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
+        uuid_fip_map = {}
+        POLL_INTERVAL_FIP = 10
+        for tmp_uuid in instance_uuids:
+            fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
+            if not fip_ip:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_ip)
+            if not fip_id:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_id)
+            fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
+            if not fip_status:
+                self.delete_all_instances(du,instance_uuids)
+                self.assertTrue(fip_status)
+            uuid_fip_map.update({tmp_uuid:fip_ip})
+            self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
+            time.sleep(POLL_INTERVAL_FIP)
+
+        # read pmo import template
+        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
+        pmo_import_file = self.get_pmo_importdata_path()
+        if os.path.isfile(pmo_import_file):
+            with open(pmo_import_file) as json_file:
+                import_json = json.load(json_file)
+
+        # parameterize pmo import template
+        instance_num = 1
+        for tmp_uuid in instance_uuids:
+            # parameterize IP for kvm nodes
+            ci_hostname = "ci-kvm{}".format(str(instance_num).zfill(2))
+            for tmp_host in import_json['hosts']:
+                if tmp_host['hostname'] == ci_hostname:
+                    tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+
+            # parameterize ssh-keypath in region
+            import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+            # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
+            for tmp_auth in import_json['auth-profiles']:
+                tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
+
+            instance_num += 1
+
+        # write parameterized template to tmpfile
+        tmpfile = "/tmp/pf9-pmo-import.json"
+        with open(tmpfile, 'w') as outfile:
+            json.dump(import_json, outfile)
+
+        # set permissions on sskkey
+        try:
+            self.log.info("")
+            os.chmod(self.get_region_sshkey_path(), 0o400)
+        except:
+            self.log.info("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
+            self.assertTrue(False)
+
+        # call wizard (to on-board region)
+        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
+        self.log.info(">>> Starting PMO Integration Test (Importing Region)")
+        exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
+        if exit_status == 0:
+            self.log.info("INTEGRAION TEST STATUS : PASSED")
+        else:
+            self.log.info("INTEGRAION TEST STATUS : FAILED")
+
+        # display import log
+        self.log.info("================ START: Region Import Log ================")
+        for line in stdout:
+            self.log.info(line.strip())
+        self.log.info("================ END: Region Import Log ================")
+
+        # cleanup (delete instances)
+        self.delete_all_instances(du,instance_uuids)
+
+
+
+    def test_integration(self):
+        """Run Integration Tests"""
         logging.basicConfig()
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
+        self.log.info("************************************")
+        self.log.info("**** STARTING INTEGRATION TESTS ****")
+        self.log.info("************************************")
+
         # validate config file exists
         config_file = self.get_cicd_config_path()
-        self.log.warning("***********************************")
-        self.log.warning("**** STARTING INTEGRATION TEST ****")
-        self.log.warning("***********************************")
+        self.log.info(">>> Validate Configuration File: {}".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
-        self.log.warning(">>> Getting Encryption Key")
+        self.log.info(">>> Getting Encryption Key")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
         if not EMS_VAULT_KEY:
-            self.log.warning("Failed to get key for decryption from environment")
-            self.assertTrue(os.path.isfile(config_file))
-        else:
-            # initialize pf9_home
-            pf9_home = self.get_pf9home_path()
-            self.log.warning(">>> initializing {}".format(pf9_home))
-            if not os.path.isdir(pf9_home):
-                try:
-                    os.mkdir(pf9_home)
-                except:
-                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_home))
-                    self.assertTrue(False)
+            self.log.info("Failed to get key for encryption from environment")
+            self.assertTrue(False)
 
-            # initialize pf9_home_db
-            pf9_home_db = "{}/db".format(pf9_home)
-            self.log.warning(">>> initializing {}".format(pf9_home_db))
-            if not os.path.isdir(pf9_home_db):
-                try:
-                    os.mkdir(pf9_home_db)
-                except:
-                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_home_db))
-                    self.assertTrue(False)
+        # inititialize ~/.pf9
+        self.log.info(">>> Initializing Installation Directory")
+        init_status = self.init_express_basedir()
+        if not init_status:
+            self.log.info("failed to initialize EMS basedir")
 
-            # initialize pf9_lockdir
-            pf9_lockdir = "{}/lock".format(pf9_home)
-            self.log.warning(">>> initializing {}".format(pf9_lockdir))
-            if not os.path.isdir(pf9_lockdir):
-                try:
-                    os.mkdir(pf9_lockdir)
-                except:
-                    self.log.warning("ERROR: failed to create directory: {}".format(pf9_lockdir))
-                    self.assertTrue(False)
+        # import region: cloud.platform9.net
+        self.log.info(">>> Importing Region: cloud.platform9.net")
+        cmd = "wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY)
+        self.log.info("INFO running: {}".format(cmd))
+        exit_status, stdout = self.run_cmd(cmd)
+        for l in stdout:
+            self.log.info(l.strip())
+        if exit_status != 0:
+            self.assertTrue(False)
 
-            # call wizard (to import region)
-            cmd = "wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY)
-            self.log.warning(">>> running: {}".format(cmd))
-            exit_status, stdout = self.run_cmd(cmd)
-            for l in stdout:
-                self.log.warning(l.strip())
-            if exit_status != 0:
-                self.assertTrue(False)
+        # run integration test: PMO
+        self.test_pmo(config_file)
 
-            # read config file: scripts/integration-tests/integration-tests.conf
-            self.log.warning("*** Starting PMO Integration Test ***")
-            self.log.warning(">>> Launching Openstack Instances for PMO Integration Test:")
-            du_url = self.get_du_url(config_file)
-            self.assertTrue(du_url)
-            self.log.warning("du_url = {}".format(du_url))
-            num_instances_pmo = int(self.get_num_instances_pmo(config_file))
-            self.log.warning("num_instances_pmo = {}".format(num_instances_pmo))
-            self.assertTrue(num_instances_pmo)
-
-            # get du record
-            du = datamodel.get_du_metadata(du_url)
-            self.assertTrue(du)
-
-            # instantiate openstack library
-            from openstack_utils import Openstack
-            openstack = Openstack(du)
-
-            # launch PMO instances
-            instance_uuids = openstack.launch_in_nstances(num_instances_pmo,"ci-kvm")
-            if not instance_uuids:
-                self.log.warning("ERROR: failed to launch Openstack {} instances".format(num_instances_pmo))
-                self.assertTrue(False)
-            if len(instance_uuids) < num_instances_pmo:
-                self.log.warning("ERROR: failed to launch Openstack {} instances".format(num_instances_pmo))
-                self.assertTrue(False)
-            self.log.warning("INFO: launched {} instances successfully - waiting for them to boot...".format(num_instances_pmo))
-                
-
-            # timeout loop : wait for instances to boot
-            booted_instances = []
-            TIMEOUT = 5
-            POLL_INTERVAL = 15
-            timeout = int(time.time()) + (60 * TIMEOUT)
-            flag_all_active = False
-            while True:
-                # loop over all instances and get status
-                for tmp_uuid in instance_uuids:
-                    instance_status = openstack.get_instance_status(tmp_uuid)
-                    if instance_status == "ACTIVE":
-                        if not tmp_uuid in booted_instances:
-                            booted_instances.append(tmp_uuid)
-                    time.sleep(1)
-
-                # check if all instances have become active
-                tmp_flag = True
-                for tmp_uuid in instance_uuids:
-                    if not tmp_uuid in booted_instances:
-                        tmp_flag = False
-                        break
-
-                if tmp_flag:
-                    flag_all_active = True
-                    break
-                elif int(time.time()) > timeout:
-                    break
-                else:
-                    time.sleep(POLL_INTERVAL)
-
-            # enforce TIMEOUT
-            if not flag_all_active:
-                self.log.warning("TIMEOUT: waiting for all instances to become active")
-                self.log.warning("instance_uuids = {}".format(instance_uuids))
-                self.delete_all_instances(du, instance_uuids)
-                self.assertTrue(False)
-            self.log.warning("INFO: all instances have completed booting")
-
-            # assign floating IP to instance
-            self.log.warning(">>> Adding Floating IP Interfaces (Public) to Instances")
-            uuid_fip_map = {}
-            POLL_INTERVAL_FIP = 10
-            for tmp_uuid in instance_uuids:
-                fip_ip, fip_id = openstack.get_floating_ip(tmp_uuid)
-                if not fip_ip:
-                    self.delete_all_instances(du,instance_uuids)
-                    self.assertTrue(fip_ip)
-                if not fip_id:
-                    self.delete_all_instances(du,instance_uuids)
-                    self.assertTrue(fip_id)
-                fip_status = openstack.assign_fip_to_instance(tmp_uuid, fip_ip)
-                if not fip_status:
-                    self.delete_all_instances(du,instance_uuids)
-                    self.assertTrue(fip_status)
-                uuid_fip_map.update({tmp_uuid:fip_ip})
-                self.log.warning("Added {} to {}".format(fip_ip,tmp_uuid))
-                time.sleep(POLL_INTERVAL_FIP)
-
-            # read pmo import template
-            self.log.warning(">>> Parameterizing Import Template for PMO Integration Test")
-            pmo_import_file = self.get_pmo_importdata_path()
-            if os.path.isfile(pmo_import_file):
-                with open(pmo_import_file) as json_file:
-                    import_json = json.load(json_file)
-
-            # parameterize pmo import template
-            instance_num = 1
-            for tmp_uuid in instance_uuids:
-                # parameterize IP for kvm nodes
-                ci_hostname = "ci-kvm{}".format(str(instance_num).zfill(2))
-                for tmp_host in import_json['hosts']:
-                    if tmp_host['hostname'] == ci_hostname:
-                        tmp_host['ip'] = uuid_fip_map[tmp_uuid]
-
-                # parameterize ssh-keypath in region
-                import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
-
-                # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
-                for tmp_auth in import_json['auth-profiles']:
-                    tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
-
-                instance_num += 1
-
-            # write parameterized template to tmpfile
-            tmpfile = "/tmp/pf9-pmo-import.json"
-            with open(tmpfile, 'w') as outfile:
-                json.dump(import_json, outfile)
-
-            # set permissions on sskkey
-            try:
-                self.log.warning("")
-                os.chmod(self.get_region_sshkey_path(), 0o400)
-            except:
-                self.log.warning("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
-                self.assertTrue(False)
-
-            # call wizard (to on-board region)
-            self.log.warning(">>> Parameterizing Import Template for PMO Integration Test")
-            self.log.warning(">>> Starting PMO Integration Test (Importing Region)")
-            exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
-            if exit_status == 0:
-                self.log.warning("INTEGRAION TEST STATUS : PASSED")
-            else:
-                self.log.warning("INTEGRAION TEST STATUS : FAILED")
-
-            # display import log
-            self.log.warning("================ START: Region Import Log ================")
-            for line in stdout:
-                self.log.warning(line.strip())
-            self.log.warning("================ END: Region Import Log ================")
-
-            # cleanup (delete instances)
-            self.delete_all_instances(du,instance_uuids)
-            self.log.warning("CD-CD : COMPLETE (reached the end of the script within asserting)")
-
+        # end of integration test
+        self.log.info("CI-CD : COMPLETE (reached the end of the script within asserting)")

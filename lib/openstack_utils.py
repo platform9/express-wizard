@@ -182,7 +182,7 @@ class Openstack:
         return(False)
 
 
-    def launch_in_nstances(self,num_instances,instance_basename):
+    def launch_n_instances(self,num_instances,instance_basename):
         SLEEP_BETWEEN_LAUNCH = 2
         instance_num = 1
         instance_uuids = []
@@ -195,3 +195,39 @@ class Openstack:
             time.sleep(SLEEP_BETWEEN_LAUNCH)
         return(instance_uuids)
 
+
+    def wait_for_instances(self,instance_uuids):
+        booted_instances = []
+        TIMEOUT = 5
+        POLL_INTERVAL = 15
+        timeout = int(time.time()) + (60 * TIMEOUT)
+        flag_all_active = False
+        while True:
+            # loop over all instances and get status
+            for tmp_uuid in instance_uuids:
+                instance_status = self.get_instance_status(tmp_uuid)
+                if instance_status == "ACTIVE":
+                    if not tmp_uuid in booted_instances:
+                        booted_instances.append(tmp_uuid)
+                time.sleep(1)
+
+            # check if all instances have become active
+            tmp_flag = True
+            for tmp_uuid in instance_uuids:
+                if not tmp_uuid in booted_instances:
+                    tmp_flag = False
+                    break
+
+            if tmp_flag:
+                flag_all_active = True
+                break
+            elif int(time.time()) > timeout:
+                break
+            else:
+                time.sleep(POLL_INTERVAL)
+
+        # enforce TIMEOUT
+        if not flag_all_active:
+            return(False)
+
+        return(True)
