@@ -469,6 +469,7 @@ def run_express_cli(du, onboard_params=None):
             onboarding_type = "PMO"
 
         # perform automated onboarding - PMO
+        sys.stdout.write("--> onboarding {} region".format(onboarding_type))
         if onboarding_type == "PMO":
             if not 'pmo-inventory' in onboard_params:
                 sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format('pmo-inventory'))
@@ -495,23 +496,23 @@ def run_express_cli(du, onboard_params=None):
                     if not master_entries:
                         sys.stdout.write("\nINFO: there are no unattached masters to attach to this cluster\n")
                     else:
+                        sys.stdout.write("\nThe following unattached master nodes will be onboarded:\n")
                         reports.report_host_info(master_entries)
                         flag_installed = install_express(du)
                         if flag_installed == True:
                             express_config = build_express_config(du)
                             if express_config:
-                                express_inventory = build_express_inventory(du,master_entries)
-                                if express_inventory:
-                                    try:
-                                        shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
-                                    except:
-                                        sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
-                                        return()
+                                try:
+                                    shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                                except:
+                                    sys.stdout.write("ERROR: failed to copy express config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                    return()
 
-                                    sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                                    invoke_express_cli_nodeprep(master_entries)
-                                    sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                                    invoke_express_cli(master_entries,selected_cluster['name'],"master")
+                                sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                                invoke_express_cli_nodeprep(master_entries)
+                                sys.stdout.write("\nSKIPPING NODE ATTACH")
+                                #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                                #invoke_express_cli(master_entries,selected_cluster['name'],"master")
 
                 if 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
                     worker_entries = datamodel.get_unattached_workers(selected_cluster)
