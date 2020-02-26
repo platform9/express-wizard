@@ -40,15 +40,24 @@ class Openstack:
 
         instance_uuid = None
         instance_msg = "instance launched successfully"
+
+        # note: removed to boot from volume "imageRef" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8"
         instance_spec = {
             "server" : {
                 "name" : instance_name,
                 "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
-                "imageRef" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
                 "key_name" : "danwright-mac01",
                 "security_groups": [
                     { "name": "cs-integration" }
                 ],
+                block_device {
+                    uuid                  = "9091915e-5272-4b35-a4bb-5dfec4ffc2e8"
+                    source_type           = "image"
+                    volume_size           = 20
+                    boot_index            = 0
+                    destination_type      = "volume"
+                    delete_on_termination = true
+                },
                 "networks" : [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
                 ]
