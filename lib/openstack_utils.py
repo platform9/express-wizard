@@ -120,7 +120,7 @@ class Openstack:
 
 
     def wait_for_instance(self, instance_uuid):
-        TIMEOUT = 3
+        TIMEOUT = 5
         POLL_INTERVAL = 10
         timeout = int(time.time()) + (60 * TIMEOUT)
         flag_instance_is_active = False
