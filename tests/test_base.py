@@ -139,12 +139,14 @@ class TestWizardBaseLine(TestCase):
             return(False)
 
     def delete_all_instances(self, du, instance_uuids):
+        SLEEP_BETWEEN_DELETE = 5
         from openstack_utils import Openstack
         openstack = Openstack(du)
 
         for tmp_uuid in instance_uuids:
             self.log.info("INFO: deleting instance: {}".format(tmp_uuid))
             openstack.delete_instance(tmp_uuid)
+            time.sleep(SLEEP_BETWEEN_DELETE)
 
     def run_cmd(self,cmd):
         cmd_stdout = ""
