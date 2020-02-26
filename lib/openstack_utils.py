@@ -195,6 +195,7 @@ class Openstack:
 
     def wait_for_instances(self,instance_uuids):
         booted_instances = []
+        start_time = int(time.time())
         TIMEOUT = 15
         POLL_INTERVAL = 30
         timeout = int(time.time()) + (60 * TIMEOUT)
@@ -225,6 +226,10 @@ class Openstack:
 
         # enforce TIMEOUT
         if not flag_all_active:
-            return(False)
+            return(False,0)
 
-        return(True)
+        # calculate time to launch all instances
+        end_time = int(time.time())
+        time_elapsed = end_time - start_time
+
+        return(True,time_elapsed)

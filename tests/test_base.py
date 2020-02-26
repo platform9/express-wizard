@@ -218,12 +218,12 @@ class TestWizardBaseLine(TestCase):
             
 
         # wait for instances to boot
-        boot_status = openstack.wait_for_instances(instance_uuids)
+        boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
         if not boot_status:
             self.log.info("TIMEOUT: waiting for all instances to become active")
             self.delete_all_instances(du, instance_uuids)
             self.assertTrue(False)
-        self.log.info("all instances booted successfully")
+        self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
 
         # assign floating IP to instance
         self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
@@ -249,10 +249,13 @@ class TestWizardBaseLine(TestCase):
         self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
         target_import_file = self.get_pmo_importdata_path()
         if os.path.isfile(target_import_file):
-            with open(target_import_file) as json_file:
-                import_json = json.load(json_file)
+            try:
+                with open(target_import_file) as json_file:
+                    import_json = json.load(json_file)
+            except Exception as ex:
+                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
 
-        # parameterize pmo import template
+        # parameterize PMO import template
         instance_num = 1
         for tmp_uuid in instance_uuids:
             # parameterize IP address
@@ -320,12 +323,12 @@ class TestWizardBaseLine(TestCase):
             
 
         # wait for instances to boot
-        boot_status = openstack.wait_for_instances(instance_uuids)
+        boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
         if not boot_status:
             self.log.info("TIMEOUT: waiting for all instances to become active")
             self.delete_all_instances(du, instance_uuids)
             self.assertTrue(False)
-        self.log.info("all instances booted successfully")
+        self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
 
         # assign floating IP to instance
         self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
@@ -351,8 +354,11 @@ class TestWizardBaseLine(TestCase):
         self.log.info(">>> Parameterizing Import Template for PMK Integration Test")
         target_import_file = self.get_pmk_importdata_path()
         if os.path.isfile(target_import_file):
-            with open(target_import_file) as json_file:
-                import_json = json.load(json_file)
+            try:
+                with open(target_import_file) as json_file:
+                    import_json = json.load(json_file)
+            except Exception as ex:
+                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
 
         # parameterize PMK import template
         instance_num = 1
