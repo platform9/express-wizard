@@ -57,7 +57,7 @@ class Openstack:
                     "volume_size": "25",
                     "destination_type": "volume",
                     "delete_on_termination": true,
-                    "disk_bus": "scsi"}]
+                    "disk_bus": "scsi"}],
                 "networks" : [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
                 ]
