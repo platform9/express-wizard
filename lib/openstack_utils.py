@@ -50,14 +50,14 @@ class Openstack:
                 "security_groups": [
                     { "name": "cs-integration" }
                 ],
-                "block_device" : {
-                    "uuid" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
-                    "source_type" : "image",
-                    "volume_size" : 20,
-                    "boot_index" :  0,
-                    "destination_type" : "volume",
-                    "delete_on_termination" : True
-                },
+                "block_device_mapping_v2": [{
+                    "boot_index": "0",
+                    "uuid": "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
+                    "source_type": "image",
+                    "volume_size": "25",
+                    "destination_type": "volume",
+                    "delete_on_termination": true,
+                    "disk_bus": "scsi"}]
                 "networks" : [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
                 ]
