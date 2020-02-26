@@ -401,8 +401,8 @@ class TestWizardBaseLine(TestCase):
         self.log.info("================ END: Region Import Log ================")
 
         # cleanup (delete instances)
-        self.log.info("CLEANUP: deleting all instances")
-        self.delete_all_instances(du,instance_uuids)
+        #self.log.info("CLEANUP: deleting all instances")
+        #self.delete_all_instances(du,instance_uuids)
 
 
     def test_integration(self):

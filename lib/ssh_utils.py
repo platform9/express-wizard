@@ -65,6 +65,8 @@ def discover_host(du_metadata, host):
         sys.stdout.flush()
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,last_key,source_script,last_user,last_ip,target_script)
         exit_status, stdout = run_cmd(cmd)
+        for l in stdout:
+            sys.stdout.write(" <{}> <{}> ".format(cmd,l.strip()))
         if exit_status == 0:
             cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,last_key,last_user,last_ip,target_script)
             exit_status, stdout = run_cmd(cmd)
