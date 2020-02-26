@@ -120,7 +120,9 @@ def discover_host(du_metadata, host):
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
         sys.stdout.write(" {} ".format(cmd))
         exit_status, stdout = run_cmd(cmd)
-        sys.stdout.write(stdout)
+        sys.stdout.write(" exit_status={} ".format(exit_status))
+        for l in stdout:
+            sys.stdout.write(l.strip())
         sys.stdout.flush()
         if exit_status == 0:
             flag_scp_succeeded = True
