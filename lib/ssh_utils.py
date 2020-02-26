@@ -50,9 +50,21 @@ def discover_host(du_metadata, host):
     discover_metadata = {}
     cnt = 0
 
+# {
+#     "operation": "onboard-region",
+#     "region-name": "https://cs-integration-k8s01.platform9.horse",
+#     "cluster-name": "ci-cluster01",
+#     "masters": "all",
+#     "workers": "all"
+# },
+# {
+#     "operation": "discover-region",
+#     "region-name": "https://cs-integration-k8s01.platform9.horse"
+# }
+
     # try last known-good auth profile (if exists)
     sys.stdout.write("    {}: ".format(host['hostname']))
-    sys.stdout.write("trying ")
+    sys.stdout.write("x.trying ")
     sys.stdout.flush()
     discover_metadata['message'] = "Initializing"
     if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
@@ -61,12 +73,12 @@ def discover_host(du_metadata, host):
         last_key = host['discovery_last_auth'].split(',')[0]
         last_user = host['discovery_last_auth'].split(',')[1]
 
-        sys.stdout.write("{}".format(last_ip))
-        sys.stdout.flush()
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,last_key,source_script,last_user,last_ip,target_script)
+        sys.stdout.write("ip={} cmd={}".format(last_ip,cmd))
+        sys.stdout.flush()
         exit_status, stdout = run_cmd(cmd)
-        for l in stdout:
-            sys.stdout.write(" <{}> <{}> ".format(cmd,l.strip()))
+        sys.stdout.write("\n----------------\n{}\n----------------\n".format(stdout))
+        sys.stdout.flush()
         if exit_status == 0:
             cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,last_key,last_user,last_ip,target_script)
             exit_status, stdout = run_cmd(cmd)

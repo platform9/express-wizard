@@ -920,6 +920,7 @@ def discover_region_hosts(discover_target):
             for tmp_host in datamodel_hosts:
                 if not tmp_host['hostname'] in discovered_hostnames:
                     discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
+                    sys.stdout.write("\nDBG: calling ssh_utils.discover_host() for host: {}\n\n".format(tmp_host['hostname']))
                     tmp_host['ssh_status'] = discovery_metadata['message']
                     if "interface-list" in discovery_metadata:
                         tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
