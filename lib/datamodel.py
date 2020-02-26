@@ -145,7 +145,7 @@ def import_region(import_file_path):
             continue
 
         if key_name == "region":
-            sys.stdout.write("--> importing region\n")
+            sys.stdout.write("--> importing region: {}\n".format(region_config['region']['url']))
             write_config(region_config['region'])
         elif key_name == "hosts":
             sys.stdout.write("--> importing hosts\n")
@@ -205,13 +205,13 @@ def import_region(import_file_path):
                 sys.exit(0)
 
             if action['operation'] == 'discover-region':
-                sys.stdout.write("\n[ Discover Region : {}]\n".format(action['region-name']))
+                sys.stdout.write("\n[ ACTION = Discover Region : {}]\n".format(action['region-name']))
                 discover_region(du)
             elif action['operation'] == 'onboard-region':
-                sys.stdout.write("\n[ Onboard Region: {}]\n".format(action['region-name']))
-                express_utils.run_express_cli(du, action)
+                sys.stdout.write("\n[ ACTION = Onboard Region: {}]\n".format(action['region-name']))
+                express_utils.ci_onboard_region(du, action)
             else:
-                sys.stdout.write("ERROR: invalid action: {}\n".format(action['operation']))
+                sys.stdout.write("ERROR: invalid ACTION: {}\n".format(action['operation']))
 
 
 def export_region(du_urls):

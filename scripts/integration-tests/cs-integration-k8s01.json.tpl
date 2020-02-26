@@ -7,7 +7,9 @@
       {
           "operation": "onboard-region",
           "region-name": "https://cs-integration-k8s01.platform9.horse",
-          "cluster-name": "ci-cluster01"
+          "cluster-name": "ci-cluster01",
+          "masters": "all",
+          "workers": "all"
       },
       {
           "operation": "discover-region",
