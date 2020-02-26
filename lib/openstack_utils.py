@@ -195,14 +195,16 @@ class Openstack:
         SLEEP_BETWEEN_LAUNCH = 2
         instance_num = 1
         instance_uuids = []
+        instance_messages = []
         while instance_num <= num_instances:
             instance_name = "{}{}".format(instance_basename,str(instance_num).zfill(2))
             instance_uuid, instance_msg = self.launch_instance(instance_name)
             if instance_uuid:
                 instance_uuids.append(instance_uuid)
+            instance_messages.append(instance_msg)
             instance_num += 1
             time.sleep(SLEEP_BETWEEN_LAUNCH)
-        return(instance_uuids)
+        return(instance_uuids, instance_messages)
 
 
     def wait_for_instances(self,instance_uuids):

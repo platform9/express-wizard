@@ -302,7 +302,11 @@ class TestWizardBaseLine(TestCase):
         ci_hostname = "ci-k8s"
         self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
         self.log.info("du_url = {}".format(du['url']))
-        instance_uuids = openstack.launch_n_instances(num_instances,ci_hostname)
+        instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname)
+        if instance_messages:
+            self.log.info("Launch Status:")
+            for m in instance_messages:
+                self.log.info("--> {}".format(m))
         if not instance_uuids:
             self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
             self.assertTrue(False)
