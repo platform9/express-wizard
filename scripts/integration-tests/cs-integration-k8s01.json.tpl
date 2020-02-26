@@ -7,7 +7,7 @@
       {
           "operation": "onboard-region",
           "region-name": "https://cs-integration-k8s01.platform9.horse",
-          "pmo-inventory": "all"
+          "cluster-name": "ci-cluster01"
       },
       {
           "operation": "discover-region",

@@ -465,8 +465,11 @@ def run_express_cli(du, onboard_params=None):
         # determine type of onboarding (PMO or PMK)
         if 'cluster-name' in onboard_params:
             onboarding_type = "PMK"
-        else:
+        elif 'pmo-inventory' in onboard_params:
             onboarding_type = "PMO"
+        else:
+            sys.stdout.write("ERROR: missing metadata in import json (action), required_keys = ['cluster-name','pmo-inventory']")
+            return()
 
         # perform automated onboarding - PMO
         sys.stdout.write("--> onboarding {} region".format(onboarding_type))
