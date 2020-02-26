@@ -54,7 +54,7 @@ class Openstack:
                     "boot_index": "0",
                     "uuid": "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
                     "source_type": "image",
-                    "volume_size": "25",
+                    "volume_size": "10",
                     "destination_type": "volume",
                     "delete_on_termination": True,
                     "disk_bus": "scsi"}],
@@ -120,7 +120,7 @@ class Openstack:
 
 
     def wait_for_instance(self, instance_uuid):
-        TIMEOUT = 5
+        TIMEOUT = 10
         POLL_INTERVAL = 10
         timeout = int(time.time()) + (60 * TIMEOUT)
         flag_instance_is_active = False
