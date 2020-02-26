@@ -64,7 +64,7 @@ def discover_host(du_metadata, host):
 
     # try last known-good auth profile (if exists)
     sys.stdout.write("    {}: ".format(host['hostname']))
-    sys.stdout.write("x.trying ")
+    sys.stdout.write("trying ")
     sys.stdout.flush()
     discover_metadata['message'] = "Initializing"
     if host['discovery_last_auth'] != "" and host['discovery_last_ip'] != "":
@@ -74,10 +74,7 @@ def discover_host(du_metadata, host):
         last_user = host['discovery_last_auth'].split(',')[1]
 
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,last_key,source_script,last_user,last_ip,target_script)
-        sys.stdout.write("ip={} cmd={}".format(last_ip,cmd))
-        sys.stdout.flush()
-        exit_status, stdout = run_cmd(cmd)
-        sys.stdout.write("\n----------------\n{}\n----------------\n".format(stdout))
+        sys.stdout.write("{} ".format(last_ip))
         sys.stdout.flush()
         if exit_status == 0:
             cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,last_key,last_user,last_ip,target_script)
@@ -121,7 +118,10 @@ def discover_host(du_metadata, host):
 
         # try the region-level auth params
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
+        sys.stdout.write(" {} ".format(cmd))
         exit_status, stdout = run_cmd(cmd)
+        sys.stdout.write(stdout)
+        sys.stdout.flush()
         if exit_status == 0:
             flag_scp_succeeded = True
             break
