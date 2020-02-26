@@ -374,10 +374,6 @@ class TestWizardBaseLine(TestCase):
         # parameterize ssh-keypath in region
         import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
-        # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
-        for tmp_auth in import_json['auth-profiles']:
-            tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
-
         # write parameterized template to tmpfile
         tmpfile = "/tmp/pf9-pmk-import.json"
         with open(tmpfile, 'w') as outfile:
