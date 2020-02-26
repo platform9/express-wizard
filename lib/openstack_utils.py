@@ -56,7 +56,7 @@ class Openstack:
                     "volume_size" : 20,
                     "boot_index" :  0,
                     "destination_type" : "volume",
-                    "delete_on_termination" : true
+                    "delete_on_termination" : True
                 },
                 "networks" : [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
