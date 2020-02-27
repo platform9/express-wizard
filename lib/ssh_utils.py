@@ -20,6 +20,44 @@ def run_cmd(cmd):
     return cmd_exitcode, cmd_stdout
 
 
+def test_ip_via_ssh(ssh_key, ssh_username, host_ip):
+    cmd = "ssh -o StrictHostKeyChecking=no -i {} {}@{} 'echo 201'".format(ssh_key, ssh_username, host_ip)
+    exit_status, stdout = run_cmd(cmd)
+    if exit_status == 0:
+        return(True)
+    else:
+        return(False)
+
+
+def wait_for_ip(du, host_ip):
+    TIMEOUT = 2
+    POLL_INTERVAL = 10
+    timeout = int(time.time()) + (60 * TIMEOUT)
+    flag_ip_responding = False
+    sys.stdout.write("waiting for ip {} to respond (using ssh): ".format(host_ip))
+    sys.stdout.flush()
+
+    while True:
+        ip_status = test_ip_via_ssh(du['auth_ssh_key'],du['auth_username'],host_ip)
+        if ip_status:
+            flag_ip_responding = True
+            break
+        elif int(time.time()) > timeout:
+            break
+        else:
+            time.sleep(POLL_INTERVAL)
+
+    # enforce TIMEOUT
+    if not flag_ip_responding:
+        sys.stdout.write("TIMEOUT\n")
+        sys.stdout.flush()
+        return(False)
+
+    sys.stdout.write("OK\n")
+    sys.stdout.flush()
+    return(True)
+
+
 def validate_login(du_metadata, host_ip):
     if du_metadata['auth_type'] == "simple":
         return(False)

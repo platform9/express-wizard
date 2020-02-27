@@ -13,6 +13,7 @@ LIB_DIR = SCRIPT_DIR + "/../lib"
 sys.path.append(LIB_DIR)
 import datamodel
 import json
+import ssh_utils
 from encrypt import Encryption
 from lock import Lock
 from openstack_utils import Openstack
@@ -349,6 +350,13 @@ class TestWizardBaseLine(TestCase):
             uuid_fip_map.update({tmp_uuid:fip_ip})
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
+
+        # wait for floating IPs to respond on all instances (if any timeout, assert)
+        self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
+        for tmp_uuid in instance_uuids:
+            ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
+            if not ip_is_responding:
+                self.assertTrue(False)
 
         # read PMK import template
         self.log.info(">>> Parameterizing Import Template for PMK Integration Test")
