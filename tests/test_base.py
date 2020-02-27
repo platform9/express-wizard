@@ -239,7 +239,7 @@ class TestWizardBaseLine(TestCase):
             if not fip_status:
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_metadata['ip']})
+            uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
@@ -340,7 +340,7 @@ class TestWizardBaseLine(TestCase):
             if not fip_status:
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_metadata['ip']})
+            uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
@@ -430,6 +430,7 @@ class TestWizardBaseLine(TestCase):
 
         self.log.info(">>> Getting Encryption Key")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
+        EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if not EMS_VAULT_KEY:
             self.log.info("Failed to get key for encryption from environment")
             self.assertTrue(False)
@@ -462,12 +463,15 @@ class TestWizardBaseLine(TestCase):
         openstack = Openstack(du)
 
         # DBG
-        #tmp_uuid = "50861620-53cd-4882-915e-f945b87e8677"
-        #fip_metadata = openstack.get_floating_ip()
-        #sys.stdout.write("RETURNED FIP METADATA = {}\n---------------------\n".format(fip_metadata))
-        #fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
-        #print("fip_status = {}".format(fip_status))
-        #self.assertTrue(False)
+        ########################################################################################################
+        # tmp_uuid = "e04ddc65-2476-4e44-97d4-6eb3817b75a3"
+        # fip_metadata = openstack.get_floating_ip()
+        # print(fip_metadata)
+        # sys.stdout.write("RETURNED FIP METADATA = {}\n---------------------\n".format(fip_metadata))
+        # fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
+        # print("fip_status = {}".format(fip_status))
+        # self.assertTrue(False)
+        ########################################################################################################
 
         # set permissions on sskkey
         try:
