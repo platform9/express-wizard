@@ -239,7 +239,7 @@ class TestWizardBaseLine(TestCase):
             if not fip_status:
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_ip})
+            uuid_fip_map.update({tmp_uuid:fip_metadata['ip']})
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
@@ -335,12 +335,12 @@ class TestWizardBaseLine(TestCase):
             fip_metadata = openstack.get_floating_ip()
             if not fip_metadata:
                 self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_ip)
+                self.assertTrue(fip_metadata)
             fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
             if not fip_status:
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_ip})
+            uuid_fip_map.update({tmp_uuid:fip_metadata['ip']})
             self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
