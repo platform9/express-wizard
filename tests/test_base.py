@@ -430,7 +430,7 @@ class TestWizardBaseLine(TestCase):
 
         self.log.info(">>> Getting Encryption Key")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
-        EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
+        #EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if not EMS_VAULT_KEY:
             self.log.info("Failed to get key for encryption from environment")
             self.assertTrue(False)
@@ -461,6 +461,15 @@ class TestWizardBaseLine(TestCase):
         # instantiate openstack library
         from openstack_utils import Openstack
         openstack = Openstack(du)
+
+        # DBG
+        ########################################################################################################
+        # instance_uuids = ["fac480df-4bbe-4265-bce2-89ff8a61ce0f"]
+        # self.log.info("waiting for IP...")
+        # ip_is_responding = ssh_utils.wait_for_ip(du,"131.153.254.47")
+        # print("ip_is_responding={}".format(ip_is_responding))
+        # self.assertTrue(False)
+        ########################################################################################################
 
         # DBG
         ########################################################################################################
