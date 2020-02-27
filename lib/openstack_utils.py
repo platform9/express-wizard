@@ -52,7 +52,7 @@ class Openstack:
                 ],
                 "block_device_mapping_v2": [{
                     "boot_index": "0",
-                    "uuid": "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
+                    "uuid": "a5e7ace4-f685-415a-af0d-075f0c663a01",
                     "source_type": "image",
                     "volume_size": "10",
                     "destination_type": "volume",
