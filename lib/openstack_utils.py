@@ -85,6 +85,19 @@ class Openstack:
         return(instance_uuid,instance_msg)
 
 
+    def get_instance_ip(self, target_uuid):
+        """Get IP Address for Openstack Instance"""
+
+        # get server record
+        api_endpoint = "nova/v2.1/{}/servers/{}".format(self.project_id,target_uuid)
+        headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
+        pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers)
+        if pf9_response.status_code != 200:
+            return(False)
+        tmp_server = json.loads(pf9_response.text)
+        return(tmp_server['server']['addresses']['auto_allocated_network_cs-dev'][0]['addr'])
+
+
     def delete_instance(self, target_uuid):
         """Delete an Openstack Instance"""
 
@@ -134,51 +147,60 @@ class Openstack:
         return(True)
 
 
-    def get_floating_ip(self, instance_uuid):
+    def get_floating_ip(self):
         sys.stdout.write("getting floating ip from pool\n")
         try:
-            api_endpoint = "nova/v2.1/os-floating-ips"
-            #api_endpoint = "neutron/v2.0/floatingips"
+            api_endpoint = "neutron/v2.0/floatingips"
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
             pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers)
             if pf9_response.status_code != 200:
-                return(None, None)
+                return(False)
 
             # parse api response
             try:
                 json_response = json.loads(pf9_response.text)
-                for fip in json_response['floating_ips']:
-                    if not fip['instance_id']:
-                        return(fip['ip'], fip['id'])
-                return(None, None)
+                for fip in json_response['floatingips']:
+                    if not fip['fixed_ip_address']:
+                        if fip['floating_ip_address'] == "104.143.12.173":
+                            return(fip)
+                return(False)
             except Exception as ex1:
-                return(None, None)
+                return(False)
         except:
-            return(None, None)
+            return(False)
 
 
-    def assign_fip_to_instance(self, instance_uuid, fip_ip):
-        sys.stdout.write("assigning floating ip {} to instance {}\n".format(fip_ip, instance_uuid))
+    def assign_fip_to_instance(self, fip_metadata, instance_ip):
+        neutron_port_id = None
+        try:
+            api_endpoint = "neutron/v2.0/ports"
+            headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
+            pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers)
+            json_response = json.loads(pf9_response.text)
+            for p in json_response['ports']:
+                for fixed_ip in p['fixed_ips']:
+                    if fixed_ip['ip_address'] == instance_ip:
+                        neutron_port_id = p['id']
+        except Exception as ex2:
+            return(False)
+
+        if not neutron_port_id:
+              return(False)
 
         fip_payload = {
-            "addFloatingIp" : {
-                "address": fip_ip
+            "floatingip": {
+                "port_id": neutron_port_id
             }
         }
-        #fip_payload = {
-        #    "floatingip": {
-        #        "port_id": "0"
-        #    }
-        #}
 
         try:
-            api_endpoint = "nova/v2.1/{}/servers/{}/action".format(self.project_id, instance_uuid)
-            #api_endpoint = "neutron/v2.0/floatingips/{}".format(instance_uuid)
+            api_endpoint = "neutron/v2.0/floatingips/{}".format(fip_metadata['id'])
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
-            pf9_response = requests.post("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers, data=json.dumps(fip_payload))
-            if pf9_response.status_code == 202:
+            pf9_response = requests.put("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers, data=json.dumps(fip_payload))
+            if pf9_response.status_code == 200:
                 return(True)
-        except Exception as ex2:
+        except Exception as ex:
+            sys.stdout.write("{}\n".format(ex.message))
             return(False)
 
         return(False)
