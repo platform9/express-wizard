@@ -89,18 +89,6 @@ def discover_host(du_metadata, host):
     discover_metadata = {}
     cnt = 0
 
-# {
-#     "operation": "onboard-region",
-#     "region-name": "https://cs-integration-k8s01.platform9.horse",
-#     "cluster-name": "ci-cluster01",
-#     "masters": "all",
-#     "workers": "all"
-# },
-# {
-#     "operation": "discover-region",
-#     "region-name": "https://cs-integration-k8s01.platform9.horse"
-# }
-
     # try last known-good auth profile (if exists)
     sys.stdout.write("    {}: ".format(host['hostname']))
     sys.stdout.write("trying ")
