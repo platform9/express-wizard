@@ -354,7 +354,12 @@ class TestWizardBaseLine(TestCase):
         # wait for floating IPs to respond on all instances (if any timeout, assert)
         self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
         for tmp_uuid in instance_uuids:
-            ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
+            try:
+                ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
+                self.log.info("DBG: ip_is_responding = {}".format(ip_is_responding))
+            except Exception as ex:
+                self.log.info("EXCEPTION: {}".format(ex.message))
+
             if not ip_is_responding:
                 self.assertTrue(False)
 
