@@ -138,6 +138,7 @@ class Openstack:
         sys.stdout.write("getting floating ip from pool\n")
         try:
             api_endpoint = "nova/v2.1/os-floating-ips"
+            #api_endpoint = "neutron/v2.0/floatingips"
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
             pf9_response = requests.get("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers)
             if pf9_response.status_code != 200:
@@ -164,9 +165,15 @@ class Openstack:
                 "address": fip_ip
             }
         }
+        #fip_payload = {
+        #    "floatingip": {
+        #        "port_id": "0"
+        #    }
+        #}
 
         try:
             api_endpoint = "nova/v2.1/{}/servers/{}/action".format(self.project_id, instance_uuid)
+            #api_endpoint = "neutron/v2.0/floatingips/{}".format(instance_uuid)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
             pf9_response = requests.post("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers, data=json.dumps(fip_payload))
             if pf9_response.status_code == 202:
