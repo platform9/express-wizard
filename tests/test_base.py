@@ -234,13 +234,13 @@ class TestWizardBaseLine(TestCase):
             fip_metadata = openstack.get_floating_ip()
             if not fip_metadata:
                 self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_ip)
+                self.assertTrue(fip_metadata)
             fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
             if not fip_status:
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
             uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
-            self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
+            self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
         # read PMO import template
@@ -341,7 +341,7 @@ class TestWizardBaseLine(TestCase):
                 self.delete_all_instances(du,instance_uuids)
                 self.assertTrue(fip_status)
             uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
-            self.log.info("Added {} to {}".format(fip_ip,tmp_uuid))
+            self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
             time.sleep(POLL_INTERVAL_FIP)
 
         # wait for floating IPs to respond on all instances (if any timeout, assert)
