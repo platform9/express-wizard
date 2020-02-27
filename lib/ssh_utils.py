@@ -31,11 +31,11 @@ def test_ip_via_ssh(ssh_key, ssh_username, host_ip):
 
 
 def wait_for_ip(du, host_ip):
-    TIMEOUT = 1
+    TIMEOUT = 3
     POLL_INTERVAL = 10
     timeout = int(time.time()) + (60 * TIMEOUT)
     flag_ip_responding = False
-    sys.stdout.write("waiting for ip {} to respond (using ssh -i {} {}@{}): ".format(host_ip,du['auth_ssh_key'],du['auth_username'],host_ip))
+    sys.stdout.write("waiting for ip {} to respond (using ssh): ".format(host_ip,du['auth_ssh_key'],du['auth_username'],host_ip))
     sys.stdout.flush()
 
     while True:
@@ -157,12 +157,7 @@ def discover_host(du_metadata, host):
 
         # try the region-level auth params
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,ssh_key,source_script,ssh_user,interface_ipaddr,target_script)
-        sys.stdout.write(" {} ".format(cmd))
         exit_status, stdout = run_cmd(cmd)
-        sys.stdout.write(" exit_status={} ".format(exit_status))
-        for l in stdout:
-            sys.stdout.write(l.strip())
-        sys.stdout.flush()
         if exit_status == 0:
             flag_scp_succeeded = True
             break
