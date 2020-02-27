@@ -464,9 +464,9 @@ class TestWizardBaseLine(TestCase):
 
         # DBG
         ########################################################################################################
-        # instance_uuids = ["fac480df-4bbe-4265-bce2-89ff8a61ce0f"]
-        # self.log.info("waiting for IP...")
-        # ip_is_responding = ssh_utils.wait_for_ip(du,"131.153.254.47")
+        # ip_addr = "131.153.255.204"
+        # self.log.info("waiting for IP: {}".format(ip_addr))
+        # ip_is_responding = ssh_utils.wait_for_ip(du,ip_addr)
         # print("ip_is_responding={}".format(ip_is_responding))
         # self.assertTrue(False)
         ########################################################################################################
