@@ -55,7 +55,7 @@ class Openstack:
         instance_spec = {
             "server" : {
                 "name" : instance_name,
-                "imageRef" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8",
+                "imageRef" : "a5e7ace4-f685-415a-af0d-075f0c663a01",
                 "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
                 "key_name" : "danwright-mac01",
                 "security_groups": [
