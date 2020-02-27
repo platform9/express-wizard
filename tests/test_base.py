@@ -464,9 +464,9 @@ class TestWizardBaseLine(TestCase):
 
         # DBG
         ########################################################################################################
-        # tmp_uuid = "e04ddc65-2476-4e44-97d4-6eb3817b75a3"
+        # tmp_uuid = "aa9286fe-568e-4e92-b5cf-9abe1228fe5b"
+        # tmp_uuid = "937d349c-1f6d-4002-8ec1-1e3097de709a"
         # fip_metadata = openstack.get_floating_ip()
-        # print(fip_metadata)
         # sys.stdout.write("RETURNED FIP METADATA = {}\n---------------------\n".format(fip_metadata))
         # fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
         # print("fip_status = {}".format(fip_status))
