@@ -176,11 +176,8 @@ class Openstack:
             try:
                 json_response = json.loads(pf9_response.text)
                 for fip in json_response['floatingips']:
-                    sys.stdout.write("\n----------\nDBG: get_floating_ip.json_response.fip = {}\n----------\n".format(fip))
-                for fip in json_response['floatingips']:
                     if not fip['fixed_ip_address']:
-                        if fip['floating_ip_address'] == "131.153.254.47":
-                            return(fip)
+                        return(fip)
                 return(False)
             except Exception as ex1:
                 return(False)
