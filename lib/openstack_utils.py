@@ -73,7 +73,7 @@ class Openstack:
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
             pf9_response = requests.post("{}/{}".format(self.du_url,api_endpoint), verify=False, headers=headers, data=json.dumps(instance_spec))
             if pf9_response.status_code != 202:
-                instance_msg = "failed to launch instance (HTTP response code: {}|{})".format(pf9_response.status_code,pf9_response)
+                instance_msg = "failed to launch instance (HTTP response code: {}|{})".format(pf9_response.status_code,pf9_response.json())
                 return(instance_uuid,instance_msg)
 
             # parse api response
