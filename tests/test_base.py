@@ -81,9 +81,6 @@ class TestWizardBaseLine(TestCase):
     def get_cicd_config_path(self):
         return("{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__))))
 
-    def get_region_importdata_path(self):
-        return("{}/../scripts/integration-tests/cloud.platform9.net".format(os.path.dirname(os.path.realpath(__file__))))
-
     def get_region_sshkey_path(self):
         return("{}/../id_rsa".format(os.path.dirname(os.path.realpath(__file__))))
 
@@ -92,6 +89,9 @@ class TestWizardBaseLine(TestCase):
 
     def get_pmk_importdata_path(self):
         return("{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
+
+    def get_pf9cloud_importdata_path(self):
+        return("{}/../scripts/integration-tests/cloud.platform9.net.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
 
     def get_keyfile_path(self):
         from os.path import expanduser
@@ -441,9 +441,37 @@ class TestWizardBaseLine(TestCase):
         if not init_status:
             self.log.info("failed to initialize EMS basedir")
 
+        ################################################################################################
+        # read cloud.platform9.net import template
+        self.log.info(">>> Parameterizing Import Template for Platform9 Cloud Region")
+        target_import_file = self.get_pf9cloud_importdata_path()
+        if os.path.isfile(target_import_file):
+            try:
+                with open(target_import_file) as json_file:
+                    import_json = json.load(json_file)
+            except Exception as ex:
+                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
+
+        # parameterize ssh-keypath in region
+        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+        # write parameterized template to tmpfile
+        tmpfile = "/tmp/pf9-cloud-import.json"
+        with open(tmpfile, 'w') as outfile:
+            json.dump(import_json, outfile)
+
+        self.log.info("================ START: Platform9 Cloud Region Import File ================")
+        cmd = "cat {} | python -m json.tool".format(tmpfile)
+        exit_status, stdout = self.run_cmd(cmd)
+        for l in stdout:
+            self.log.info(l.strip())
+        self.log.info("================ END: Platform9 Cloud Region Import File ================")
+
+        ################################################################################################
+
         # import region: cloud.platform9.net
         self.log.info(">>> Importing Region: cloud.platform9.net")
-        cmd = "wizard -i --jsonImport {} -k {}".format(self.get_region_importdata_path(),EMS_VAULT_KEY)
+        cmd = "wizard -i --jsonImport {} -k {}".format(tmpfile,EMS_VAULT_KEY)
         self.log.info("INFO running: {}".format(cmd))
         exit_status, stdout = self.run_cmd(cmd)
         for l in stdout:

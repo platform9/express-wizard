@@ -31,7 +31,7 @@ def test_ip_via_ssh(ssh_key, ssh_username, host_ip):
 
 
 def wait_for_ip(du, host_ip):
-    TIMEOUT = 3
+    TIMEOUT = 1
     POLL_INTERVAL = 10
     timeout = int(time.time()) + (60 * TIMEOUT)
     flag_ip_responding = False
