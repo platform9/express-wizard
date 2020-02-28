@@ -864,7 +864,7 @@ def get_aggregate_host_profile(host_profile_name):
 def discover_region(du):
     sys.stdout.write("\nPerforming Discovery\n")
     sys.stdout.write("--> Discovering hosts:\n")
-    num_hosts = datamodel.discover_region_hosts(du)
+    num_hosts = discover_region_hosts(du)
     sys.stdout.write("    # of hosts discovered: {}\n".format(num_hosts))
     if du['du_type'] == "Kubernetes":
         sys.stdout.write("--> Discovering clusters:\n")
@@ -919,8 +919,9 @@ def discover_region_hosts(discover_target):
         if datamodel_hosts:
             for tmp_host in datamodel_hosts:
                 if not tmp_host['hostname'] in discovered_hostnames:
-                    discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
                     sys.stdout.write("\nDBG: calling ssh_utils.discover_host() for host: {}\n\n".format(tmp_host['hostname']))
+                    discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
+                    sys.stdout.write("\nDBG: returned from ssh_utils.discover_host()")
                     tmp_host['ssh_status'] = discovery_metadata['message']
                     if "interface-list" in discovery_metadata:
                         tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]
