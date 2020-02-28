@@ -59,7 +59,7 @@ class Openstack:
                 "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
                 "key_name" : "danwright-mac01",
                 "security_groups": [
-                    { "name": "cs-integration-test" }
+                    { "name": "cs-integration" }
                 ],
                 "networks" : [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
