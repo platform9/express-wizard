@@ -42,6 +42,36 @@ def build_express_config(du):
     return(express_config)
 
 
+def build_express_cli_config(du):
+    """write config file"""
+    express_config = globals.EXPRESS_CLI_CONFIG_DIR
+    sys.stdout.write("--> Building configuration file: {}\n".format(express_config))
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+
+    try:
+        express_config_fh = open(express_config, "w")
+        express_config_fh.write("manage_hostname|false\n")
+        express_config_fh.write("manage_resolver|false\n")
+        express_config_fh.write("dns_resolver1|8.8.8.8\n")
+        express_config_fh.write("dns_resolver2|8.8.4.4\n")
+        express_config_fh.write("os_tenant|{}\n".format(du['tenant']))
+        express_config_fh.write("du_url|{}\n".format(du['url']))
+        express_config_fh.write("os_username|{}\n".format(du['username']))
+        express_config_fh.write("os_password|{}\n".format(encryption.decrypt_password(du['password'])))
+        express_config_fh.write("os_region|{}\n".format(du['region']))
+        express_config_fh.write("proxy_url|-\n".format(du['region_proxy']))
+        express_config_fh.close()
+    except:
+        sys.stdout.write("ERROR: failed to build configuration file: {}\n{}\n".format(express_config,sys.exc_info()))
+        return(None)
+
+    # validate config was written
+    if not os.path.isfile(express_config):
+        return(None)
+
+    return(express_config)
+
+
 def build_express_inventory(du,host_entries):
     """write inventory file"""
     express_inventory = "{}/{}.inv".format(globals.CONFIG_DIR, "{}".format(du['url'].replace('https://','')))
@@ -216,6 +246,53 @@ def get_express_branch(git_branch):
 
     return(stdout[0].strip())
     
+
+def get_express_cli_branch():
+    if not os.path.isdir(globals.EXPRESS_CLI_INSTALL_DIR):
+        return(None)
+
+    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(globals.EXPRESS_CLI_INSTALL_DIR)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
+    if exit_status != 0:
+        return(None)
+
+    return(stdout[0].strip())
+    
+
+def install_express_cli():
+    sys.stdout.write("\nInstalling Express CLI (branch = {})\n".format(globals.EXPRESS_CLI_BRANCH))
+    if not os.path.isdir(globals.EXPRESS_CLI_INSTALL_DIR):
+        cmd = "git clone {} {}".format(globals.EXPRESS_CLI_URL, globals.EXPRESS_CLI_INSTALL_DIR)
+        sys.stdout.write("--> cloning repository ({})\n".format(cmd))
+        exit_status, stdout = ssh_utils.run_cmd(cmd)
+        if not os.path.isdir(globals.EXPRESS_CLI_INSTALL_DIR):
+            sys.stdout.write("ERROR: failed to clone Express-CLI Repository\n")
+            return(False)
+
+    sys.stdout.write("--> refreshing repository (git fetch -a)\n")
+    cmd = "cd {}; git fetch -a".format(globals.EXPRESS_CLI_INSTALL_DIR)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
+    if exit_status != 0:
+        sys.stdout.write("ERROR: failed to fetch branches (git fetch -)\n")
+        return(False)
+
+    current_branch = get_express_cli_branch()
+    sys.stdout.write("--> current branch: {}\n".format(current_branch))
+    if current_branch != globals.EXPRESS_CLI_BRANCH:
+        sys.stdout.write("--> switching branches: {}\n".format(globals.EXPRESS_CLI_BRANCH))
+        if (checkout_branch(globals.EXPRESS_CLI_BRANCH)) == False:
+            sys.stdout.write("ERROR: failed to checkout git branch: {}\n".format(globals.EXPRESS_CLI_BRANCH))
+            return(False)
+
+    cmd = "cd {}; git pull origin {}".format(globals.EXPRESS_CLI_INSTALL_DIR,globals.EXPRESS_CLI_BRANCH)
+    sys.stdout.write("--> pulling latest code (git pull origin {})\n".format(globals.EXPRESS_CLI_BRANCH))
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
+    if exit_status != 0:
+        sys.stdout.write("ERROR: failed to pull latest code (git pull origin {})\n".format(globals.EXPRESS_CLI_BRANCH))
+        return(False)
+ 
+    return(True)
+
 
 def install_express(du):
     sys.stdout.write("\nInstalling PF9-Express (branch = {})\n".format(du['git_branch']))
@@ -468,7 +545,7 @@ def ci_onboard_region(du, onboard_params):
         return()
 
     # perform automated onboarding - PMO
-    sys.stdout.write("--> onboarding {} region".format(onboarding_type))
+    sys.stdout.write("--> onboarding {} region\n".format(onboarding_type))
     if onboarding_type == "PMO":
         if not 'pmo-inventory' in onboard_params:
             sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format('pmo-inventory'))
@@ -500,12 +577,12 @@ def ci_onboard_region(du, onboard_params):
             else:
                 sys.stdout.write("\nThe following unattached master nodes will be onboarded:\n")
                 reports.report_host_info(master_entries)
-                flag_installed = install_express(du)
+                flag_installed = install_express_cli()
                 if flag_installed == True:
-                    express_config = build_express_config(du)
-                    if express_config:
+                    express_cli_config = build_express_cli_config(du)
+                    if express_cli_config:
                         try:
-                            shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                            shutil.copyfile(express_cli_config, globals.EXPRESS_CLI_CONFIG_DIR)
                         except:
                             sys.stdout.write("ERROR: failed to copy express config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                             return()
