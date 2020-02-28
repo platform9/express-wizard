@@ -171,17 +171,19 @@ def discover_host(du_metadata, host):
         exit_status, stdout = run_cmd(cmd)
         if exit_status == 0:
             sys.stdout.write(" - succeeded\n")
+            sys.stdout.flush()
             discover_metadata['primary-ip'] = search_discovery_data(stdout,"primary-ip")
             discover_metadata['interface-list'] = search_discovery_data(stdout,"interface-list")
             discover_metadata['message'] = "Complete"
         else:
             sys.stdout.write(" - failed on all interfaces\n".format(interface_ipaddr))
+            sys.stdout.flush()
             discover_metadata['message'] = "Failed"
-        sys.stdout.flush()
 
     # catch the case where SCP fails on all interfaces
     if discover_metadata['message'] == "Initializing":
         sys.stdout.write(" - failed on all interfaces\n")
+        sys.stdout.flush()
         discover_metadata['message'] = "Failed"
 
     return(discover_metadata)

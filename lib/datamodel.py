@@ -38,6 +38,7 @@ def create_host_entry():
         'du_url': "",
         'du_type': "",
         'ip': "",
+        'public_ip': "",
         'uuid': "",
         'ip_interfaces': "",
         'interface_list': "",
@@ -919,9 +920,7 @@ def discover_region_hosts(discover_target):
         if datamodel_hosts:
             for tmp_host in datamodel_hosts:
                 if not tmp_host['hostname'] in discovered_hostnames:
-                    sys.stdout.write("\nDBG: calling ssh_utils.discover_host() for host: {}\n\n".format(tmp_host['hostname']))
                     discovery_metadata = ssh_utils.discover_host(discover_target, tmp_host)
-                    sys.stdout.write("\nDBG: returned from ssh_utils.discover_host()")
                     tmp_host['ssh_status'] = discovery_metadata['message']
                     if "interface-list" in discovery_metadata:
                         tmp_host['interface_list'] = discovery_metadata['interface-list'].split("=")[1]

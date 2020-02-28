@@ -59,7 +59,7 @@ class TestWizardBaseLine(TestCase):
         lock.release_lock()
         self.assertFalse(os.path.isdir(lock_file))
 
-    def test_encryption(self):
+    def xtest_encryption(self):
         """Test wizard encryption class"""
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
@@ -302,58 +302,68 @@ class TestWizardBaseLine(TestCase):
 
         num_instances = int(self.get_num_instances_pmk(config_file))
 
+        # DBG:
+        # instance_uuids = [
+        #     "c51f73e9-2235-455a-a4af-adc9ef138246"
+        # ]
+        # uuid_fip_map = {
+        #     "c51f73e9-2235-455a-a4af-adc9ef138246": "131.153.255.204"
+        # }
+        
         # launch instances
+        instance_uuids = []
         ci_hostname = "ci-k8s"
-        self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
-        self.log.info("du_url = {}".format(du['url']))
-        instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname)
-        if instance_messages:
-            self.log.info("Launch Status:")
-            for m in instance_messages:
-                self.log.info("--> {}".format(m))
         if not instance_uuids:
-            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
-            self.assertTrue(False)
-        if len(instance_uuids) < num_instances:
-            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
-            self.assertTrue(False)
-        self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
-            
-        # wait for instances to boot
-        boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
-        if not boot_status:
-            self.log.info("TIMEOUT: waiting for all instances to become active")
-            self.delete_all_instances(du, instance_uuids)
-            self.assertTrue(False)
-        self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
-
-        # assign floating IP to instance
-        self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
-        uuid_fip_map = {}
-        POLL_INTERVAL_FIP = 10
-        for tmp_uuid in instance_uuids:
-            fip_metadata = openstack.get_floating_ip()
-            if not fip_metadata:
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_metadata)
-            fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
-            if not fip_status:
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
-            self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
-            time.sleep(POLL_INTERVAL_FIP)
-
-        # wait for floating IPs to respond on all instances (if any timeout, assert)
-        self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
-        for tmp_uuid in instance_uuids:
-            try:
-                ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
-            except Exception as ex:
-                self.log.info("EXCEPTION: {}".format(ex.message))
-
-            if not ip_is_responding:
+            self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
+            self.log.info("du_url = {}".format(du['url']))
+            instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname)
+            if instance_messages:
+                self.log.info("Launch Status:")
+                for m in instance_messages:
+                    self.log.info("--> {}".format(m))
+            if not instance_uuids:
+                self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
                 self.assertTrue(False)
+            if len(instance_uuids) < num_instances:
+                self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
+                self.assertTrue(False)
+            self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
+                
+            # wait for instances to boot
+            boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
+            if not boot_status:
+                self.log.info("TIMEOUT: waiting for all instances to become active")
+                self.delete_all_instances(du, instance_uuids)
+                self.assertTrue(False)
+            self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
+
+            # assign floating IP to instance
+            self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
+            uuid_fip_map = {}
+            POLL_INTERVAL_FIP = 10
+            for tmp_uuid in instance_uuids:
+                fip_metadata = openstack.get_floating_ip()
+                if not fip_metadata:
+                    self.delete_all_instances(du,instance_uuids)
+                    self.assertTrue(fip_metadata)
+                fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
+                if not fip_status:
+                    self.delete_all_instances(du,instance_uuids)
+                    self.assertTrue(fip_status)
+                uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
+                self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
+                time.sleep(POLL_INTERVAL_FIP)
+
+            # wait for floating IPs to respond on all instances (if any timeout, assert)
+            self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
+            for tmp_uuid in instance_uuids:
+                try:
+                    ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
+                except Exception as ex:
+                    self.log.info("EXCEPTION: {}".format(ex.message))
+
+                if not ip_is_responding:
+                    self.assertTrue(False)
 
         # read PMK import template
         self.log.info(">>> Parameterizing Import Template for PMK Integration Test")
@@ -373,6 +383,7 @@ class TestWizardBaseLine(TestCase):
             for tmp_host in import_json['hosts']:
                 if tmp_host['hostname'] == target_hostname:
                     tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+                    tmp_host['public_ip'] = uuid_fip_map[tmp_uuid]
 
             instance_num += 1
 
@@ -440,7 +451,6 @@ class TestWizardBaseLine(TestCase):
         if not init_status:
             self.log.info("failed to initialize EMS basedir")
 
-        ################################################################################################
         # read cloud.platform9.net import template
         self.log.info(">>> Parameterizing Import Template for Platform9 Cloud Region")
         target_import_file = self.get_pf9cloud_importdata_path()
@@ -466,8 +476,6 @@ class TestWizardBaseLine(TestCase):
             self.log.info(l.strip())
         self.log.info("================ END: Platform9 Cloud Region Import File ================")
 
-        ################################################################################################
-
         # import region: cloud.platform9.net
         self.log.info(">>> Importing Region: cloud.platform9.net")
         cmd = "wizard -i --jsonImport {} -k {}".format(tmpfile,EMS_VAULT_KEY)
@@ -491,10 +499,10 @@ class TestWizardBaseLine(TestCase):
 
         # DBG
         ########################################################################################################
-        import express_utils
-        self.log.info(">>> Build express cli config")
-        express_utils.build_express_cli_config(du)
-        self.assertTrue(False)
+        # import express_utils
+        # self.log.info(">>> Build express cli config")
+        # express_utils.build_express_cli_config(du)
+        # self.assertTrue(False)
         ########################################################################################################
 
         # DBG

@@ -229,8 +229,10 @@ def build_express_inventory(du,host_entries):
     return(express_inventory)
 
 
-def checkout_branch(git_branch):
-    cmd = "cd {} && git checkout {}".format(globals.EXPRESS_INSTALL_DIR, git_branch)
+def checkout_branch(git_branch, install_dir):
+    print(">>>>>> checkout_branch({})".format(git_branch))
+    cmd = "cd {} && git checkout {}".format(install_dir, git_branch)
+    print(">>>>>> cmd={}".format(cmd))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
 
     current_branch = get_express_branch(git_branch)
@@ -283,9 +285,10 @@ def install_express_cli():
 
     current_branch = get_express_cli_branch()
     sys.stdout.write("--> current branch: {}\n".format(current_branch))
+    sys.stdout.write("--> target branch: {}\n".format(globals.EXPRESS_CLI_BRANCH))
     if current_branch != globals.EXPRESS_CLI_BRANCH:
         sys.stdout.write("--> switching branches: {}\n".format(globals.EXPRESS_CLI_BRANCH))
-        if (checkout_branch(globals.EXPRESS_CLI_BRANCH)) == False:
+        if (checkout_branch(globals.EXPRESS_CLI_BRANCH,globals.EXPRESS_CLI_INSTALL_DIR)) == False:
             sys.stdout.write("ERROR: failed to checkout git branch: {}\n".format(globals.EXPRESS_CLI_BRANCH))
             return(False)
 
@@ -320,7 +323,7 @@ def install_express(du):
     sys.stdout.write("--> current branch: {}\n".format(current_branch))
     if current_branch != du['git_branch']:
         sys.stdout.write("--> switching branches: {}\n".format(du['git_branch']))
-        if (checkout_branch(du['git_branch'])) == False:
+        if (checkout_branch(du['git_branch'],globals.EXPRESS_INSTALL_DIR)) == False:
             sys.stdout.write("ERROR: failed to checkout git branch: {}\n".format(du['git_branch']))
             return(False)
 
@@ -468,25 +471,32 @@ def invoke_express(express_config,express_inventory,target_inventory,role_flag,s
         wait_for_job(p)
 
 
-def invoke_express_cli_nodeprep(nodes):
+def invoke_express_cli_nodeprep(du, nodes, silent_flag=False):
     # intialize help
     help = Help()
 
     sys.stdout.write("\nRunning PF9-Express CLI\n")
-    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
-    sys.stdout.flush()
+    if silent_flag:
+        user_input = "y"
+    else:
+        user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
+        sys.stdout.flush()
     if user_input == 'q':
         return()
 
     # build command args
-    command_args = [globals.EXPRESS_CLI,'cluster','prep-node']
+    command_args = [globals.EXPRESS_CLI,'cluster','prep-node','-u',du['auth_username'],'-s',du['auth_ssh_key']]
     for node in nodes:
         command_args.append("-i")
-        command_args.append(node['ip'])
+        if node['public_ip'] != "":
+            command_args.append(node['public_ip'])
+        else:
+            command_args.append(node['ip'])
     cmd = ""
     for c in command_args:
         cmd = "{} {}".format(cmd,c)
     sys.stdout.write("Running: {}\n".format(cmd))
+    sys.stdout.flush()
     c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     if user_input == 'y':
@@ -586,14 +596,8 @@ def ci_onboard_region(du, onboard_params):
                 if flag_installed == True:
                     express_cli_config = build_express_cli_config(du)
                     if express_cli_config:
-                        try:
-                            shutil.copyfile(express_cli_config, globals.EXPRESS_CLI_CONFIG_FILE)
-                        except:
-                            sys.stdout.write("ERROR: failed to copy Express CLI config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
-                            return()
-
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                        invoke_express_cli_nodeprep(master_entries)
+                        invoke_express_cli_nodeprep(du, master_entries, True)
                         sys.stdout.write("\nSKIPPING NODE ATTACH")
                         #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                         #invoke_express_cli(master_entries,selected_cluster['name'],"master")
@@ -614,7 +618,7 @@ def ci_onboard_region(du, onboard_params):
                             return()
 
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                        invoke_express_cli_nodeprep(worker_entries)
+                        invoke_express_cli_nodeprep(du, worker_entries, True)
                         #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                         #invoke_express_cli(worker_entries,selected_cluster['name'],"worker")
         else:
