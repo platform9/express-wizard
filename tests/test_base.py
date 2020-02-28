@@ -429,7 +429,7 @@ class TestWizardBaseLine(TestCase):
 
         self.log.info(">>> Getting Encryption Key")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
-        #EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
+        EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if not EMS_VAULT_KEY:
             self.log.info("Failed to get key for encryption from environment")
             self.assertTrue(False)
@@ -491,10 +491,10 @@ class TestWizardBaseLine(TestCase):
 
         # DBG
         ########################################################################################################
-        # import express_utils
-        # self.log.info(">>> Build express cli config")
-        # express_utils.build_express_cli_config(du)
-        # self.assertTrue(False)
+        import express_utils
+        self.log.info(">>> Build express cli config")
+        express_utils.build_express_cli_config(du)
+        self.assertTrue(False)
         ########################################################################################################
 
         # DBG
