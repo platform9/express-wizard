@@ -43,38 +43,23 @@ def build_express_config(du):
 
 
 def build_express_cli_config(du):
-    """write config file"""
-    express_cli_config = globals.EXPRESS_CLI_CONFIG_FILE
-    sys.stdout.write("--> Building configuration file: {}\n".format(express_cli_config))
+    """create config file for express-cli"""
+
+    sys.stdout.write("--> Building configuration file for Express-CLI\n")
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
-
-    # create fiesystem path
-    cmd = "mkdir -p {}".format(globals.EXPRESS_CLI_CONFIG_DIR)
+    cmd = "express config create --du_url {} --os_username {} --os_password '{}' --os_region {} --os_tenant {}".format(
+        du['url'], du['username'], encryption.decrypt_password(du['password']), du['region'], du['tenant']
+    )
+    sys.stdout.write("DBG: cmd={}\n".format(cmd))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
+    sys.stdout.write("-------- express confif create --------------------------------\n")
+    for l in stdout:
+        sys.stdout.write(l.strip())
+    sys.stdout.write("---------------------------------------------------------------\n")
+    if exit_status != 0:
+        return(False)
 
-    # build/write config
-    try:
-        express_cli_config_fh = open(express_cli_config, "w")
-        express_cli_config_fh.write("manage_hostname|false\n")
-        express_cli_config_fh.write("manage_resolver|false\n")
-        express_cli_config_fh.write("dns_resolver1|8.8.8.8\n")
-        express_cli_config_fh.write("dns_resolver2|8.8.4.4\n")
-        express_cli_config_fh.write("os_tenant|{}\n".format(du['tenant']))
-        express_cli_config_fh.write("du_url|{}\n".format(du['url']))
-        express_cli_config_fh.write("os_username|{}\n".format(du['username']))
-        express_cli_config_fh.write("os_password|{}\n".format(encryption.decrypt_password(du['password'])))
-        express_cli_config_fh.write("os_region|{}\n".format(du['region']))
-        express_cli_config_fh.write("proxy_url|-\n".format(du['region_proxy']))
-        express_cli_config_fh.close()
-    except:
-        sys.stdout.write("ERROR: failed to build configuration file: {}\n{}\n".format(express_cli_config,sys.exc_info()))
-        return(None)
-
-    # validate config was written
-    if not os.path.isfile(express_cli_config):
-        return(None)
-
-    return(express_cli_config)
+    return(True)
 
 
 def build_express_inventory(du,host_entries):
@@ -230,9 +215,8 @@ def build_express_inventory(du,host_entries):
 
 
 def checkout_branch(git_branch, install_dir):
-    print(">>>>>> checkout_branch({})".format(git_branch))
     cmd = "cd {} && git checkout {}".format(install_dir, git_branch)
-    print(">>>>>> cmd={}".format(cmd))
+    sys.stdout.write("cmd={}".format(cmd))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
 
     current_branch = get_express_branch(git_branch)
@@ -299,6 +283,14 @@ def install_express_cli():
         sys.stdout.write("ERROR: failed to pull latest code (git pull origin {})\n".format(globals.EXPRESS_CLI_BRANCH))
         return(False)
  
+    sys.stdout.write("INFO: Initializing EXPRESS CLI\n")
+    cmd = "cd {}; pip install -e .[test]".format(globals.EXPRESS_CLI_INSTALL_DIR)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
+    if exit_status != 0:
+        for line in stdout:
+            sys.stdout.write("{}\n".format(line))
+        sys.stdout.write("ERROR: initialization failed\n")
+        return(False)
     return(True)
 
 
@@ -595,6 +587,7 @@ def ci_onboard_region(du, onboard_params):
                 flag_installed = install_express_cli()
                 if flag_installed == True:
                     express_cli_config = build_express_cli_config(du)
+                    sys.stdout.write("DBG: express_cli_config = {}".format(express_cli_config))
                     if express_cli_config:
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
                         invoke_express_cli_nodeprep(du, master_entries, True)

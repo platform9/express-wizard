@@ -303,15 +303,15 @@ class TestWizardBaseLine(TestCase):
         num_instances = int(self.get_num_instances_pmk(config_file))
 
         # DBG:
-        # instance_uuids = [
-        #     "c51f73e9-2235-455a-a4af-adc9ef138246"
-        # ]
-        # uuid_fip_map = {
-        #     "c51f73e9-2235-455a-a4af-adc9ef138246": "131.153.255.204"
-        # }
+        instance_uuids = [
+            "8bb0d570-8ad4-425f-9dc0-0566751e2b9b"
+        ]
+        uuid_fip_map = {
+            "8bb0d570-8ad4-425f-9dc0-0566751e2b9b": "131.153.255.204"
+        }
         
         # launch instances
-        instance_uuids = []
+        #instance_uuids = []
         ci_hostname = "ci-k8s"
         if not instance_uuids:
             self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
