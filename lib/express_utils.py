@@ -44,32 +44,32 @@ def build_express_config(du):
 
 def build_express_cli_config(du):
     """write config file"""
-    express_config = globals.EXPRESS_CLI_CONFIG_DIR
-    sys.stdout.write("--> Building configuration file: {}\n".format(express_config))
+    express_cli_config = globals.EXPRESS_CLI_CONFIG_DIR
+    sys.stdout.write("--> Building configuration file: {}\n".format(express_cli_config))
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     try:
-        express_config_fh = open(express_config, "w")
-        express_config_fh.write("manage_hostname|false\n")
-        express_config_fh.write("manage_resolver|false\n")
-        express_config_fh.write("dns_resolver1|8.8.8.8\n")
-        express_config_fh.write("dns_resolver2|8.8.4.4\n")
-        express_config_fh.write("os_tenant|{}\n".format(du['tenant']))
-        express_config_fh.write("du_url|{}\n".format(du['url']))
-        express_config_fh.write("os_username|{}\n".format(du['username']))
-        express_config_fh.write("os_password|{}\n".format(encryption.decrypt_password(du['password'])))
-        express_config_fh.write("os_region|{}\n".format(du['region']))
-        express_config_fh.write("proxy_url|-\n".format(du['region_proxy']))
-        express_config_fh.close()
+        express_cli_config_fh = open(express_cli_config, "w")
+        express_cli_config_fh.write("manage_hostname|false\n")
+        express_cli_config_fh.write("manage_resolver|false\n")
+        express_cli_config_fh.write("dns_resolver1|8.8.8.8\n")
+        express_cli_config_fh.write("dns_resolver2|8.8.4.4\n")
+        express_cli_config_fh.write("os_tenant|{}\n".format(du['tenant']))
+        express_cli_config_fh.write("du_url|{}\n".format(du['url']))
+        express_cli_config_fh.write("os_username|{}\n".format(du['username']))
+        express_cli_config_fh.write("os_password|{}\n".format(encryption.decrypt_password(du['password'])))
+        express_cli_config_fh.write("os_region|{}\n".format(du['region']))
+        express_cli_config_fh.write("proxy_url|-\n".format(du['region_proxy']))
+        express_cli_config_fh.close()
     except:
-        sys.stdout.write("ERROR: failed to build configuration file: {}\n{}\n".format(express_config,sys.exc_info()))
+        sys.stdout.write("ERROR: failed to build configuration file: {}\n{}\n".format(express_cli_config,sys.exc_info()))
         return(None)
 
     # validate config was written
-    if not os.path.isfile(express_config):
+    if not os.path.isfile(express_cli_config):
         return(None)
 
-    return(express_config)
+    return(express_cli_config)
 
 
 def build_express_inventory(du,host_entries):
@@ -584,7 +584,7 @@ def ci_onboard_region(du, onboard_params):
                         try:
                             shutil.copyfile(express_cli_config, globals.EXPRESS_CLI_CONFIG_DIR)
                         except:
-                            sys.stdout.write("ERROR: failed to copy express config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                            sys.stdout.write("ERROR: failed to copy Express CLI config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
                             return()
 
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
