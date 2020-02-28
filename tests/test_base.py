@@ -349,7 +349,6 @@ class TestWizardBaseLine(TestCase):
         for tmp_uuid in instance_uuids:
             try:
                 ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
-                self.log.info("DBG: ip_is_responding = {}".format(ip_is_responding))
             except Exception as ex:
                 self.log.info("EXCEPTION: {}".format(ex.message))
 
@@ -489,6 +488,14 @@ class TestWizardBaseLine(TestCase):
         # instantiate openstack library
         from openstack_utils import Openstack
         openstack = Openstack(du)
+
+        # DBG
+        ########################################################################################################
+        # import express_utils
+        # self.log.info(">>> Build express cli config")
+        # express_utils.build_express_cli_config(du)
+        # self.assertTrue(False)
+        ########################################################################################################
 
         # DBG
         ########################################################################################################

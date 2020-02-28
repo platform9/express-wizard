@@ -44,10 +44,15 @@ def build_express_config(du):
 
 def build_express_cli_config(du):
     """write config file"""
-    express_cli_config = globals.EXPRESS_CLI_CONFIG_DIR
+    express_cli_config = globals.EXPRESS_CLI_CONFIG_FILE
     sys.stdout.write("--> Building configuration file: {}\n".format(express_cli_config))
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
+    # create fiesystem path
+    cmd = "mkdir -p {}".format(globals.EXPRESS_CLI_CONFIG_DIR)
+    exit_status, stdout = ssh_utils.run_cmd(cmd)
+
+    # build/write config
     try:
         express_cli_config_fh = open(express_cli_config, "w")
         express_cli_config_fh.write("manage_hostname|false\n")
@@ -386,9 +391,9 @@ def create_pmk_cluster(du, cluster):
         express_config = build_express_config(du)
         if express_config:
             try:
-                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_FILE)
             except:
-                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
                 return()
 
             # build command args
@@ -582,9 +587,9 @@ def ci_onboard_region(du, onboard_params):
                     express_cli_config = build_express_cli_config(du)
                     if express_cli_config:
                         try:
-                            shutil.copyfile(express_cli_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                            shutil.copyfile(express_cli_config, globals.EXPRESS_CLI_CONFIG_FILE)
                         except:
-                            sys.stdout.write("ERROR: failed to copy Express CLI config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                            sys.stdout.write("ERROR: failed to copy Express CLI config file to {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
                             return()
 
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
@@ -603,9 +608,9 @@ def ci_onboard_region(du, onboard_params):
                     express_config = build_express_config(du)
                     if express_config:
                         try:
-                            shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                            shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_FILE)
                         except:
-                            sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                            sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
                             return()
 
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
@@ -648,9 +653,9 @@ def run_express_cli(du):
                         express_inventory = build_express_inventory(du,master_entries)
                         if express_inventory:
                             try:
-                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_FILE)
                             except:
-                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
                                 return()
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_master",1)
@@ -681,9 +686,9 @@ def run_express_cli(du):
                         express_inventory = build_express_inventory(du,worker_entries)
                         if express_inventory:
                             try:
-                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_DIR)
+                                shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_FILE)
                             except:
-                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_DIR))
+                                sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
                                 return()
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_worker",1)
