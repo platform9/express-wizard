@@ -498,13 +498,16 @@ def invoke_express_cli_nodeprep(du, nodes, silent_flag=False):
         wait_for_job(c)
 
 
-def invoke_express_cli(nodes, cluster_name, node_type):
+def invoke_express_cli(du, nodes, cluster_name, node_type, silent_flag=False):
     # intialize help
     help = Help()
 
     sys.stdout.write("\nRunning PF9-Express CLI\n")
-    user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
-    sys.stdout.flush()
+    if silent_flag:
+        user_input = "y"
+    else:
+        user_input = user_io.read_kbd("--> Do you want to tail the log", ['q','y','n'], 'y', True, True, help.onboard_interview("run-express-cli"), True)
+        sys.stdout.flush()
     if user_input == 'q':
         return()
 
@@ -515,7 +518,10 @@ def invoke_express_cli(nodes, cluster_name, node_type):
             command_args.append("-m")
         else:
             command_args.append("-w")
-        command_args.append(node['ip'])
+        if node['public_ip'] != "":
+            command_args.append(node['public_ip'])
+        else:
+            command_args.append(node['ip'])
     command_args.append(cluster_name)
     cmd = ""
     for c in command_args:
@@ -589,11 +595,11 @@ def ci_onboard_region(du, onboard_params):
                     express_cli_config = build_express_cli_config(du)
                     sys.stdout.write("DBG: express_cli_config = {}".format(express_cli_config))
                     if express_cli_config:
-                        sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                        invoke_express_cli_nodeprep(du, master_entries, True)
-                        sys.stdout.write("\nDBG: SKIPPING NODE ATTACH")
-                        #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                        #invoke_express_cli(master_entries,selected_cluster['name'],"master")
+                        #sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                        #invoke_express_cli_nodeprep(du, master_entries, True)
+                        #sys.stdout.write("\nDBG: SKIPPING NODE ATTACH")
+                        sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                        invoke_express_cli(du,master_entries,selected_cluster['name'],"master",True)
         elif 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if not worker_entries:
@@ -613,7 +619,7 @@ def ci_onboard_region(du, onboard_params):
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
                         invoke_express_cli_nodeprep(du, worker_entries, True)
                         #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                        #invoke_express_cli(worker_entries,selected_cluster['name'],"worker")
+                        #invoke_express_cli(du,worker_entries,selected_cluster['name'],"worker",True)
         else:
             sys.stdout.write("\nINFO: no nodes specified for onboarding (neither 'masters' nor 'workers' defined in ACTION)\n")
         
@@ -657,7 +663,7 @@ def run_express_cli(du):
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_master",1)
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                            invoke_express_cli(targets,selected_cluster['name'],"master")
+                            invoke_express_cli(du,targets,selected_cluster['name'],"master")
 
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True, help.onboard_interview("attach-workers"))
         if user_input == "y":
@@ -690,7 +696,7 @@ def run_express_cli(du):
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_worker",1)
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                            invoke_express_cli(targets,selected_cluster['name'],"worker")
+                            invoke_express_cli(du,targets,selected_cluster['name'],"worker")
 
 
 def run_express(du,host_entries):

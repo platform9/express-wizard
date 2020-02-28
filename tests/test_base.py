@@ -101,6 +101,10 @@ class TestWizardBaseLine(TestCase):
         from os.path import expanduser
         return("{}/.pf9".format(expanduser("~")))
 
+    def get_clihome_path(self):
+        from os.path import expanduser
+        return("{}/pf9".format(expanduser("~")))
+
     def get_du_url(self, config_file):
         if sys.version_info[0] == 2:
             cicd_config = ConfigParser.ConfigParser()
@@ -170,29 +174,21 @@ class TestWizardBaseLine(TestCase):
         None
 
     def init_express_basedir(self):
-        # initialize pf9_home
-        pf9_home = self.get_pf9home_path()
-        if not os.path.isdir(pf9_home):
-            try:
-                os.mkdir(pf9_home)
-            except:
-                return(False)
+        base_dirs = [
+            self.get_pf9home_path(),
+            self.get_clihome_path(),
+            "{}/log".format(self.get_clihome_path()),
+            "{}/db".format(self.get_pf9home_path()),
+            "{}/lock".format(self.get_pf9home_path())
+        ]
 
-        # initialize pf9_home_db
-        pf9_home_db = "{}/db".format(pf9_home)
-        if not os.path.isdir(pf9_home_db):
-            try:
-                os.mkdir(pf9_home_db)
-            except:
-                return(False)
-
-        # initialize pf9_lockdir
-        pf9_lockdir = "{}/lock".format(pf9_home)
-        if not os.path.isdir(pf9_lockdir):
-            try:
-                os.mkdir(pf9_lockdir)
-            except:
-                return(False)
+        # initialize basedirs
+        for base_dir in base_dirs:
+            if not os.path.isdir(base_dir):
+                try:
+                    os.mkdir(base_dir)
+                except:
+                    return(False)
 
         return(True)
 
@@ -435,7 +431,6 @@ class TestWizardBaseLine(TestCase):
 
         # validate config file exists
         config_file = self.get_cicd_config_path()
-        self.log.info(">>> Validate Configuration File: {}".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
 
         self.log.info(">>> Getting Encryption Key")
