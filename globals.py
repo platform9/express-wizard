@@ -48,7 +48,7 @@ EXPRESS_BRANCH = "master"
 ENCRYPTION_KEY_FILE = "{}/.keyfile".format(CONFIG_DIR)
 
 # Cluster Discovery
-CREATE_MISSING_CLUSTERS = True
+CREATE_MISSING_CLUSTERS = False
 
 # define map for bond modes
 bond_modes = [

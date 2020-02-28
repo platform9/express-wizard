@@ -498,7 +498,7 @@ def invoke_express_cli_nodeprep(du, nodes, silent_flag=False):
         wait_for_job(c)
 
 
-def invoke_express_cli(du, nodes, cluster_name, node_type, silent_flag=False):
+def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
     # intialize help
     help = Help()
 
@@ -511,8 +511,8 @@ def invoke_express_cli(du, nodes, cluster_name, node_type, silent_flag=False):
     if user_input == 'q':
         return()
 
-    # build command args
-    command_args = [globals.EXPRESS_CLI,'cluster','attach-node']
+    # build base command args
+    command_args = [globals.EXPRESS_CLI,'cluster','create','-u',du['auth_username'],'-s',du['auth_ssh_key']]
     for node in nodes:
         if node_type == "master":
             command_args.append("-m")
@@ -522,7 +522,27 @@ def invoke_express_cli(du, nodes, cluster_name, node_type, silent_flag=False):
             command_args.append(node['public_ip'])
         else:
             command_args.append(node['ip'])
-    command_args.append(cluster_name)
+
+    # append cluster args
+    command_args.append('--masterVip')
+    command_args.append(cluster['master_vip_ipv4'])
+    command_args.append('--masterVipIf')
+    command_args.append(cluster['master_vip_iface'])
+    command_args.append('--metallbIpRange')
+    command_args.append(cluster['metallb_cidr'])
+    command_args.append('--containersCidr')
+    command_args.append(cluster['containers_cidr'])
+    command_args.append('--servicesCidr')
+    command_args.append(cluster['services_cidr'])
+    command_args.append('--privileged')
+    command_args.append(cluster['privileged'])
+    command_args.append('--appCatalogEnabled')
+    command_args.append(cluster['app_catalog_enabled'])
+    command_args.append('--allowWorkloadsOnMaster')
+    command_args.append(cluster['allow_workloads_on_master'])
+    command_args.append(cluster['name'])
+
+    # run command (via subprocess)
     cmd = ""
     for c in command_args:
         cmd = "{} {}".format(cmd,c)
@@ -599,7 +619,7 @@ def ci_onboard_region(du, onboard_params):
                         #invoke_express_cli_nodeprep(du, master_entries, True)
                         #sys.stdout.write("\nDBG: SKIPPING NODE ATTACH")
                         sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                        invoke_express_cli(du,master_entries,selected_cluster['name'],"master",True)
+                        invoke_express_cli(du,master_entries,selected_cluster,"master",True)
         elif 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if not worker_entries:
@@ -619,7 +639,7 @@ def ci_onboard_region(du, onboard_params):
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
                         invoke_express_cli_nodeprep(du, worker_entries, True)
                         #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                        #invoke_express_cli(du,worker_entries,selected_cluster['name'],"worker",True)
+                        #invoke_express_cli(du,worker_entries,selected_cluster,"worker",True)
         else:
             sys.stdout.write("\nINFO: no nodes specified for onboarding (neither 'masters' nor 'workers' defined in ACTION)\n")
         
@@ -663,7 +683,7 @@ def run_express_cli(du):
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_master",1)
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                            invoke_express_cli(du,targets,selected_cluster['name'],"master")
+                            invoke_express_cli(du,targets,selected_cluster,"master")
 
         user_input = user_io.read_kbd("\nAttach Worker Nodes:", ['y','n','q'], 'y', True, True, help.onboard_interview("attach-workers"))
         if user_input == "y":
@@ -696,7 +716,7 @@ def run_express_cli(du):
                             sys.stdout.write("\n***INFO: invoking pf9-express for node prep (system/pip packages)\n")
                             invoke_express(express_config,express_inventory,"k8s_worker",1)
                             sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                            invoke_express_cli(du,targets,selected_cluster['name'],"worker")
+                            invoke_express_cli(du,targets,selected_cluster,"worker")
 
 
 def run_express(du,host_entries):
