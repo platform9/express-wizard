@@ -598,7 +598,7 @@ def ci_onboard_region(du, onboard_params):
                     if express_cli_config:
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
                         invoke_express_cli_nodeprep(du, master_entries, True)
-                        sys.stdout.write("\nSKIPPING NODE ATTACH")
+                        sys.stdout.write("\nDBG: SKIPPING NODE ATTACH")
                         #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
                         #invoke_express_cli(master_entries,selected_cluster['name'],"master")
         elif 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:

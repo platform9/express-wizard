@@ -130,7 +130,9 @@ def discover_host(du_metadata, host):
     ip_list = []
     if host['ip'] != "":
         ip_list.append(host['ip'])
-    else:
+    if host['public_ip'] != "":
+        ip_list.append(host['public_ip'])
+    if len(ip_list) == 0:
         for interface_ipaddr in host['ip_interfaces'].split(","):
             ip_list.append(interface_ipaddr)
 
