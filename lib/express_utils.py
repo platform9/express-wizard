@@ -613,33 +613,26 @@ def ci_onboard_region(du, onboard_params):
                 flag_installed = install_express_cli()
                 if flag_installed == True:
                     express_cli_config = build_express_cli_config(du)
-                    sys.stdout.write("DBG: express_cli_config = {}".format(express_cli_config))
                     if express_cli_config:
-                        #sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                        #invoke_express_cli_nodeprep(du, master_entries, True)
-                        #sys.stdout.write("\nDBG: SKIPPING NODE ATTACH")
-                        sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
+                        sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                        invoke_express_cli_nodeprep(du, master_entries, True)
+                        sys.stdout.write("\n***INFO: invoking express-cli for cluster create\n")
                         invoke_express_cli(du,master_entries,selected_cluster,"master",True)
         elif 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if not worker_entries:
                 sys.stdout.write("\nINFO: there are no unattached workers to attach to this cluster\n")
             else:
+                sys.stdout.write("\nThe following unattached worker nodes will be onboarded:\n")
                 reports.report_host_info(worker_entries)
-                flag_installed = install_express(du)
+                flag_installed = install_express_cli()
                 if flag_installed == True:
-                    express_config = build_express_config(du)
-                    if express_config:
-                        try:
-                            shutil.copyfile(express_config, globals.EXPRESS_CLI_CONFIG_FILE)
-                        except:
-                            sys.stdout.write("ERROR: failed to update {}\n".format(globals.EXPRESS_CLI_CONFIG_FILE))
-                            return()
-
+                    express_cli_config = build_express_cli_config(du)
+                    if express_cli_config:
                         sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
                         invoke_express_cli_nodeprep(du, worker_entries, True)
-                        #sys.stdout.write("\n***INFO: invoking express-cli for node attach (cluster attach-node <cluster>))\n")
-                        #invoke_express_cli(du,worker_entries,selected_cluster,"worker",True)
+                        sys.stdout.write("\n***INFO: invoking express-cli for cluster create\n")
+                        invoke_express_cli(du,worker_entries,selected_cluster,"worker",True)
         else:
             sys.stdout.write("\nINFO: no nodes specified for onboarding (neither 'masters' nor 'workers' defined in ACTION)\n")
         
