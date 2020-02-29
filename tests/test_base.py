@@ -299,17 +299,22 @@ class TestWizardBaseLine(TestCase):
         num_instances = int(self.get_num_instances_pmk(config_file))
 
         # DBG:
-        # instance_uuids = [
-        #     "8bb0d570-8ad4-425f-9dc0-0566751e2b9b"
-        # ]
-        # uuid_fip_map = {
-        #     "8bb0d570-8ad4-425f-9dc0-0566751e2b9b": "131.153.255.204"
-        # }
+        flag_skip_launch = True
+        if flag_skip_launch:
+            instance_uuids = [
+                "4af8a84f-5c3d-4a59-b0e2-7bb56e8b9d6e"
+            ]
+            uuid_fip_map = {
+                "4af8a84f-5c3d-4a59-b0e2-7bb56e8b9d6e": "131.153.255.204"
+            }
+        else:
+            instance_uuids = []
         
         # launch instances
-        instance_uuids = []
         ci_hostname = "ci-k8s"
-        if not instance_uuids:
+        if instance_uuids:
+            self.log.info(">>> Skipping Launching Openstack Instances")
+        else:
             self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
             self.log.info("du_url = {}".format(du['url']))
             instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname)
@@ -391,12 +396,13 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        self.log.info("================ START: Region Import File ================")
-        cmd = "cat {} | python -m json.tool".format(tmpfile)
-        exit_status, stdout = self.run_cmd(cmd)
-        for l in stdout:
-            self.log.info(l.strip())
-        self.log.info("================ END: Region Import File ================")
+        # DBG:
+        # self.log.info("================ START: Region Import File ================")
+        # cmd = "cat {} | python -m json.tool".format(tmpfile)
+        # exit_status, stdout = self.run_cmd(cmd)
+        # for l in stdout:
+        #     self.log.info(l.strip())
+        # self.log.info("================ END: Region Import File ================")
 
         # call wizard (to on-board region)
         cmd = "wizard --jsonImport {}".format(tmpfile)
@@ -433,7 +439,7 @@ class TestWizardBaseLine(TestCase):
         config_file = self.get_cicd_config_path()
         self.assertTrue(os.path.isfile(config_file))
 
-        self.log.info(">>> Getting Encryption Key")
+        self.log.info(">>> Initializing Encryption")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
         EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if not EMS_VAULT_KEY:
@@ -441,12 +447,12 @@ class TestWizardBaseLine(TestCase):
             self.assertTrue(False)
 
         # inititialize ~/.pf9
-        self.log.info(">>> Initializing Installation Directory")
+        self.log.info(">>> Initializing Installation Directories")
         init_status = self.init_express_basedir()
         if not init_status:
             self.log.info("failed to initialize EMS basedir")
 
-        # read cloud.platform9.net import template
+        # read import template for cloud.platform9.net
         self.log.info(">>> Parameterizing Import Template for Platform9 Cloud Region")
         target_import_file = self.get_pf9cloud_importdata_path()
         if os.path.isfile(target_import_file):
@@ -456,20 +462,20 @@ class TestWizardBaseLine(TestCase):
             except Exception as ex:
                 self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
 
-        # parameterize ssh-keypath in region
+        # parameterize import template
         import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
-        # write parameterized template to tmpfile
+        # write template to tmpfile
         tmpfile = "/tmp/pf9-cloud-import.json"
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        self.log.info("================ START: Platform9 Cloud Region Import File ================")
+        self.log.info("================ START: Region Import File for cloud.platform9.net  ================")
         cmd = "cat {} | python -m json.tool".format(tmpfile)
         exit_status, stdout = self.run_cmd(cmd)
         for l in stdout:
             self.log.info(l.strip())
-        self.log.info("================ END: Platform9 Cloud Region Import File ================")
+        self.log.info("================================ END: Region Import ================================")
 
         # import region: cloud.platform9.net
         self.log.info(">>> Importing Region: cloud.platform9.net")

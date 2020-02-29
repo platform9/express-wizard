@@ -556,6 +556,17 @@ def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
         wait_for_job(c)
 
 
+def invoke_cmd_py3():
+    command_args = ['ls','-l','/tmp']
+    cmd = ""
+    for c in command_args:
+        cmd = "{} {}".format(cmd,c)
+    sys.stdout.write("Running: {}\n".format(cmd))
+    c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
+    tail_log(c)
+
+
 def ci_onboard_region(du, onboard_params):
     """Automated onboarding for PMO and PMK"""
     sys.stdout.write("\nci_onboard_region() : performing automated onboarding")

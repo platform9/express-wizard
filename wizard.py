@@ -450,6 +450,10 @@ def main():
     if args.test:
         sys.exit(0)
 
+    # DBG:
+    express_utils.invoke_cmd_py3()
+    sys.exit(0)
+    
     # main menu loop
     menu_level0()
 
