@@ -219,18 +219,18 @@ def checkout_branch(git_branch, install_dir):
     sys.stdout.write("cmd={}".format(cmd))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
 
-    current_branch = get_express_branch(git_branch)
+    current_branch = get_express_branch(git_branch, install_dir)
     if current_branch != git_branch:
         return(False)
 
     return(True)
 
 
-def get_express_branch(git_branch):
-    if not os.path.isdir(globals.EXPRESS_INSTALL_DIR):
+def get_express_branch(git_branch, repo_basedir):
+    if not os.path.isdir(repo_basedir):
         return(None)
 
-    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(globals.EXPRESS_INSTALL_DIR)
+    cmd = "cd {} && git symbolic-ref --short -q HEAD".format(repo_basedir)
     exit_status, stdout = ssh_utils.run_cmd(cmd)
     if exit_status != 0:
         return(None)
@@ -311,7 +311,7 @@ def install_express(du):
         sys.stdout.write("ERROR: failed to fetch branches (git fetch -)\n")
         return(False)
 
-    current_branch = get_express_branch(du['git_branch'])
+    current_branch = get_express_branch(du['git_branch'],globals.EXPRESS_INSTALL_DIR)
     sys.stdout.write("--> current branch: {}\n".format(current_branch))
     if current_branch != du['git_branch']:
         sys.stdout.write("--> switching branches: {}\n".format(du['git_branch']))
