@@ -498,6 +498,12 @@ def invoke_express_cli_nodeprep(du, nodes, silent_flag=False):
         wait_for_job(c)
 
 
+def map_true_false(s):
+    if int(s) == 1:
+        return(True)
+    else:
+        return(False)
+
 def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
     # intialize help
     help = Help()
@@ -535,11 +541,11 @@ def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
     command_args.append('--servicesCidr')
     command_args.append(cluster['services_cidr'])
     command_args.append('--privileged')
-    command_args.append(cluster['privileged'])
+    command_args.append(map_true_false(cluster['privileged']))
     command_args.append('--appCatalogEnabled')
-    command_args.append(cluster['app_catalog_enabled'])
+    command_args.append(map_true_false(cluster['app_catalog_enabled']))
     command_args.append('--allowWorkloadsOnMaster')
-    command_args.append(cluster['allow_workloads_on_master'])
+    command_args.append(map_true_false(cluster['allow_workloads_on_master']))
     command_args.append(cluster['name'])
 
     # run command (via subprocess)
