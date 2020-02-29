@@ -299,7 +299,7 @@ class TestWizardBaseLine(TestCase):
         num_instances = int(self.get_num_instances_pmk(config_file))
 
         # DBG:
-        flag_skip_launch = True
+        flag_skip_launch = False
         if flag_skip_launch:
             instance_uuids = [
                 "4af8a84f-5c3d-4a59-b0e2-7bb56e8b9d6e"
