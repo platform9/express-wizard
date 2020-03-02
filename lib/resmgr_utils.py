@@ -2,8 +2,30 @@ import requests
 import globals
 import json
 import pmk_utils
+import du_utils
 import datamodel
 import ssh_utils
+
+
+def deauth_host(du, host_uuid):
+    project_id, token = du_utils.login_du(du['url'],
+                                          du['username'],
+                                          du['password'],
+                                          du['tenant'])
+    if token == None:
+        sys.stdout.write("--> failed to login to region")
+        return(False)
+    else:
+        try:
+            api_endpoint = "resmgr/v1/hosts/{}".format(host_uuid)
+            headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
+            pf9_response = requests.delete("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
+            print("code={}".format(pf9_response.status_code))
+            if pf9_response.status_code != 200:
+                return(False)
+            return(True)
+        except:
+            return(False)
 
 
 def discover_du_hosts(du_url, du_type, project_id, token, flag_validate_ssh):

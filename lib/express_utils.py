@@ -631,10 +631,10 @@ def ci_onboard_region(du, onboard_params):
                 if flag_installed == True:
                     express_cli_config = build_express_cli_config(du)
                     if express_cli_config:
-                        #sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
-                        #invoke_express_cli_nodeprep(du, master_entries, True)
-                        sys.stdout.write("\n***INFO: invoking express-cli for cluster create\n")
-                        invoke_express_cli(du,master_entries,selected_cluster,"master",True)
+                        sys.stdout.write("\n***INFO: invoking express-cli for node prep (system/pip packages)\n")
+                        invoke_express_cli_nodeprep(du, master_entries, True)
+                        #sys.stdout.write("\n***INFO: invoking express-cli for cluster create\n")
+                        #invoke_express_cli(du,master_entries,selected_cluster,"master",True)
         elif 'workers' in onboard_params and onboard_params['workers'] in ['ALL','all','All']:
             worker_entries = datamodel.get_unattached_workers(selected_cluster)
             if not worker_entries:
