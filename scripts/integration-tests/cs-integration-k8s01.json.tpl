@@ -3,17 +3,6 @@
       {
           "operation": "discover-region",
           "region-name": "https://cs-integration-k8s01.platform9.horse"
-      },
-      {
-          "operation": "onboard-region",
-          "region-name": "https://cs-integration-k8s01.platform9.horse",
-          "cluster-name": "ci-cluster01",
-          "masters": "all",
-          "workers": "all"
-      },
-      {
-          "operation": "discover-region",
-          "region-name": "https://cs-integration-k8s01.platform9.horse"
       }
   ],
   "region": {
@@ -41,7 +30,7 @@
       "record_source": "User-Defined",
       "containers_cidr": "192.168.0.0/16",
       "services_cidr": "192.169.0.0/16",
-      "master_vip_iface": "ens160",
+      "master_vip_iface": "eth0",
       "master_vip_ipv4": "172.20.8.244",
       "metallb_cidr": "172.20.8.240-172.20.8.243",
       "app_catalog_enabled": 0,

@@ -13,15 +13,13 @@ def deauth_host(du, host_uuid):
                                           du['password'],
                                           du['tenant'])
     if token == None:
-        sys.stdout.write("--> failed to login to region")
         return(False)
     else:
         try:
             api_endpoint = "resmgr/v1/hosts/{}".format(host_uuid)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
             pf9_response = requests.delete("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
-            print("code={}".format(pf9_response.status_code))
-            if pf9_response.status_code != 200:
+            if pf9_response.status_code != 201:
                 return(False)
             return(True)
         except:

@@ -14,6 +14,7 @@ sys.path.append(LIB_DIR)
 import datamodel
 import json
 import ssh_utils
+import resmgr_utils
 from encrypt import Encryption
 from lock import Lock
 from openstack_utils import Openstack
@@ -194,7 +195,7 @@ class TestWizardBaseLine(TestCase):
 
 
     def pmo_integration_test(self, config_file, du, openstack):
-        self.log.info("\n****************************************")
+        self.log.info("****************************************")
         self.log.info("**** STARTING PMO INTEGRATION TESTS ****")
         self.log.info("****************************************")
 
@@ -292,20 +293,21 @@ class TestWizardBaseLine(TestCase):
 
 
     def pmk_integration_test(self, config_file, du, openstack):
-        self.log.info("\n****************************************")
+        self.log.info("****************************************")
         self.log.info("**** STARTING PMK INTEGRATION TESTS ****")
         self.log.info("****************************************")
 
+        target_du = "https://cs-integration-k8s01.platform9.horse"
         num_instances = int(self.get_num_instances_pmk(config_file))
 
         # DBG:
-        flag_skip_launch = False
+        flag_skip_launch = True
         if flag_skip_launch:
             instance_uuids = [
-                "4af8a84f-5c3d-4a59-b0e2-7bb56e8b9d6e"
+                "11eb2cd2-b2ed-4e51-8999-5626a975171e"
             ]
             uuid_fip_map = {
-                "4af8a84f-5c3d-4a59-b0e2-7bb56e8b9d6e": "131.153.255.204"
+                "11eb2cd2-b2ed-4e51-8999-5626a975171e": "131.153.255.204"
             }
         else:
             instance_uuids = []
@@ -396,14 +398,6 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        # DBG:
-        # self.log.info("================ START: Region Import File ================")
-        # cmd = "cat {} | python -m json.tool".format(tmpfile)
-        # exit_status, stdout = self.run_cmd(cmd)
-        # for l in stdout:
-        #     self.log.info(l.strip())
-        # self.log.info("================ END: Region Import File ================")
-
         # call wizard (to on-board region)
         cmd = "wizard --jsonImport {}".format(tmpfile)
         self.log.info(">>> Starting PMK Integration Test (Importing Region)")
@@ -415,10 +409,22 @@ class TestWizardBaseLine(TestCase):
             self.log.info("INTEGRAION TEST STATUS : FAILED")
 
         # display import log
-        self.log.info("================ START: Region Import Log ================")
+        self.log.info("================ START: Integration Test Log ================")
         for line in stdout:
             self.log.info(line.strip())
-        self.log.info("================ END: Region Import Log ================")
+        self.log.info("================ END: Integration Test Log ================")
+
+        # deauthorize hosts
+        self.log.info(">>> Deauthorizing Hosts")
+        du_hosts = datamodel.get_hosts(target_du)
+        if du_hosts:
+            for h in du_hosts:
+                if h['uuid'] != "":
+                    self.log.info("{}... ".format(h['hostname']))
+                    if (resmgr_utils.deauth_host(du,h['uuid'])):
+                        self.log.info("OK\n")
+                    else:
+                        self.log.info("FAILED\n")
 
         # cleanup (delete instances)
         #self.log.info("CLEANUP: deleting all instances")
@@ -431,7 +437,7 @@ class TestWizardBaseLine(TestCase):
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        self.log.info("\n************************************")
+        self.log.info("************************************")
         self.log.info("**** STARTING INTEGRATION TESTS ****")
         self.log.info("************************************")
 
@@ -470,21 +476,14 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        self.log.info("================ START: Region Import File for cloud.platform9.net  ================")
-        cmd = "cat {} | python -m json.tool".format(tmpfile)
-        exit_status, stdout = self.run_cmd(cmd)
-        for l in stdout:
-            self.log.info(l.strip())
-        self.log.info("================================ END: Region Import ================================")
-
         # import region: cloud.platform9.net
         self.log.info(">>> Importing Region: cloud.platform9.net")
         cmd = "wizard -i --jsonImport {} -k {}".format(tmpfile,EMS_VAULT_KEY)
         self.log.info("INFO running: {}".format(cmd))
         exit_status, stdout = self.run_cmd(cmd)
-        for l in stdout:
-            self.log.info(l.strip())
         if exit_status != 0:
+            for l in stdout:
+                self.log.info(l.strip())
             self.assertTrue(False)
 
         # read du_url (from config file)
