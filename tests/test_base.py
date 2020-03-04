@@ -176,7 +176,7 @@ class TestWizardBaseLine(TestCase):
         else:
             self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test (OS={}):".format(num_instances,os_version))
             self.log.info("du_url = {}".format(du['url']))
-            instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname,os_version)
+            instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname,os_version,self.log.info)
             if instance_messages:
                 self.log.info("Launch Status:")
                 for m in instance_messages:
@@ -224,7 +224,7 @@ class TestWizardBaseLine(TestCase):
                     with open(target_import_file) as json_file:
                         import_json = json.load(json_file)
                 except Exception as ex:
-                    self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
+                    self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
 
             # parameterize PMK import template
             self.log.info("    parameterizing IP addresses")
@@ -279,13 +279,29 @@ class TestWizardBaseLine(TestCase):
             self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
             for tmp_uuid in instance_uuids:
                 try:
-                    ip_is_responding = ssh_utils.wait_for_ip(target_du,uuid_fip_map[tmp_uuid])
+                    ip_is_responding = ssh_utils.wait_for_ip(target_du,uuid_fip_map[tmp_uuid],self.log.info)
                 except Exception as ex:
-                    self.log.info("EXCEPTION: {}".format(ex.message))
+                    self.log.info("EXCEPTION: {}".format(ex))
 
                 if not ip_is_responding:
                     self.assertTrue(False)
             self.log.info("INFO: all floating IPs are responding")
+
+            # get filesystem stats for each host
+            self.log.info(">>> Getting System Info (using SSH)")
+            for tmp_uuid in instance_uuids:
+                try:
+                    host_fs_stats = ssh_utils.get_fs_stats(target_du,uuid_fip_map[tmp_uuid],self.log.info)
+                    if host_fs_stats:
+                        self.log.info("------------ {} ------------".format(tmp_uuid))
+                        for l in host_fs_stats:
+                            self.log.info(l.strip())
+                        self.log.info("----------------------------")
+                except Exception as ex:
+                    self.log.info("EXCEPTION: {}".format(ex))
+
+                if not host_fs_stats:
+                    self.assertTrue(False)
 
         # Run Integration Test
         cmd = "wizard --jsonImport {}".format(tmpfile)
@@ -302,6 +318,22 @@ class TestWizardBaseLine(TestCase):
         for line in stdout:
             self.log.info(line.strip())
         self.log.info("================ END: Integration Test Log ================")
+
+        # get filesystem stats for each host
+        self.log.info(">>> Getting System Info (using SSH)")
+        for tmp_uuid in instance_uuids:
+            try:
+                host_fs_stats = ssh_utils.get_fs_stats(target_du,uuid_fip_map[tmp_uuid],self.log.info)
+                if host_fs_stats:
+                    self.log.info("------------ {} ------------".format(tmp_uuid))
+                    for l in host_fs_stats:
+                        self.log.info(l.strip())
+                    self.log.info("----------------------------")
+            except Exception as ex:
+                self.log.info("EXCEPTION: {}".format(ex))
+
+            if not host_fs_stats:
+                self.assertTrue(False)
 
         # deauthorize hosts
         #if ci_exit_status == 0:
@@ -346,7 +378,7 @@ class TestWizardBaseLine(TestCase):
         try:
             ci_config.read(config_file)
         except Exception as ex:
-            self.log.info("ERROR: {}".format(ex.message))
+            self.log.info("ERROR: {}".format(ex))
             self.assertTrue(False)
 
         self.log.info(">>> Initializing Encryption")
@@ -368,7 +400,7 @@ class TestWizardBaseLine(TestCase):
                 with open(source_import_file) as json_file:
                     import_json = json.load(json_file)
             except Exception as ex:
-                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
+                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
 
         # parameterize import template
         self.log.info("    parameterizing region ssh key")

@@ -35,7 +35,7 @@ class Openstack:
 
         return(None)
 
-    def launch_instance(self, instance_name, os_version):
+    def launch_instance(self, instance_name, os_version,ci_logger):
         """Launch an Openstack Instance"""
 
         instance_uuid = None
@@ -48,7 +48,7 @@ class Openstack:
         #    "boot_index": "0",
         #    "uuid": image_map[os_version],
         #    "source_type": "image",
-        #    "volume_size": "8",
+        #    "volume_size": "10",
         #    "destination_type": "volume",
         #    "delete_on_termination": True,
         #    "disk_bus": "scsi"}],
@@ -61,21 +61,25 @@ class Openstack:
         }
 
         instance_spec = {
-            "server" : {
-                "name" : instance_name,
+            "server": {
+                "name": instance_name,
                 "imageRef" : image_map[os_version],
-                "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
-                "key_name" : "danwright-mac01",
+                "OS-DCF:diskConfig": "AUTO",
+                "config_drive": False,
+                "metadata": {},
+                "flavorRef": "3f039057-e358-4d8a-9b32-979cd7a5181a",
+                "key_name": "danwright-mac01",
                 "security_groups": [
-                    { "name": "cs-integration-test" }
+                    { "name": "5631cd6b-7478-4622-ab9f-ff343b229d66" }
                 ],
-                "networks" : [
+                "networks": [
                     { "uuid" : "b8e1371f-d7bb-4670-a583-682e289a4724" }
                 ]
             }
         }
 
-        sys.stdout.write("launching instance: {} (os_version = {})\n".format(instance_name,os_version))
+        ci_logger("launching instance: {} (os_version = {})\n".format(instance_name,os_version))
+        ci_logger("instance spec:\n{}\n".format(instance_spec))
         try:
             api_endpoint = "nova/v2.1/{}/servers".format(self.project_id)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
@@ -229,14 +233,14 @@ class Openstack:
         return(False)
 
 
-    def launch_n_instances(self,num_instances,instance_basename,os_version):
+    def launch_n_instances(self,num_instances,instance_basename,os_version,ci_logger):
         SLEEP_BETWEEN_LAUNCH = 2
         instance_num = 1
         instance_uuids = []
         instance_messages = []
         while instance_num <= num_instances:
             instance_name = "{}{}".format(instance_basename,str(instance_num).zfill(2))
-            instance_uuid, instance_msg = self.launch_instance(instance_name, os_version)
+            instance_uuid, instance_msg = self.launch_instance(instance_name, os_version,ci_logger)
             if instance_uuid:
                 instance_uuids.append(instance_uuid)
             instance_messages.append(instance_msg)
