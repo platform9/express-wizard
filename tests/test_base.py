@@ -79,20 +79,8 @@ class TestWizardBaseLine(TestCase):
         unencrypted_string = encryption.decrypt_password(encrypted_string)
         self.assertTrue(unencrypted_string == original_string)
         
-    def get_cicd_config_path(self):
-        return("{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__))))
-
     def get_region_sshkey_path(self):
         return("{}/../id_rsa".format(os.path.dirname(os.path.realpath(__file__))))
-
-    def get_pmo_importdata_path(self):
-        return("{}/../scripts/integration-tests/cs-integration-kvm01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
-
-    def get_pmk_importdata_path(self):
-        return("{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
-
-    def get_pf9cloud_importdata_path(self):
-        return("{}/../scripts/integration-tests/cloud.platform9.net.json.tpl".format(os.path.dirname(os.path.realpath(__file__))))
 
     def get_keyfile_path(self):
         from os.path import expanduser
@@ -105,44 +93,6 @@ class TestWizardBaseLine(TestCase):
     def get_clihome_path(self):
         from os.path import expanduser
         return("{}/pf9".format(expanduser("~")))
-
-    def get_du_url(self, config_file):
-        if sys.version_info[0] == 2:
-            cicd_config = ConfigParser.ConfigParser()
-        else:
-            cicd_config = configparser.ConfigParser()
-
-        try:
-            cicd_config.read(config_file)
-            return(cicd_config.get('source_region','du_url'))
-        except Exception as ex:
-            return(False)
-
-
-    def get_num_instances_pmk(self, config_file):
-        if sys.version_info[0] == 2:
-            cicd_config = ConfigParser.ConfigParser()
-        else:
-            cicd_config = configparser.ConfigParser()
-
-        try:
-            cicd_config.read(config_file)
-            return(cicd_config.get('source_region','num_instances_pmk'))
-        except Exception as ex:
-            return(False)
-
-
-    def get_num_instances_pmo(self, config_file):
-        if sys.version_info[0] == 2:
-            cicd_config = ConfigParser.ConfigParser()
-        else:
-            cicd_config = configparser.ConfigParser()
-
-        try:
-            cicd_config.read(config_file)
-            return(cicd_config.get('source_region','num_instances_pmo'))
-        except Exception as ex:
-            return(False)
 
     def delete_all_instances(self, du, instance_uuids):
         SLEEP_BETWEEN_DELETE = 5
@@ -170,9 +120,6 @@ class TestWizardBaseLine(TestCase):
         os.remove(tmpfile)
         return cmd_exitcode, cmd_stdout
 
-    def launch_instances(self, num_instances):
-        """Launch OpenStack Instances (On-Boarding Targets)"""
-        None
 
     def init_express_basedir(self):
         base_dirs = [
@@ -194,132 +141,42 @@ class TestWizardBaseLine(TestCase):
         return(True)
 
 
-    def pmo_integration_test(self, config_file, du, openstack):
+    def pmk_integration_test(self, ci_config, os_version):
         self.log.info("****************************************")
-        self.log.info("**** STARTING PMO INTEGRATION TESTS ****")
-        self.log.info("****************************************")
-
-        num_instances = int(self.get_num_instances_pmo(config_file))
-
-        # launch instances
-        ci_hostname = "ci-kvm"
-        self.log.info(">>> Launching {} Openstack Instances for PMO Integration Test:".format(num_instances))
-        self.log.info("du_url = {}".format(du['url']))
-        instance_uuids = openstack.launch_n_instances(num_instances,ci_hostname)
-        if not instance_uuids:
-            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
-            self.assertTrue(False)
-        if len(instance_uuids) < num_instances:
-            self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
-            self.assertTrue(False)
-        self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
-            
-
-        # wait for instances to boot
-        boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
-        if not boot_status:
-            self.log.info("TIMEOUT: waiting for all instances to become active")
-            self.delete_all_instances(du, instance_uuids)
-            self.assertTrue(False)
-        self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
-
-        # assign floating IP to instance
-        self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
-        uuid_fip_map = {}
-        POLL_INTERVAL_FIP = 10
-        for tmp_uuid in instance_uuids:
-            fip_metadata = openstack.get_floating_ip()
-            if not fip_metadata:
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_metadata)
-            fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
-            if not fip_status:
-                self.delete_all_instances(du,instance_uuids)
-                self.assertTrue(fip_status)
-            uuid_fip_map.update({tmp_uuid:fip_metadata['floating_ip_address']})
-            self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
-            time.sleep(POLL_INTERVAL_FIP)
-
-        # read PMO import template
-        self.log.info(">>> Parameterizing Import Template for PMO Integration Test")
-        target_import_file = self.get_pmo_importdata_path()
-        if os.path.isfile(target_import_file):
-            try:
-                with open(target_import_file) as json_file:
-                    import_json = json.load(json_file)
-            except Exception as ex:
-                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
-
-        # parameterize PMO import template
-        instance_num = 1
-        for tmp_uuid in instance_uuids:
-            # parameterize IP address
-            target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
-            for tmp_host in import_json['hosts']:
-                if tmp_host['hostname'] == target_hostname:
-                    tmp_host['ip'] = uuid_fip_map[tmp_uuid]
-
-            instance_num += 1
-
-        # parameterize ssh-keypath in region
-        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
-
-        # parameterize ssh-keypath in auth-profiles (they all use the same key as the region)
-        for tmp_auth in import_json['auth-profiles']:
-            tmp_auth['auth_ssh_key'] = self.get_region_sshkey_path()
-
-        # write parameterized template to tmpfile
-        tmpfile = "/tmp/pf9-pmo-import.json"
-        with open(tmpfile, 'w') as outfile:
-            json.dump(import_json, outfile)
-
-        # call wizard (to on-board region)
-        self.log.info(">>> Starting PMO Integration Test (Importing Region)")
-        exit_status, stdout = self.run_cmd("wizard --jsonImport {}".format(tmpfile))
-        if exit_status == 0:
-            self.log.info("INTEGRAION TEST STATUS : PASSED")
-        else:
-            self.log.info("INTEGRAION TEST STATUS : FAILED")
-
-        # display import log
-        self.log.info("================ START: Region Import Log ================")
-        for line in stdout:
-            self.log.info(line.strip())
-        self.log.info("================ END: Region Import Log ================")
-
-        # cleanup (delete instances)
-        self.log.info("CLEANUP: deleting all instances")
-        self.delete_all_instances(du,instance_uuids)
-
-
-    def pmk_integration_test(self, config_file, du, openstack):
-        self.log.info("****************************************")
-        self.log.info("**** STARTING PMK INTEGRATION TESTS ****")
+        self.log.info("**** STARTING PMK INTEGRATION TESTS")
+        self.log.info("**** OS for K8s Nodes: {}".format(os_version))
         self.log.info("****************************************")
 
-        target_du = "https://cs-integration-k8s01.platform9.horse"
-        num_instances = int(self.get_num_instances_pmk(config_file))
+        # instantiate openstack library (for source region)
+        self.log.info(">>> Initialize Openstack Integration (includes logging in to DU)")
+        du = datamodel.get_du_metadata(ci_config.get('source_region','du_url'))
+        self.assertTrue(du)
+        from openstack_utils import Openstack
+        openstack = Openstack(du)
+
+        # get number of instances to launch (must correlate with host stanza in import json)
+        num_instances = int(ci_config.get('source_region','num_instances_pmk'))
 
         # DBG:
-        flag_skip_launch = True
+        flag_skip_launch = False
         if flag_skip_launch:
             instance_uuids = [
-                "11eb2cd2-b2ed-4e51-8999-5626a975171e"
+                "dae6e968-6f8e-4789-82e3-8f9391db1db1"
             ]
             uuid_fip_map = {
-                "11eb2cd2-b2ed-4e51-8999-5626a975171e": "131.153.255.204"
+                "dae6e968-6f8e-4789-82e3-8f9391db1db1": "104.143.12.173"
             }
         else:
-            instance_uuids = []
+           instance_uuids = []
         
         # launch instances
         ci_hostname = "ci-k8s"
         if instance_uuids:
             self.log.info(">>> Skipping Launching Openstack Instances")
         else:
-            self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test:".format(num_instances))
+            self.log.info(">>> Launching {} Openstack Instances for PMK Integration Test (OS={}):".format(num_instances,os_version))
             self.log.info("du_url = {}".format(du['url']))
-            instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname)
+            instance_uuids, instance_messages = openstack.launch_n_instances(num_instances,ci_hostname,os_version)
             if instance_messages:
                 self.log.info("Launch Status:")
                 for m in instance_messages:
@@ -330,7 +187,6 @@ class TestWizardBaseLine(TestCase):
             if len(instance_uuids) < num_instances:
                 self.log.info("ERROR: failed to launch Openstack {} instances".format(num_instances))
                 self.assertTrue(False)
-            self.log.info("all instances launched successfully - waiting for them to boot...".format(num_instances))
                 
             # wait for instances to boot
             boot_status, launch_elapsed_time = openstack.wait_for_instances(instance_uuids)
@@ -357,53 +213,86 @@ class TestWizardBaseLine(TestCase):
                 self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
                 time.sleep(POLL_INTERVAL_FIP)
 
+            # get target du
+            target_du_url = ci_config.get('pmk_region','du_url')
+
+            # read PMK import template
+            self.log.info(">>> Parameterizing Import Template for Target Region: {}".format(target_du_url))
+            target_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
+            if os.path.isfile(target_import_file):
+                try:
+                    with open(target_import_file) as json_file:
+                        import_json = json.load(json_file)
+                except Exception as ex:
+                    self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
+
+            # parameterize PMK import template
+            self.log.info("    parameterizing IP addresses")
+            instance_num = 1
+            for tmp_uuid in instance_uuids:
+                # parameterize IP address
+                target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
+                for tmp_host in import_json['hosts']:
+                    if tmp_host['hostname'] == target_hostname:
+                        tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+                        tmp_host['public_ip'] = uuid_fip_map[tmp_uuid]
+
+                instance_num += 1
+
+            # parameterize ssh-keypath in region
+            self.log.info("    parameterizing region ssh key")
+            import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+
+            # parameterize username for remote access
+            self.log.info("    parameterizing region auth username: ")
+            if os_version in ["centos74"]:
+                self.log.info("    parameterizing region auth username: centos")
+                import_json['region']['auth_username'] = "centos"
+            elif os_version in ["ubuntu16","ubuntu18"]:
+                self.log.info("    parameterizing region auth username: ubuntu")
+                import_json['region']['auth_username'] = "ubuntu"
+            else:
+                self.log.info("Failed to map os_version: {}".format(os_version))
+                self.assertTrue(False)
+
+            # write parameterized template to tmpfile
+            tmpfile = "/tmp/pf9-pmk-import.json"
+            with open(tmpfile, 'w') as outfile:
+                json.dump(import_json, outfile)
+
+            # Import Region
+            cmd = "wizard --jsonImport {} --skipActions".format(tmpfile)
+            self.log.info(">>> Importing Target Region: {}".format(target_du_url))
+            self.log.info("running: {}".format(cmd))
+            exit_status, stdout = self.run_cmd(cmd)
+            if exit_status != 0:
+                self.log.info("ERROR: failed to import region")
+                self.assertTrue(False)
+
+            # get target_du
+            self.log.info(">>> Getting Configuration for Target DU: {}".format(target_du_url))
+            target_du = datamodel.get_du_metadata(target_du_url)
+            self.assertTrue(target_du)
+            self.log.info("target DU: {}".format(target_du['url']))
+
             # wait for floating IPs to respond on all instances (if any timeout, assert)
             self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
             for tmp_uuid in instance_uuids:
                 try:
-                    ip_is_responding = ssh_utils.wait_for_ip(du,uuid_fip_map[tmp_uuid])
+                    ip_is_responding = ssh_utils.wait_for_ip(target_du,uuid_fip_map[tmp_uuid])
                 except Exception as ex:
                     self.log.info("EXCEPTION: {}".format(ex.message))
 
                 if not ip_is_responding:
                     self.assertTrue(False)
+            self.log.info("INFO: all floating IPs are responding")
 
-        # read PMK import template
-        self.log.info(">>> Parameterizing Import Template for PMK Integration Test")
-        target_import_file = self.get_pmk_importdata_path()
-        if os.path.isfile(target_import_file):
-            try:
-                with open(target_import_file) as json_file:
-                    import_json = json.load(json_file)
-            except Exception as ex:
-                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
-
-        # parameterize PMK import template
-        instance_num = 1
-        for tmp_uuid in instance_uuids:
-            # parameterize IP address
-            target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
-            for tmp_host in import_json['hosts']:
-                if tmp_host['hostname'] == target_hostname:
-                    tmp_host['ip'] = uuid_fip_map[tmp_uuid]
-                    tmp_host['public_ip'] = uuid_fip_map[tmp_uuid]
-
-            instance_num += 1
-
-        # parameterize ssh-keypath in region
-        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
-
-        # write parameterized template to tmpfile
-        tmpfile = "/tmp/pf9-pmk-import.json"
-        with open(tmpfile, 'w') as outfile:
-            json.dump(import_json, outfile)
-
-        # call wizard (to on-board region)
+        # Run Integration Test
         cmd = "wizard --jsonImport {}".format(tmpfile)
         self.log.info(">>> Starting PMK Integration Test (Importing Region)")
         self.log.info("running: {}".format(cmd))
-        exit_status, stdout = self.run_cmd(cmd)
-        if exit_status == 0:
+        ci_exit_status, stdout = self.run_cmd(cmd)
+        if ci_exit_status == 0:
             self.log.info("INTEGRAION TEST STATUS : PASSED")
         else:
             self.log.info("INTEGRAION TEST STATUS : FAILED")
@@ -415,60 +304,74 @@ class TestWizardBaseLine(TestCase):
         self.log.info("================ END: Integration Test Log ================")
 
         # deauthorize hosts
-        self.log.info(">>> Deauthorizing Hosts")
-        du_hosts = datamodel.get_hosts(target_du)
-        if du_hosts:
-            for h in du_hosts:
-                if h['uuid'] != "":
-                    self.log.info("{}... ".format(h['hostname']))
-                    if (resmgr_utils.deauth_host(du,h['uuid'])):
-                        self.log.info("OK\n")
-                    else:
-                        self.log.info("FAILED\n")
+        #if ci_exit_status == 0:
+        #    self.log.info(">>> Deauthorizing Hosts")
+        #    du_hosts = datamodel.get_hosts(target_du_url)
+        #    if du_hosts:
+        #        for h in du_hosts:
+        #            if h['uuid'] != "":
+        #                self.log.info("{}... ".format(h['hostname']))
+        #                if (resmgr_utils.deauth_host(du,h['uuid'])):
+        #                    self.log.info("OK\n")
+        #                else:
+        #                    self.log.info("FAILED\n")
+        #    # cleanup (delete instances)
+        #    self.log.info("CLEANUP: deleting all instances")
+        #    self.delete_all_instances(du,instance_uuids)
+        #    return(True)
+        #else:
+        #    return(False)
+        return(True)
 
-        # cleanup (delete instances)
-        #self.log.info("CLEANUP: deleting all instances")
-        #self.delete_all_instances(du,instance_uuids)
 
-
-    def test_integration(self):
-        """Run Integration Tests"""
+    def test_ci(self):
+        """Run Continuous Integration Tests"""
         logging.basicConfig()
         self.log = logging.getLogger(inspect.currentframe().f_code.co_name)
         print(self.log)
 
-        self.log.info("************************************")
-        self.log.info("**** STARTING INTEGRATION TESTS ****")
-        self.log.info("************************************")
+        self.log.info("*********************************************")
+        self.log.info("**** INITIALIZING CONTINUOUS INTEGRATION ****")
+        self.log.info("*********************************************")
 
-        # validate config file exists
-        config_file = self.get_cicd_config_path()
+        # validate/read config file
+        config_file = "{}/../scripts/integration-tests/integration-tests.conf".format(os.path.dirname(os.path.realpath(__file__)))
+        self.log.info(">>> Reading Configuration file: {}".format(config_file))
         self.assertTrue(os.path.isfile(config_file))
+        if sys.version_info[0] == 2:
+            ci_config = ConfigParser.ConfigParser()
+        else:
+            ci_config = configparser.ConfigParser()
+
+        try:
+            ci_config.read(config_file)
+        except Exception as ex:
+            self.log.info("ERROR: {}".format(ex.message))
+            self.assertTrue(False)
 
         self.log.info(">>> Initializing Encryption")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
-        EMS_VAULT_KEY = "tSlJjykbyXqnDDxj6AIRa6052xvrng6OCBowyRSlITc="
         if not EMS_VAULT_KEY:
-            self.log.info("Failed to get key for encryption from environment")
+            self.log.info("Failed to get encryption key from environment")
             self.assertTrue(False)
 
-        # inititialize ~/.pf9
+        # inititialize base directories
         self.log.info(">>> Initializing Installation Directories")
-        init_status = self.init_express_basedir()
-        if not init_status:
-            self.log.info("failed to initialize EMS basedir")
+        if not (self.init_express_basedir()):
+            self.log.info("failed to initialize base directories")
 
-        # read import template for cloud.platform9.net
-        self.log.info(">>> Parameterizing Import Template for Platform9 Cloud Region")
-        target_import_file = self.get_pf9cloud_importdata_path()
-        if os.path.isfile(target_import_file):
+        # read import template for source region
+        self.log.info(">>> Parameterizing Import Template for Source Region")
+        source_import_file = "{}/../scripts/integration-tests/cloud.platform9.net.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
+        if os.path.isfile(source_import_file):
             try:
-                with open(target_import_file) as json_file:
+                with open(source_import_file) as json_file:
                     import_json = json.load(json_file)
             except Exception as ex:
                 self.log.info("JSON IMPORT EXCEPTION: {}".format(ex.message))
 
         # parameterize import template
+        self.log.info("    parameterizing region ssh key")
         import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
         # write template to tmpfile
@@ -476,54 +379,15 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        # import region: cloud.platform9.net
-        self.log.info(">>> Importing Region: cloud.platform9.net")
+        # import source region
+        self.log.info(">>> Importing Source Region: cloud.platform9.net")
         cmd = "wizard -i --jsonImport {} -k {}".format(tmpfile,EMS_VAULT_KEY)
-        self.log.info("INFO running: {}".format(cmd))
+        self.log.info("    Running: '{}'".format(cmd))
         exit_status, stdout = self.run_cmd(cmd)
         if exit_status != 0:
             for l in stdout:
                 self.log.info(l.strip())
             self.assertTrue(False)
-
-        # read du_url (from config file)
-        du_url = self.get_du_url(config_file)
-
-        # get du record
-        du = datamodel.get_du_metadata(du_url)
-        self.assertTrue(du)
-
-        # instantiate openstack library
-        from openstack_utils import Openstack
-        openstack = Openstack(du)
-
-        # DBG
-        ########################################################################################################
-        # import express_utils
-        # self.log.info(">>> Build express cli config")
-        # express_utils.build_express_cli_config(du)
-        # self.assertTrue(False)
-        ########################################################################################################
-
-        # DBG
-        ########################################################################################################
-        # ip_addr = "131.153.255.204"
-        # self.log.info("waiting for IP: {}".format(ip_addr))
-        # ip_is_responding = ssh_utils.wait_for_ip(du,ip_addr)
-        # print("ip_is_responding={}".format(ip_is_responding))
-        # self.assertTrue(False)
-        ########################################################################################################
-
-        # DBG
-        ########################################################################################################
-        # tmp_uuid = "aa9286fe-568e-4e92-b5cf-9abe1228fe5b"
-        # tmp_uuid = "937d349c-1f6d-4002-8ec1-1e3097de709a"
-        # fip_metadata = openstack.get_floating_ip()
-        # sys.stdout.write("RETURNED FIP METADATA = {}\n---------------------\n".format(fip_metadata))
-        # fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
-        # print("fip_status = {}".format(fip_status))
-        # self.assertTrue(False)
-        ########################################################################################################
 
         # set permissions on sskkey
         try:
@@ -532,11 +396,17 @@ class TestWizardBaseLine(TestCase):
             self.log.info("ERROR: failed to set permissions on sshkey: {}".format(self.get_region_sshkey_path()))
             self.assertTrue(False)
 
-        # run integration test: PMO
-        #self.pmo_integration_test(config_file, du, openstack)
-
-        # run integration test: PMK
-        self.pmk_integration_test(config_file, du, openstack)
+        # run integration tests: PMK
+        os_versions = [
+            "centos74",
+            "ubuntu16",
+            "ubuntu18"
+        ]
+        os_versions = ["ubuntu16"]
+        for os_version in os_versions:
+            if not (self.pmk_integration_test(ci_config,os_version)):
+                self.log.info("CI-CD : FAILED")
+                self.assertTrue(False)
 
         # end of integration test
-        self.log.info("CI-CD : COMPLETE (reached the end of the script within asserting)")
+        self.log.info("CI-CD : COMPLETE (reached the end of the script without asserting)")

@@ -46,6 +46,7 @@ def _parse_args():
     ap.add_argument("--init", "-i",  help = "Initialize Configuration (delete all regions/hosts)", action="store_true")
     ap.add_argument("--local", "-l", help = "Use local libraries (for development only)", action="store_true")
     ap.add_argument("--test", "-t", help = "Test Express-Wizard Build and Install", action = "store_true")
+    ap.add_argument("--skipActions", "-s", help = "Skip actions when importing region", action = "store_true")
     ap.add_argument('--jsonImport', "-j", help="Path to import file (JSON format, see '--export' function)", required=False)
     ap.add_argument("--export", "-e", help = "Name of region to export", required = False, nargs = 1)
     ap.add_argument("--encryptionKey", "-k", help = "Encryption key for decrytping secure data", required = False, nargs = 1)
@@ -443,7 +444,7 @@ def main():
             sys.stdout.write("ERROR: failed to initialize keyfile for encryption: {}".format(globals.ENCRYPTION_KEY_FILE))
             sys.exit(1)
     if args.jsonImport:
-        datamodel.import_region(args.jsonImport)
+        datamodel.import_region(args.jsonImport, args.skipActions)
         sys.exit(0)
 
     # If test is passed exit before menu_level0() temp until unittest

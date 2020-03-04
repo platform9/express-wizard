@@ -35,27 +35,35 @@ class Openstack:
 
         return(None)
 
-    def launch_instance(self, instance_name):
+    def launch_instance(self, instance_name, os_version):
         """Launch an Openstack Instance"""
 
         instance_uuid = None
         instance_msg = "instance launched successfully"
 
-        # note: removed to boot from volume "imageRef" : "9091915e-5272-4b35-a4bb-5dfec4ffc2e8"
+        # note: removed to boot from volume:
+        #       "imageRef" : image_map[os_version]
         # note: added boot-from-volume code:
         # "block_device_mapping_v2": [{
         #    "boot_index": "0",
-        #    "uuid": "a5e7ace4-f685-415a-af0d-075f0c663a01",
+        #    "uuid": image_map[os_version],
         #    "source_type": "image",
         #    "volume_size": "8",
         #    "destination_type": "volume",
         #    "delete_on_termination": True,
         #    "disk_bus": "scsi"}],
 
+        # images in cloud.platform9.net:
+        image_map = {
+            "centos74": "a5e7ace4-f685-415a-af0d-075f0c663a01",
+            "ubuntu16": "ec3fe9fa-aec1-4bfb-aa80-abecca46f108",
+            "ubuntu18": "a393aaab-07b1-4520-9d66-0c49c1ba2b96"
+        }
+
         instance_spec = {
             "server" : {
                 "name" : instance_name,
-                "imageRef" : "a5e7ace4-f685-415a-af0d-075f0c663a01",
+                "imageRef" : image_map[os_version],
                 "flavorRef" : "4b76ff99-7f5f-4bcf-ae50-79aa37acc8ce",
                 "key_name" : "danwright-mac01",
                 "security_groups": [
@@ -67,7 +75,7 @@ class Openstack:
             }
         }
 
-        sys.stdout.write("launching instance: {}\n".format(instance_name))
+        sys.stdout.write("launching instance: {} (os_version = {})\n".format(instance_name,os_version))
         try:
             api_endpoint = "nova/v2.1/{}/servers".format(self.project_id)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
@@ -221,14 +229,14 @@ class Openstack:
         return(False)
 
 
-    def launch_n_instances(self,num_instances,instance_basename):
+    def launch_n_instances(self,num_instances,instance_basename,os_version):
         SLEEP_BETWEEN_LAUNCH = 2
         instance_num = 1
         instance_uuids = []
         instance_messages = []
         while instance_num <= num_instances:
             instance_name = "{}{}".format(instance_basename,str(instance_num).zfill(2))
-            instance_uuid, instance_msg = self.launch_instance(instance_name)
+            instance_uuid, instance_msg = self.launch_instance(instance_name, os_version)
             if instance_uuid:
                 instance_uuids.append(instance_uuid)
             instance_messages.append(instance_msg)

@@ -35,7 +35,7 @@ def wait_for_ip(du, host_ip):
     POLL_INTERVAL = 10
     timeout = int(time.time()) + (60 * TIMEOUT)
     flag_ip_responding = False
-    sys.stdout.write("waiting for ip {} to respond (using ssh): ".format(host_ip,du['auth_ssh_key'],du['auth_username'],host_ip))
+    sys.stdout.write("waiting for ip to respond using: ssh {}@{}): ".format(du['auth_username'],host_ip))
     sys.stdout.flush()
 
     while True:

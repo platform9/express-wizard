@@ -126,8 +126,9 @@ def create_cluster_entry():
     return(cluster_record)
 
 
-def import_region(import_file_path):
+def import_region(import_file_path, flag_skip_actions):
     sys.stdout.write("Importing Region (existing data will be over-written) from import file: {}\n".format(import_file_path))
+    sys.stdout.write("--> flag_skip_actions = {}".format(flag_skip_actions))
 
     # for host imports, enforce a minimum set of required keys
     host_record_required_keys = ["du_url", "du_type", "ip", "du_host_type", "hostname"]
@@ -188,7 +189,9 @@ def import_region(import_file_path):
                 write_host_profile(target)
 
     # perform actions (if defined in import data)
-    if 'actions' in region_config:
+    if flag_skip_actions:
+        sys.stdout.write("\n========== Skipping Actions ========== \n")
+    elif 'actions' in region_config:
         sys.stdout.write("\n========== Performing Actions ========== \n")
         for action in region_config['actions']:
             # validate action (from user json)

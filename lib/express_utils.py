@@ -500,9 +500,10 @@ def invoke_express_cli_nodeprep(du, nodes, silent_flag=False):
 
 def map_true_false(s):
     if int(s) == 1:
-        return(True)
+        return("True")
     else:
-        return(False)
+        return("False")
+
 
 def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
     # intialize help
@@ -524,10 +525,11 @@ def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
             command_args.append("-m")
         else:
             command_args.append("-w")
+        command_args.append(node['ip'])
+
         if node['public_ip'] != "":
+            command_args.append("-f")
             command_args.append(node['public_ip'])
-        else:
-            command_args.append(node['ip'])
 
     # append cluster args
     command_args.append('--masterVip')
@@ -560,17 +562,6 @@ def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
         tail_log(c)
     else:
         wait_for_job(c)
-
-
-def invoke_cmd_py3():
-    command_args = ['ls','-l','/tmp']
-    cmd = ""
-    for c in command_args:
-        cmd = "{} {}".format(cmd,c)
-    sys.stdout.write("Running: {}\n".format(cmd))
-    c = subprocess.Popen(command_args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    sys.stdout.write("----------------------------------- Start Log -----------------------------------\n")
-    tail_log(c)
 
 
 def ci_onboard_region(du, onboard_params):
