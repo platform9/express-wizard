@@ -42,8 +42,9 @@ class Openstack:
         instance_msg = "instance launched successfully"
 
         # note: removed to boot from volume:
-        #       "imageRef" : image_map[os_version]
+        #  "imageRef" : image_map[os_version]
         # note: added boot-from-volume code:
+        #  "OS-DCF:diskConfig": "AUTO",
         # "block_device_mapping_v2": [{
         #    "boot_index": "0",
         #    "uuid": image_map[os_version],
@@ -63,12 +64,20 @@ class Openstack:
         instance_spec = {
             "server": {
                 "name": instance_name,
-                "imageRef" : image_map[os_version],
-                "OS-DCF:diskConfig": "AUTO",
                 "config_drive": False,
                 "metadata": {},
-                "flavorRef": "3f039057-e358-4d8a-9b32-979cd7a5181a",
+                "flavorRef": "4a5e2cea-8532-4b81-8f6a-ea9a79de0b45",
                 "key_name": "danwright-mac01",
+                "block_device_mapping_v2": [
+                    {
+                       "boot_index": 0,
+                       "uuid": image_map[os_version],
+                       "source_type": "image",
+                       "volume_size": 10,
+                       "destination_type": "volume",
+                       "delete_on_termination": True
+                    }
+                ],
                 "security_groups": [
                     { "name": "5631cd6b-7478-4622-ab9f-ff343b229d66" }
                 ],
@@ -78,8 +87,7 @@ class Openstack:
             }
         }
 
-        ci_logger("launching instance: {} (os_version = {})\n".format(instance_name,os_version))
-        ci_logger("instance spec:\n{}\n".format(instance_spec))
+        ci_logger("launching instance: {} (os_version = {})".format(instance_name,os_version))
         try:
             api_endpoint = "nova/v2.1/{}/servers".format(self.project_id)
             headers = { 'content-type': 'application/json', 'X-Auth-Token': self.token }
@@ -197,7 +205,7 @@ class Openstack:
             return(False)
 
 
-    def assign_fip_to_instance(self, fip_metadata, instance_ip):
+    def assign_fip_to_instance(self, fip_metadata, instance_ip, ci_logger=None):
         neutron_port_id = None
         try:
             api_endpoint = "neutron/v2.0/ports"

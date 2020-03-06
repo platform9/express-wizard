@@ -30,26 +30,14 @@ def test_ip_via_ssh(ssh_key, ssh_username, host_ip):
         return(False)
 
 
-def get_fs_stats(du, host_ip, ci_logger=None):
-    cmd = "ssh -o StrictHostKeyChecking=no -i {} {}@{} 'df -k'".format(du['auth_ssh_key'], du['auth_username'], host_ip)
-    exit_status, stdout = run_cmd(cmd)
-    if exit_status == 0:
-        return(stdout)
-    else:
-        return(False)
-
-
 def wait_for_ip(du, host_ip, ci_logger=None):
     TIMEOUT = 3
     POLL_INTERVAL = 10
     timeout = int(time.time()) + (60 * TIMEOUT)
     flag_ip_responding = False
     message = "waiting for ip to respond using: ssh {}@{}): ".format(du['auth_username'],host_ip)
-    if ci_logger:
-        ci_logger(message)
-    else:
-        sys.stdout.write(message)
-        sys.stdout.flush()
+    sys.stdout.write(message)
+    sys.stdout.flush()
 
     while True:
         ip_status = test_ip_via_ssh(du['auth_ssh_key'],du['auth_username'],host_ip)

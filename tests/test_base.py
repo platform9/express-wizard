@@ -197,6 +197,9 @@ class TestWizardBaseLine(TestCase):
             self.log.info("all instances booted successfully (time to launch all instances: {} seconds)".format(launch_elapsed_time))
 
             # assign floating IP to instance
+            control_plane_pause = 30
+            self.log.info(">>> Control Plane Pause (API/backend propogation): {} seconds".format(control_plane_pause))
+            time.sleep(control_plane_pause)
             self.log.info(">>> Adding Floating IP Interfaces (Public) to Instances")
             uuid_fip_map = {}
             POLL_INTERVAL_FIP = 10
@@ -205,7 +208,7 @@ class TestWizardBaseLine(TestCase):
                 if not fip_metadata:
                     self.delete_all_instances(du,instance_uuids)
                     self.assertTrue(fip_metadata)
-                fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid))
+                fip_status = openstack.assign_fip_to_instance(fip_metadata, openstack.get_instance_ip(tmp_uuid), self.log.info)
                 if not fip_status:
                     self.delete_all_instances(du,instance_uuids)
                     self.assertTrue(fip_status)
@@ -227,7 +230,7 @@ class TestWizardBaseLine(TestCase):
                     self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
 
             # parameterize PMK import template
-            self.log.info("    parameterizing IP addresses")
+            self.log.info("parameterizing IP addresses")
             instance_num = 1
             for tmp_uuid in instance_uuids:
                 # parameterize IP address
@@ -240,19 +243,30 @@ class TestWizardBaseLine(TestCase):
                 instance_num += 1
 
             # parameterize ssh-keypath in region
-            self.log.info("    parameterizing region ssh key")
+            self.log.info("parameterizing region ssh key")
             import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
-            # parameterize username for remote access
-            self.log.info("    parameterizing region auth username: ")
+            # parameterize interfae name for VIP
             if os_version in ["centos74"]:
-                self.log.info("    parameterizing region auth username: centos")
+                master_vip_iface = "eth0"
+            elif os_version in ["ubuntu16","ubuntu18"]:
+                master_vip_iface = "ens3"
+            else:
+                self.log.info("Failed to map interface name for master VIP")
+                self.assertTrue(False)
+
+            self.log.info("parameterizing interface name for master VIP: {}".format(master_vip_iface))
+            import_json['clusters'][0]['master_vip_iface'] = master_vip_iface
+
+            # parameterize username for remote access
+            if os_version in ["centos74"]:
+                self.log.info("parameterizing region auth username: centos")
                 import_json['region']['auth_username'] = "centos"
             elif os_version in ["ubuntu16","ubuntu18"]:
-                self.log.info("    parameterizing region auth username: ubuntu")
+                self.log.info("parameterizing region auth username: ubuntu")
                 import_json['region']['auth_username'] = "ubuntu"
             else:
-                self.log.info("Failed to map os_version: {}".format(os_version))
+                self.log.info("failed to parameterize region auth username")
                 self.assertTrue(False)
 
             # write parameterized template to tmpfile
@@ -287,22 +301,6 @@ class TestWizardBaseLine(TestCase):
                     self.assertTrue(False)
             self.log.info("INFO: all floating IPs are responding")
 
-            # get filesystem stats for each host
-            self.log.info(">>> Getting System Info (using SSH)")
-            for tmp_uuid in instance_uuids:
-                try:
-                    host_fs_stats = ssh_utils.get_fs_stats(target_du,uuid_fip_map[tmp_uuid],self.log.info)
-                    if host_fs_stats:
-                        self.log.info("------------ {} ------------".format(tmp_uuid))
-                        for l in host_fs_stats:
-                            self.log.info(l.strip())
-                        self.log.info("----------------------------")
-                except Exception as ex:
-                    self.log.info("EXCEPTION: {}".format(ex))
-
-                if not host_fs_stats:
-                    self.assertTrue(False)
-
         # Run Integration Test
         cmd = "wizard --jsonImport {}".format(tmpfile)
         self.log.info(">>> Starting PMK Integration Test (Importing Region)")
@@ -319,41 +317,24 @@ class TestWizardBaseLine(TestCase):
             self.log.info(line.strip())
         self.log.info("================ END: Integration Test Log ================")
 
-        # get filesystem stats for each host
-        self.log.info(">>> Getting System Info (using SSH)")
-        for tmp_uuid in instance_uuids:
-            try:
-                host_fs_stats = ssh_utils.get_fs_stats(target_du,uuid_fip_map[tmp_uuid],self.log.info)
-                if host_fs_stats:
-                    self.log.info("------------ {} ------------".format(tmp_uuid))
-                    for l in host_fs_stats:
-                        self.log.info(l.strip())
-                    self.log.info("----------------------------")
-            except Exception as ex:
-                self.log.info("EXCEPTION: {}".format(ex))
-
-            if not host_fs_stats:
-                self.assertTrue(False)
-
         # deauthorize hosts
-        #if ci_exit_status == 0:
-        #    self.log.info(">>> Deauthorizing Hosts")
-        #    du_hosts = datamodel.get_hosts(target_du_url)
-        #    if du_hosts:
-        #        for h in du_hosts:
-        #            if h['uuid'] != "":
-        #                self.log.info("{}... ".format(h['hostname']))
-        #                if (resmgr_utils.deauth_host(du,h['uuid'])):
-        #                    self.log.info("OK\n")
-        #                else:
-        #                    self.log.info("FAILED\n")
-        #    # cleanup (delete instances)
-        #    self.log.info("CLEANUP: deleting all instances")
-        #    self.delete_all_instances(du,instance_uuids)
-        #    return(True)
-        #else:
-        #    return(False)
-        return(True)
+        if ci_exit_status == 0:
+            #self.log.info(">>> Deauthorizing Hosts")
+            #du_hosts = datamodel.get_hosts(target_du_url)
+            #if du_hosts:
+            #    for h in du_hosts:
+            #        if h['uuid'] != "":
+            #            self.log.info("{}... ".format(h['hostname']))
+            #            if (resmgr_utils.deauth_host(du,h['uuid'])):
+            #                self.log.info("OK\n")
+            #            else:
+            #                self.log.info("FAILED\n")
+            # cleanup (delete instances)
+            #self.log.info("CLEANUP: deleting all instances")
+            #self.delete_all_instances(du,instance_uuids)
+            return(True)
+        else:
+            return(False)
 
 
     def test_ci(self):
@@ -403,7 +384,7 @@ class TestWizardBaseLine(TestCase):
                 self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
 
         # parameterize import template
-        self.log.info("    parameterizing region ssh key")
+        self.log.info("parameterizing region ssh key")
         import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
         # write template to tmpfile
