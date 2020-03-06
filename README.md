@@ -8,3 +8,8 @@ This script is the public entry point for attaching hosts to Platform9 regions.
 ```
 bash <(curl -s https://raw.githubusercontent.com/platform9/express-wizard/master/wizard.sh)
 ```
+
+To-Do:
+1. Upgrade cs-integration to 4.1
+2. Test Ubuntu 18.04 against 4.2 DU
+3. Test ni Travis
