@@ -2,9 +2,9 @@ language: python
 python:
 - '3.7'
 install:
-- travis_wait pip install -e .[test]
+- pip install -e .[test]
 script:
-- python setup.py test
+- travis_wait python setup.py test
 env:
   global:
     secure: oyZpFVb/Wj3Z4UQPPmuyAo7uLieL4gy07iDd6iCao72P+7HGkDre4jdKtUDVhp/czyGKnsehre2eXVRVlqPMQs2qi4AHCVQuGaNULgD5PTMLvzp3dGXMLoJmyMiXHPLixHM0td3qtMQtncSouiByAqmE37Cu8Gb2eemKs9onDPrOT8bgtL9IZ7R+a/PsvmKI8dMK528B/E5LsNtC6QcIA2MhvUAAPzhtU1E8ZmrTOKF9YPWL5B3axx2bgRIArXskQ4TFF7hIMWeU6334hmV/nU3/whxwyjvdWGz7QJNOrnXg9T0iQ/8LMx3Kex9iA9S/LlITxwPMqy4LGSAtWSIX7x8JouL0U8YGj878TkBD3E17uj6Q+w7M00Ah+E0ILRzlf5qAufZLrpJNpKasJTu9NS7uqCyvKi13NWbdOw1qW+0E091U1z5c88sbL7K45fE4KTx134pj4PkMae2avSzNkC910k2OsnB/o5f5cN9RyCDtMYLL4ZuFTpUF3aaNRIcXI2ETLu3Llte1SfFsuXG9RQVp1w3uc7aLknhHNVEW2bPa39MppJ0hLiPQXCNySwsJF4rQB9FWF3SsGWx/y07qnC+63TISnVItHyvlpFbrSXZR1LAbKpUIy2PefAfOqAoFYeXNvWHsvkLePUDPMMzsjMPxXxQmWc5A1eVVrDowiIk=
