@@ -8,6 +8,7 @@ import subprocess
 import datamodel
 import reports
 import interview
+import pmk_utils
 import globals
 from encrypt import Encryption
 from help_messages import Help
@@ -562,6 +563,21 @@ def invoke_express_cli(du, nodes, cluster, node_type, silent_flag=False):
         tail_log(c)
     else:
         wait_for_job(c)
+
+
+def ci_delete_cluster(du, onboard_params):
+    """CI Operation - Delete Cluster"""
+    sys.stdout.write("\nci_delete_cluster() : deleting cluster")
+    sys.stdout.write("--> onboard_params = \n{}\n\n".format(onboard_params))
+
+    # validate import json
+    required_keys = ['region-name','cluster-name']
+    for rkey in required_keys:
+        if not rkey in onboard_params:
+            sys.stdout.write("ERROR: missing metadata in import json, missing key = {}".format(rkey))
+            return()
+
+    pmk_utils.delete_cluster(onboard_params['region-name'],onboard_params['cluster-name'])
 
 
 def ci_onboard_region(du, onboard_params):

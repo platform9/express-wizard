@@ -319,19 +319,30 @@ class TestWizardBaseLine(TestCase):
 
         # deauthorize hosts
         if ci_exit_status == 0:
-            #self.log.info(">>> Deauthorizing Hosts")
-            #du_hosts = datamodel.get_hosts(target_du_url)
-            #if du_hosts:
-            #    for h in du_hosts:
-            #        if h['uuid'] != "":
-            #            self.log.info("{}... ".format(h['hostname']))
-            #            if (resmgr_utils.deauth_host(du,h['uuid'])):
-            #                self.log.info("OK\n")
-            #            else:
-            #                self.log.info("FAILED\n")
+            # Delete Cluster
+            cleanup_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01-cleanup.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
+            cmd = "wizard --jsonImport {}".format(cluster_import_file)
+            self.log.info(">>> Deleting Cluster")
+            self.log.info("running: {}".format(cmd))
+            exit_status, stdout = self.run_cmd(cmd)
+            if exit_status != 0:
+                self.log.info("ERROR: failed to delete cluster")
+                self.assertTrue(False)
+
             # cleanup (delete instances)
-            #self.log.info("CLEANUP: deleting all instances")
-            #self.delete_all_instances(du,instance_uuids)
+            self.log.info("CLEANUP: deleting all instances")
+            self.delete_all_instances(du,instance_uuids)
+
+            self.log.info(">>> Deauthorizing Hosts")
+            du_hosts = datamodel.get_hosts(target_du_url)
+            if du_hosts:
+                for h in du_hosts:
+                    if h['uuid'] != "":
+                        self.log.info("{}... ".format(h['hostname']))
+                        if (resmgr_utils.deauth_host(du,h['uuid'])):
+                            self.log.info("OK\n")
+                        else:
+                            self.log.info("FAILED\n")
             return(True)
         else:
             return(False)

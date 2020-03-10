@@ -14,6 +14,7 @@ import pmk_utils
 import datamodel
 from encrypt import Encryption
 from help_messages import Help
+from pf9_region import PF9_Region
 
 
 def get_cluster_metadata(du, project_id, token):
@@ -1183,7 +1184,8 @@ def add_region(existing_du_url):
     ]
 
     # check for sub-regions
-    sub_regions, du_name_list = du_utils.get_sub_dus(du)
+    region = PF9_Region(du['url'])
+    sub_regions, du_name_list = region.get_sub_dus()
     if not sub_regions:
         sys.stdout.write("\nERROR: failed to login to Region\n")
         datamodel.write_config(du)
@@ -1226,7 +1228,7 @@ def add_region(existing_du_url):
             du['region'] = du_name_list[sub_regions.index(du_metadata['du_url'].replace('https://',''))]
             discover_targets.append(du)
 
-    # create region (and sub-regions)
+    # create region and sub-regions
     sys.stdout.write("\nCreating Regions:\n")
     for discover_target in discover_targets:
         encryption = Encryption(globals.ENCRYPTION_KEY_FILE)

@@ -31,7 +31,6 @@ try:
     import du_utils, pmk_utils, resmgr_utils, reports, datamodel, interview, express_utils, user_io
     from help_messages import Help
 except:
-    debug("EXCEPT: {}".format(sys.exc_info()))
     except_str = str(sys.exc_info()[1])
     module_name = except_str.split(' ')[-1]
     fail("Failed to import python module: {}".format(module_name))
@@ -52,29 +51,6 @@ def _parse_args():
     ap.add_argument("--encryptionKey", "-k", help = "Encryption key for decrytping secure data", required = False, nargs = 1)
     ap.add_argument("--debug", "-d", help = "Debug Mode", action = "store", nargs = 1)
     return ap.parse_args()
-
-
-def dump_var(target_var):
-    from inspect import getmembers
-    from pprint import pprint
-    pprint(getmembers(target_var))
-
-
-def run_cmd(cmd):
-    cmd_stdout = ""
-    tmpfile = "/tmp/pf9.{}.tmp".format(os.getppid())
-    cmd_exitcode = os.system("{} > {} 2>&1".format(cmd, tmpfile))
-
-    # read output of command
-    if os.path.isfile(tmpfile):
-        try:
-            fh_tmpfile = open(tmpfile, 'r')
-            cmd_stdout = fh_tmpfile.readlines()
-        except:
-            None
-
-    os.remove(tmpfile)
-    return cmd_exitcode, cmd_stdout
 
 
 def dump_text_file(target_file):
@@ -145,18 +121,6 @@ def view_config(du):
         sys.stdout.write("ERROR: failed to build configuration file: {}".format(express_config))
 
 
-def dump_database(db_file):
-    if os.path.isfile(db_file):
-        exit_status, stdout = run_cmd("cat {} | jq '.'".format(db_file))
-        if exit_status == 0:
-            for line in stdout:
-                sys.stdout.write(line)
-        else:
-            with open(db_file) as json_file:
-                db_json = json.load(json_file)
-            pprint(db_json)
-
-
 def action_header(title):
     title = "  {}  ".format(title)
     sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
@@ -185,12 +149,9 @@ def display_menu1():
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Delete Region\n")
     sys.stdout.write("2. Delete Host\n")
-    sys.stdout.write("3. Display Region Database\n")
-    sys.stdout.write("4. Display Host Database\n")
-    sys.stdout.write("5. Display Cluster Database\n")
-    sys.stdout.write("6. View Configuration File\n")
-    sys.stdout.write("7. View Inventory File\n")
-    sys.stdout.write("8. View Logs\n")
+    sys.stdout.write("3. View Configuration File\n")
+    sys.stdout.write("4. View Inventory File\n")
+    sys.stdout.write("5. View Logs\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -287,23 +248,17 @@ def menu_level1():
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
-            dump_database(globals.CONFIG_FILE)
-        elif user_input == '4':
-            dump_database(globals.HOST_FILE)
-        elif user_input == '5':
-            dump_database(globals.CLUSTER_FILE)
-        elif user_input == '6':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     view_config(selected_du)
-        elif user_input == '7':
+        elif user_input == '4':
             selected_du = interview.select_du()
             if selected_du:
                 if selected_du != "q":
                     host_entries = datamodel.get_hosts(selected_du['url'])
                     view_inventory(selected_du, host_entries)
-        elif user_input == '8':
+        elif user_input == '5':
             log_files = get_logs()
             if len(log_files) == 0:
                 sys.stdout.write("\nNo Logs Found")

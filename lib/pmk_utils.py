@@ -228,3 +228,35 @@ def create_cluster(du_url,project_id,token,cluster):
     return(cluster_uuid)
 
 
+def delete_cluster(du_url,cluster_name):
+    sys.stdout.write("--> Deleting Cluster: {} ({})\n".format(cluster_name,du_url))
+
+    # get du record
+    du = datamodel.get_du_metadata(du_url)
+    if not du:
+        sys.stdout.write("ERROR: region not found: {}".format(du_url))
+        return(None)
+
+    # login to du
+    encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
+    project_id, token = du_utils.login_du(du['url'],
+                                          du['username'],
+                                          du['password'],
+                                          du['tenant'])
+    if token == None:
+        sys.stdout.write("--> failed to login to region")
+        return(None)
+
+    cluster = datamodel.get_cluster_record(du_url,cluster_name)
+    if not cluster:
+        sys.stdout.write("--> cluster not found")
+        return(None)
+
+    try:
+        api_endpoint = "qbert/v3/{}/clusters/{}".format(project_id,cluster['uuid'])
+        headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
+        pf9_response = requests.delete("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
+    except:
+        sys.stdout.write("ERROR: failed to delete cluster\n")
+        return(None)
+
