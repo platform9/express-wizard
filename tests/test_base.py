@@ -141,7 +141,7 @@ class TestWizardBaseLine(TestCase):
         return(True)
 
 
-    def pmk_integration_test(self, ci_config, os_version):
+    def pmk_integration_test(self, ci_config, os_version, target_du_url, target_import_file, target_cleanup_file):
         self.log.info("****************************************")
         self.log.info("**** STARTING PMK INTEGRATION TESTS")
         self.log.info("**** OS for K8s Nodes: {}".format(os_version))
@@ -216,15 +216,12 @@ class TestWizardBaseLine(TestCase):
                 self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
                 time.sleep(POLL_INTERVAL_FIP)
 
-        # get target du
-        target_du_url = ci_config.get('pmk_region','du_url')
-
         # read PMK import template
         self.log.info(">>> Parameterizing Import Template for Target Region: {}".format(target_du_url))
-        target_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
-        if os.path.isfile(target_import_file):
+        region_import_file = "{}/../scripts/integration-tests/{}".format(os.path.dirname(os.path.realpath(__file__)),target_import_file)
+        if os.path.isfile(region_import_file):
             try:
-                with open(target_import_file) as json_file:
+                with open(region_import_file) as json_file:
                     import_json = json.load(json_file)
             except Exception as ex:
                 self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
@@ -318,9 +315,10 @@ class TestWizardBaseLine(TestCase):
         self.log.info("================ END: Integration Test Log ================")
 
         # deauthorize hosts
+        ci_exit_status = 1
         if ci_exit_status == 0:
             # Delete Cluster
-            cleanup_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01-cleanup.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
+            cleanup_import_file = "{}/../scripts/integration-tests/{}".format(os.path.dirname(os.path.realpath(__file__)),target_cleanup_file)
             cmd = "wizard --jsonImport {}".format(cleanup_import_file)
             self.log.info(">>> Deleting Cluster")
             self.log.info("running: {}".format(cmd))
@@ -430,14 +428,15 @@ class TestWizardBaseLine(TestCase):
             self.assertTrue(False)
 
         # run integration tests: PMK
-        os_versions = [
-            "centos74",
-            "ubuntu16",
-            "ubuntu18"
+        ci_matrix = [
+            ['centos74','https://cs-integration-k8s01.platform9.horse','cs-integration-k8s01.json.tpl','cs-integration-k8s01-cleanup.json.tpl'],
+            ['ubuntu16','https://cs-integration-k8s01.platform9.horse','cs-integration-k8s01.json.tpl','cs-integration-k8s01-cleanup.json.tpl'],
+            ['ubuntu18','https://cs-int42.platform9.horse','cs-int42.platform9.horse.json.tpl','cs-int42-cleanup.platform9.horse.json.tpl']
         ]
-        os_versions = ["ubuntu16"]
-        for os_version in os_versions:
-            if not (self.pmk_integration_test(ci_config,os_version)):
+        ci_matrix = [['ubuntu18','https://cs-int42.platform9.horse','cs-int42.platform9.horse.json.tpl','cs-int42-cleanup.platform9.horse.json.tpl']]
+        for tmp_matrix in ci_matrix:
+            self.log.info("--> Starting Integration Test: {}/{}".format(tmp_matrix[0],tmp_matrix[1],tmp_matrix[2],tmp_matrix[3]))
+            if not (self.pmk_integration_test(ci_config,tmp_matrix[0],tmp_matrix[1],tmp_matrix[2],tmp_matrix[3])):
                 self.log.info("CI-CD : FAILED")
                 self.assertTrue(False)
 

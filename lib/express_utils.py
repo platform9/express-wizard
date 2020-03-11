@@ -51,7 +51,7 @@ def build_express_cli_config(du):
     cmd = "express config create --du_url {} --os_username {} --os_password '{}' --os_region {} --os_tenant {}".format(
         du['url'], du['username'], encryption.decrypt_password(du['password']), du['region'], du['tenant']
     )
-    sys.stdout.write("DBG: cmd={}\n".format(cmd))
+    sys.stdout.write("Running: {}\n".format(cmd))
     exit_status, stdout = ssh_utils.run_cmd(cmd)
     sys.stdout.write("-------- express confif create --------------------------------\n")
     for l in stdout:
