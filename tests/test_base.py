@@ -161,10 +161,10 @@ class TestWizardBaseLine(TestCase):
         flag_skip_launch = False
         if flag_skip_launch:
             instance_uuids = [
-                "dae6e968-6f8e-4789-82e3-8f9391db1db1"
+                "1d06dad8-538c-4607-9112-c6ef7f028c66"
             ]
             uuid_fip_map = {
-                "dae6e968-6f8e-4789-82e3-8f9391db1db1": "104.143.12.173"
+                "1d06dad8-538c-4607-9112-c6ef7f028c66": "131.153.254.79"
             }
         else:
            instance_uuids = []
@@ -216,90 +216,90 @@ class TestWizardBaseLine(TestCase):
                 self.log.info("Added {} to {}".format(fip_metadata['floating_ip_address'],tmp_uuid))
                 time.sleep(POLL_INTERVAL_FIP)
 
-            # get target du
-            target_du_url = ci_config.get('pmk_region','du_url')
+        # get target du
+        target_du_url = ci_config.get('pmk_region','du_url')
 
-            # read PMK import template
-            self.log.info(">>> Parameterizing Import Template for Target Region: {}".format(target_du_url))
-            target_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
-            if os.path.isfile(target_import_file):
-                try:
-                    with open(target_import_file) as json_file:
-                        import_json = json.load(json_file)
-                except Exception as ex:
-                    self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
+        # read PMK import template
+        self.log.info(">>> Parameterizing Import Template for Target Region: {}".format(target_du_url))
+        target_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
+        if os.path.isfile(target_import_file):
+            try:
+                with open(target_import_file) as json_file:
+                    import_json = json.load(json_file)
+            except Exception as ex:
+                self.log.info("JSON IMPORT EXCEPTION: {}".format(ex))
 
-            # parameterize PMK import template
-            self.log.info("parameterizing IP addresses")
-            instance_num = 1
-            for tmp_uuid in instance_uuids:
-                # parameterize IP address
-                target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
-                for tmp_host in import_json['hosts']:
-                    if tmp_host['hostname'] == target_hostname:
-                        tmp_host['ip'] = uuid_fip_map[tmp_uuid]
-                        tmp_host['public_ip'] = uuid_fip_map[tmp_uuid]
+        # parameterize PMK import template
+        self.log.info("parameterizing IP addresses")
+        instance_num = 1
+        for tmp_uuid in instance_uuids:
+            # parameterize IP address
+            target_hostname = "{}{}".format(ci_hostname,str(instance_num).zfill(2))
+            for tmp_host in import_json['hosts']:
+                if tmp_host['hostname'] == target_hostname:
+                    tmp_host['ip'] = uuid_fip_map[tmp_uuid]
+                    tmp_host['public_ip'] = uuid_fip_map[tmp_uuid]
 
-                instance_num += 1
+            instance_num += 1
 
-            # parameterize ssh-keypath in region
-            self.log.info("parameterizing region ssh key")
-            import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
+        # parameterize ssh-keypath in region
+        self.log.info("parameterizing region ssh key")
+        import_json['region']['auth_ssh_key'] = self.get_region_sshkey_path()
 
-            # parameterize interfae name for VIP
-            if os_version in ["centos74"]:
-                master_vip_iface = "eth0"
-            elif os_version in ["ubuntu16","ubuntu18"]:
-                master_vip_iface = "ens3"
-            else:
-                self.log.info("Failed to map interface name for master VIP")
+        # parameterize interfae name for VIP
+        if os_version in ["centos74"]:
+            master_vip_iface = "eth0"
+        elif os_version in ["ubuntu16","ubuntu18"]:
+            master_vip_iface = "ens3"
+        else:
+            self.log.info("Failed to map interface name for master VIP")
+            self.assertTrue(False)
+
+        self.log.info("parameterizing interface name for master VIP: {}".format(master_vip_iface))
+        import_json['clusters'][0]['master_vip_iface'] = master_vip_iface
+
+        # parameterize username for remote access
+        if os_version in ["centos74"]:
+            self.log.info("parameterizing region auth username: centos")
+            import_json['region']['auth_username'] = "centos"
+        elif os_version in ["ubuntu16","ubuntu18"]:
+            self.log.info("parameterizing region auth username: ubuntu")
+            import_json['region']['auth_username'] = "ubuntu"
+        else:
+            self.log.info("failed to parameterize region auth username")
+            self.assertTrue(False)
+
+        # write parameterized template to tmpfile
+        tmpfile = "/tmp/pf9-pmk-import.json"
+        with open(tmpfile, 'w') as outfile:
+            json.dump(import_json, outfile)
+
+        # Import Region
+        cmd = "wizard --jsonImport {} --skipActions".format(tmpfile)
+        self.log.info(">>> Importing Target Region: {}".format(target_du_url))
+        self.log.info("running: {}".format(cmd))
+        exit_status, stdout = self.run_cmd(cmd)
+        if exit_status != 0:
+            self.log.info("ERROR: failed to import region")
+            self.assertTrue(False)
+
+        # get target_du
+        self.log.info(">>> Getting Configuration for Target DU: {}".format(target_du_url))
+        target_du = datamodel.get_du_metadata(target_du_url)
+        self.assertTrue(target_du)
+        self.log.info("target DU: {}".format(target_du['url']))
+
+        # wait for floating IPs to respond on all instances (if any timeout, assert)
+        self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
+        for tmp_uuid in instance_uuids:
+            try:
+                ip_is_responding = ssh_utils.wait_for_ip(target_du,uuid_fip_map[tmp_uuid],self.log.info)
+            except Exception as ex:
+                self.log.info("EXCEPTION: {}".format(ex))
+
+            if not ip_is_responding:
                 self.assertTrue(False)
-
-            self.log.info("parameterizing interface name for master VIP: {}".format(master_vip_iface))
-            import_json['clusters'][0]['master_vip_iface'] = master_vip_iface
-
-            # parameterize username for remote access
-            if os_version in ["centos74"]:
-                self.log.info("parameterizing region auth username: centos")
-                import_json['region']['auth_username'] = "centos"
-            elif os_version in ["ubuntu16","ubuntu18"]:
-                self.log.info("parameterizing region auth username: ubuntu")
-                import_json['region']['auth_username'] = "ubuntu"
-            else:
-                self.log.info("failed to parameterize region auth username")
-                self.assertTrue(False)
-
-            # write parameterized template to tmpfile
-            tmpfile = "/tmp/pf9-pmk-import.json"
-            with open(tmpfile, 'w') as outfile:
-                json.dump(import_json, outfile)
-
-            # Import Region
-            cmd = "wizard --jsonImport {} --skipActions".format(tmpfile)
-            self.log.info(">>> Importing Target Region: {}".format(target_du_url))
-            self.log.info("running: {}".format(cmd))
-            exit_status, stdout = self.run_cmd(cmd)
-            if exit_status != 0:
-                self.log.info("ERROR: failed to import region")
-                self.assertTrue(False)
-
-            # get target_du
-            self.log.info(">>> Getting Configuration for Target DU: {}".format(target_du_url))
-            target_du = datamodel.get_du_metadata(target_du_url)
-            self.assertTrue(target_du)
-            self.log.info("target DU: {}".format(target_du['url']))
-
-            # wait for floating IPs to respond on all instances (if any timeout, assert)
-            self.log.info(">>> Waiting for Floating IP Addresses to Become Reachable")
-            for tmp_uuid in instance_uuids:
-                try:
-                    ip_is_responding = ssh_utils.wait_for_ip(target_du,uuid_fip_map[tmp_uuid],self.log.info)
-                except Exception as ex:
-                    self.log.info("EXCEPTION: {}".format(ex))
-
-                if not ip_is_responding:
-                    self.assertTrue(False)
-            self.log.info("INFO: all floating IPs are responding")
+        self.log.info("INFO: all floating IPs are responding")
 
         # Run Integration Test
         cmd = "wizard --jsonImport {}".format(tmpfile)
@@ -321,10 +321,12 @@ class TestWizardBaseLine(TestCase):
         if ci_exit_status == 0:
             # Delete Cluster
             cleanup_import_file = "{}/../scripts/integration-tests/cs-integration-k8s01-cleanup.json.tpl".format(os.path.dirname(os.path.realpath(__file__)))
-            cmd = "wizard --jsonImport {}".format(cluster_import_file)
+            cmd = "wizard --jsonImport {}".format(cleanup_import_file)
             self.log.info(">>> Deleting Cluster")
             self.log.info("running: {}".format(cmd))
             exit_status, stdout = self.run_cmd(cmd)
+            for l in stdout:
+                self.log.info(l.strip())
             if exit_status != 0:
                 self.log.info("ERROR: failed to delete cluster")
                 self.assertTrue(False)
@@ -333,13 +335,19 @@ class TestWizardBaseLine(TestCase):
             self.log.info("CLEANUP: deleting all instances")
             self.delete_all_instances(du,instance_uuids)
 
+            # this sleep may be unneccessary
+            control_plane_pause = 120
+            self.log.info(">>> Control Plane Pause (API/backend propogation): {} seconds".format(control_plane_pause))
+            time.sleep(control_plane_pause)
+
             self.log.info(">>> Deauthorizing Hosts")
+            self.log.info("target_du_url for deauth = {}".format(target_du_url))
             du_hosts = datamodel.get_hosts(target_du_url)
             if du_hosts:
                 for h in du_hosts:
                     if h['uuid'] != "":
-                        self.log.info("{}... ".format(h['hostname']))
-                        if (resmgr_utils.deauth_host(du,h['uuid'])):
+                        self.log.info("--> INFO: de-authing {} ({})... ".format(h['hostname'],h['uuid']))
+                        if (resmgr_utils.deauth_host(du,h['uuid'],self.log.info)):
                             self.log.info("OK\n")
                         else:
                             self.log.info("FAILED\n")
@@ -373,6 +381,7 @@ class TestWizardBaseLine(TestCase):
             self.log.info("ERROR: {}".format(ex))
             self.assertTrue(False)
 
+        # initialize encryption
         self.log.info(">>> Initializing Encryption")
         EMS_VAULT_KEY = os.environ.get('EMS_KEY')
         if not EMS_VAULT_KEY:
@@ -403,7 +412,7 @@ class TestWizardBaseLine(TestCase):
         with open(tmpfile, 'w') as outfile:
             json.dump(import_json, outfile)
 
-        # import source region
+        # import source region (which supplies instances to test against)
         self.log.info(">>> Importing Source Region: cloud.platform9.net")
         cmd = "wizard -i --jsonImport {} -k {}".format(tmpfile,EMS_VAULT_KEY)
         self.log.info("    Running: '{}'".format(cmd))

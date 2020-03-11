@@ -215,7 +215,7 @@ def import_region(import_file_path, flag_skip_actions):
                 sys.stdout.write("\n[ ACTION = Onboard Region: {}]\n".format(action['region-name']))
                 express_utils.ci_onboard_region(du, action)
             elif action['operation'] == 'delete-cluster':
-                sys.stdout.write("\n[ ACTION = Delete Cluster: {} {Region={}}]\n".format(action['cluster-name'],action['region-name']))
+                sys.stdout.write("\n[ ACTION = Delete Cluster: {} (Region={})]\n".format(action['cluster-name'],action['region-name']))
                 express_utils.ci_delete_cluster(du, action)
             else:
                 sys.stdout.write("ERROR: invalid ACTION: {}\n".format(action['operation']))

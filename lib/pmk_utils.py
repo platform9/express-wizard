@@ -3,6 +3,8 @@ import globals
 import requests
 import json
 import datamodel
+import du_utils
+from encrypt import Encryption
 
 def qbert_is_responding(du_url, project_id, token):
     try:

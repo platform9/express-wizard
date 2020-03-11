@@ -7,7 +7,7 @@ import datamodel
 import ssh_utils
 
 
-def deauth_host(du, host_uuid):
+def deauth_host(du, host_uuid, ci_logger):
     project_id, token = du_utils.login_du(du['url'],
                                           du['username'],
                                           du['password'],
@@ -17,8 +17,13 @@ def deauth_host(du, host_uuid):
     else:
         try:
             api_endpoint = "resmgr/v1/hosts/{}".format(host_uuid)
+            if ci_logger:
+                ci_logger("URL for deauth = {}".format(api_endpoint))
             headers = { 'content-type': 'application/json', 'X-Auth-Token': token }
             pf9_response = requests.delete("{}/{}".format(du_url,api_endpoint), verify=False, headers=headers)
+            if ci_logger:
+                ci_logger("HTTP Response Code = {}".format(pf9_response.status_code))
+                ci_logger("HTTP Response Text = {}".format(pf9_response.text))
             if pf9_response.status_code != 201:
                 return(False)
             return(True)
