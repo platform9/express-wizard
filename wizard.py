@@ -126,6 +126,21 @@ def action_header(title):
     sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
 
 
+def display_menu3():
+    sys.stdout.write("\n***************************************************\n")
+    sys.stdout.write("**           Platform9 Express Wizard            **\n")
+    sys.stdout.write("**              -- Reports Menu --               **\n")
+    sys.stdout.write("***************************************************\n")
+    sys.stdout.write("1. Regions\n")
+    sys.stdout.write("2. Hosts\n")
+    sys.stdout.write("3. Clusters\n")
+    sys.stdout.write("4. Auth Profiles\n")
+    sys.stdout.write("5. Bond Profiles\n")
+    sys.stdout.write("6. Role Profiles\n")
+    sys.stdout.write("7. Host Templates\n")
+    sys.stdout.write("***************************************************\n")
+
+
 def display_menu2():
     sys.stdout.write("\n***************************************************\n")
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
@@ -135,10 +150,6 @@ def display_menu2():
     sys.stdout.write("2. Manage Bond Profiles\n")
     sys.stdout.write("3. Manage Roles Profiles\n")
     sys.stdout.write("4. Manage Host Templates (Auth + Bond + Role)\n")
-    sys.stdout.write("5. Display Auth Profiles\n")
-    sys.stdout.write("6. Display Bond Profiles\n")
-    sys.stdout.write("7. Display Role Profiles\n")
-    sys.stdout.write("8. Display Host Templates\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -160,14 +171,56 @@ def display_menu0():
     sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**               -- Main Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
-    sys.stdout.write("1. Manage/Discover Regions\n")
+    sys.stdout.write("1. Manage Regions\n")
     sys.stdout.write("2. Manage Profiles\n")
     sys.stdout.write("3. Manage Clusters\n")
     sys.stdout.write("4. Manage Hosts\n")
-    sys.stdout.write("5. Onboard Host (to Region)\n")
-    sys.stdout.write("6. Show Regions\n")
+    sys.stdout.write("5. Onboard Regions\n")
+    sys.stdout.write("6. Reports\n")
     sys.stdout.write("7. Maintenance\n")
     sys.stdout.write("***************************************************\n")
+
+
+def menu_level3():
+    # intialize help
+    help = Help()
+
+    user_input = ""
+    while not user_input in ['q', 'Q']:
+        display_menu3()
+        user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu3"))
+        if user_input == '1':
+            action_header("SHOW REGION")
+            selected_du = interview.select_du()
+            if selected_du:
+                if selected_du != "q":
+                    du_entries = datamodel.get_configs(selected_du['url'])
+                    reports.report_du_info(du_entries)
+                    host_entries = datamodel.get_hosts(selected_du['url'])
+                    reports.report_host_info(host_entries)
+                    if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
+                        cluster_entries = datamodel.get_clusters(selected_du['url'])
+                        reports.report_cluster_info(cluster_entries)
+        elif user_input == '2':
+            sys.stdout.write("\nNot Implemented\n")
+        elif user_input == '3':
+            sys.stdout.write("\nNot Implemented\n")
+        elif user_input == '4':
+            auth_entries = datamodel.get_auth_profiles()
+            reports.report_auth_profiles(auth_entries)
+        elif user_input == '5':
+            bond_entries = datamodel.get_bond_profiles()
+            reports.report_bond_profiles(bond_entries)
+        elif user_input == '6':
+            role_entries = datamodel.get_role_profiles()
+            reports.report_role_profiles(role_entries)
+        elif user_input == '7':
+            host_profile_entries = datamodel.get_host_profiles()
+            reports.report_host_profiles(host_profile_entries)
+        elif user_input in ['q', 'Q']:
+            None
+        else:
+            sys.stdout.write("ERROR: Invalid Selection (enter 'q' to quit)\n")
 
 
 def menu_level2():
@@ -214,18 +267,6 @@ def menu_level2():
                 else:
                     target_profile = selected_profile
                 interview.add_host_profile(target_profile)
-        elif user_input == '5':
-            auth_entries = datamodel.get_auth_profiles()
-            reports.report_auth_profiles(auth_entries)
-        elif user_input == '6':
-            bond_entries = datamodel.get_bond_profiles()
-            reports.report_bond_profiles(bond_entries)
-        elif user_input == '7':
-            role_entries = datamodel.get_role_profiles()
-            reports.report_role_profiles(role_entries)
-        elif user_input == '8':
-            host_profile_entries = datamodel.get_host_profiles()
-            reports.report_host_profiles(host_profile_entries)
         elif user_input in ['q', 'Q']:
             None
         else:
@@ -329,17 +370,7 @@ def menu_level0():
                         if user_input == 'y':
                             datamodel.discover_region(selected_du)
         elif user_input == '6':
-            action_header("SHOW REGION")
-            selected_du = interview.select_du()
-            if selected_du:
-                if selected_du != "q":
-                    du_entries = datamodel.get_configs(selected_du['url'])
-                    reports.report_du_info(du_entries)
-                    host_entries = datamodel.get_hosts(selected_du['url'])
-                    reports.report_host_info(host_entries)
-                    if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
-                        cluster_entries = datamodel.get_clusters(selected_du['url'])
-                        reports.report_cluster_info(cluster_entries)
+            menu_level3()
         elif user_input == '7':
             menu_level1()
         elif user_input in ['q', 'Q']:
