@@ -123,7 +123,7 @@ def view_config(du):
 
 def action_header(title):
     title = "  {}  ".format(title)
-    sys.stdout.write("\n{}".format(title.center(globals.terminal_width, '*')))
+    sys.stdout.write("\n{}\n".format(title.center(globals.terminal_width, '*')))
 
 
 def display_menu3():
@@ -132,8 +132,8 @@ def display_menu3():
     sys.stdout.write("**              -- Reports Menu --               **\n")
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Regions\n")
-    sys.stdout.write("2. Hosts\n")
-    sys.stdout.write("3. Clusters\n")
+    sys.stdout.write("2. Clusters\n")
+    sys.stdout.write("3. Hosts\n")
     sys.stdout.write("4. Auth Profiles\n")
     sys.stdout.write("5. Bond Profiles\n")
     sys.stdout.write("6. Role Profiles\n")
@@ -172,9 +172,9 @@ def display_menu0():
     sys.stdout.write("**               -- Main Menu --                 **\n")
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Manage Regions\n")
-    sys.stdout.write("2. Manage Profiles\n")
-    sys.stdout.write("3. Manage Clusters\n")
-    sys.stdout.write("4. Manage Hosts\n")
+    sys.stdout.write("2. Manage Clusters\n")
+    sys.stdout.write("3. Manage Hosts\n")
+    sys.stdout.write("4. Manage Profiles\n")
     sys.stdout.write("5. Onboard Regions\n")
     sys.stdout.write("6. Reports\n")
     sys.stdout.write("7. Maintenance\n")
@@ -191,16 +191,15 @@ def menu_level3():
         user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu3"))
         if user_input == '1':
             action_header("SHOW REGION")
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Enter Region to Display")
             if selected_du:
-                if selected_du != "q":
-                    du_entries = datamodel.get_configs(selected_du['url'])
-                    reports.report_du_info(du_entries)
-                    host_entries = datamodel.get_hosts(selected_du['url'])
-                    reports.report_host_info(host_entries)
-                    if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
-                        cluster_entries = datamodel.get_clusters(selected_du['url'])
-                        reports.report_cluster_info(cluster_entries)
+                du_entries = datamodel.get_configs(selected_du['url'])
+                reports.report_du_info(du_entries)
+                host_entries = datamodel.get_hosts(selected_du['url'])
+                reports.report_host_info(host_entries)
+                if selected_du['du_type'] in ['Kubernetes', 'KVM/Kubernetes']:
+                    cluster_entries = datamodel.get_clusters(selected_du['url'])
+                    reports.report_cluster_info(cluster_entries)
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
@@ -282,23 +281,20 @@ def menu_level1():
         display_menu1()
         user_input = user_io.read_kbd("Enter Selection ('h' for help)", [], '', True, True, help.menu_interview("menu1"))
         if user_input == '1':
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Select Region To Delete")
             if selected_du:
-                if selected_du != "q":
-                    datamodel.delete_du(selected_du)
+                datamodel.delete_du(selected_du)
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
         elif user_input == '3':
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Enter Region To View Config")
             if selected_du:
-                if selected_du != "q":
-                    view_config(selected_du)
+                view_config(selected_du)
         elif user_input == '4':
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Enter Region To Display inventory File")
             if selected_du:
-                if selected_du != "q":
-                    host_entries = datamodel.get_hosts(selected_du['url'])
-                    view_inventory(selected_du, host_entries)
+                host_entries = datamodel.get_hosts(selected_du['url'])
+                view_inventory(selected_du, host_entries)
         elif user_input == '5':
             log_files = get_logs()
             if len(log_files) == 0:
@@ -331,48 +327,45 @@ def menu_level0():
                 if new_du_list:
                     reports.report_du_info(new_du_list)
         elif user_input == '2':
-            menu_level2()
-        elif user_input == '3':
             action_header("MANAGE CLUSTERS")
-            sys.stdout.write("\nSelect Region to add Cluster to:")
-            selected_du = interview.select_du(['Kubernetes', 'KVM/Kubernetes'])
+            selected_du = interview.select_du("Select Region To Add Cluster To", ['Kubernetes', 'KVM/Kubernetes'])
             if selected_du:
-                if selected_du != "q":
-                    new_cluster = interview.add_cluster(selected_du)
-        elif user_input == '4':
+                new_cluster = interview.add_cluster(selected_du)
+        elif user_input == '3':
             action_header("MANAGE HOSTS")
-            sys.stdout.write("\nSelect Region to Add Host To:")
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Select Region To Add Host To")
             if selected_du:
-                if selected_du != "q":
-                    flag_more_hosts = True
-                    while flag_more_hosts:
-                        new_host = interview.add_host(selected_du)
-                        user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True, help.menu_interview("add-another-host"))
-                        if user_input in ['n']:
-                            flag_more_hosts = False
+                flag_more_hosts = True
+                while flag_more_hosts:
+                    new_host = interview.add_host(selected_du)
+                    user_input = user_io.read_kbd("\nAdd Another Host?", ['y','n'], 'y', True, True, help.menu_interview("add-another-host"))
+                    if user_input in ['n']:
+                        flag_more_hosts = False
+        elif user_input == '4':
+            menu_level2()
         elif user_input == '5':
             action_header("ONBOARD HOSTS")
-            selected_du = interview.select_du()
+            selected_du = interview.select_du("Select Region To Onboard Hosts To")
             if selected_du:
-                if selected_du != "q":
-                    if selected_du['du_type'] == "Kubernetes":
-                        sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
-                        express_utils.run_express_cli(selected_du)
-                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
-                        if user_input == 'y':
-                            datamodel.discover_region(selected_du)
-                    elif selected_du['du_type'] == "KVM":
-                        sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
-                        host_entries = datamodel.get_hosts(selected_du['url'])
-                        express_utils.run_express(selected_du, host_entries)
-                        user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
-                        if user_input == 'y':
-                            datamodel.discover_region(selected_du)
+                if selected_du['du_type'] == "Kubernetes":
+                    sys.stdout.write("\nKubernetes Region: onboarding K8s nodes\n")
+                    express_utils.run_express_cli(selected_du)
+                    user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                    if user_input == 'y':
+                        datamodel.discover_region(selected_du)
+                elif selected_du['du_type'] == "KVM":
+                    sys.stdout.write("\nKVM Region: onboarding KVM hypervisors\n")
+                    host_entries = datamodel.get_hosts(selected_du['url'])
+                    express_utils.run_express(selected_du, host_entries)
+                    user_input = user_io.read_kbd("\nWould you like to run Region Discovery?", ['y','n'], 'y', True, True, help.menu_interview("run-region-discovery"))
+                    if user_input == 'y':
+                        datamodel.discover_region(selected_du)
         elif user_input == '6':
             menu_level3()
         elif user_input == '7':
             menu_level1()
+        elif user_input == 'cl':
+            os.system('clear')
         elif user_input in ['q', 'Q']:
             None
         else:

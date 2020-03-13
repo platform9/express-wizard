@@ -111,6 +111,7 @@ def discover_host(du_metadata, host):
         cmd = "scp {} -i {} {} {}@{}:{}".format(ssh_args,last_key,source_script,last_user,last_ip,target_script)
         sys.stdout.write("{} ".format(last_ip))
         sys.stdout.flush()
+        exit_status, stdout = run_cmd(cmd)
         if exit_status == 0:
             cmd = "ssh {} -i {} {}@{} sudo bash {}".format(ssh_args,last_key,last_user,last_ip,target_script)
             exit_status, stdout = run_cmd(cmd)
@@ -148,9 +149,10 @@ def discover_host(du_metadata, host):
     for interface_ipaddr in ip_list:
         if cnt == 0:
             sys.stdout.write("{}".format(interface_ipaddr))
+            sys.stdout.flush()
         else:
             sys.stdout.write(", {}".format(interface_ipaddr))
-        sys.stdout.flush()
+            sys.stdout.flush()
         cnt += 1
 
         # try the region-level auth params

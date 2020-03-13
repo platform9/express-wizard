@@ -24,6 +24,11 @@ class PF9_Region:
             if project_id:
                 self.project_id = project_id
 
+    def logged_in(self):
+        if self.token:
+            return(True)
+        return(False)
+
     def get_config(self):
         return(datamodel.get_du_metadata(self.region_url))
 

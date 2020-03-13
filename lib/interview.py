@@ -83,21 +83,54 @@ def get_cluster_metadata(du, project_id, token):
     return(cluster_metadata)
 
 
+def display_menu(menu_title, menu_prompt, menu_items, help_text):
+    sys.stdout.write("\n")
+    if menu_title:
+        sys.stdout.write("*** {}:\n".format(menu_title))
+    cnt = 1
+    allowed_values = ['q','n']
+    for menu_item in menu_items:
+        sys.stdout.write("{}. {}\n".format(cnt,menu_item))
+        allowed_values.append(str(cnt))
+        cnt += 1
+    user_input = user_io.read_kbd("{}".format(menu_prompt), allowed_values, '', True, True, help_text)
+    if user_input == "q":
+        return(-1)
+    elif user_input == "n":
+        return(-2)
+    else:
+        idx = int(user_input) - 1
+        return(idx)
+
+
 def get_host_metadata(du, project_id, token):
     # intialize help
     help = Help()
 
-    sys.stdout.write("\n---- ADD/UPDATE A HOST ----\n")
+    # initialize flags
+    NEW_HOST = False
+
+    # initialize du_host_type
     if du['du_type'] == "KVM":
         du_host_type = "kvm"
     elif du['du_type'] == "Kubernetes":
         du_host_type = "kubernetes"
     elif du['du_type'] == "VMware":
         du_host_type = "vmware"
-    elif du['du_type'] == "KVM/Kubernetes":
-        du_host_type = user_io.read_kbd("--> Host Type ['kvm','kubernetes']", ['kvm','kubernetes'], 'kvm', True, True, help.host_interview("host-type"))
-        if du_host_type == "q":
-            return ''
+    else:
+        return('')
+
+    # display select-host menu
+    du_hosts = datamodel.get_hosts(du['url'])
+    if du_hosts:
+        host_list = []
+        for h in du_hosts:
+            host_list.append(h['hostname'])
+        menu_selection = display_menu("HOSTS", "Select Host (enter 'n' to define a NEW host)", host_list, help.menu_interview("menu0"))
+        if menu_selection == -1:
+            return('')
+        elif menu_selection == -2:
+            NEW_HOST = True
 
     # initialize host record
     host_metadata = datamodel.create_host_entry()
@@ -105,10 +138,13 @@ def get_host_metadata(du, project_id, token):
     host_metadata['du_host_type'] = du_host_type
 
     # prompt for hostname
-    sys.stdout.write("\nSystem Parameters:\n")
-    host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True, help.host_interview("hostname"))
-    if host_metadata['hostname'] == "q":
-        return ''
+    if NEW_HOST:
+        sys.stdout.write("\nDefining NEW Host:\n")
+        host_metadata['hostname'] = user_io.read_kbd("--> Hostname", [], '', True, True, help.host_interview("hostname"))
+        if host_metadata['hostname'] == "q":
+            return ''
+    else:
+        host_metadata['hostname'] = host_list[menu_selection]
 
     # get current host settings (if already defined)
     host_settings = datamodel.get_host_record(du['url'], host_metadata['hostname'])
@@ -555,30 +591,19 @@ def get_du_creds(existing_du_url):
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     if existing_du_url == None:
-        sys.stdout.write("\nAdding a Region:\n")
+        sys.stdout.write("\nx.Adding a Region:\n")
         user_url = user_io.read_kbd("--> Region URL", [], '', True, True, help.region_interview("region-url"))
         if user_url == 'q':
             return ''
     else:
+        sys.stdout.write("\nx.Updating a Region:\n")
         user_url = existing_du_url
 
-        # prompt for operation to perform
-        sys.stdout.write("\nUpdate Region:\n")
-        sys.stdout.write("\nRegion Operations:\n")
-        du_operations = [
-            'Update Settings and Discover',
-            'Discover Only'
-        ]
-        cnt = 1
-        allowed_values = ['q']
-        for op in du_operations:
-            sys.stdout.write("    {}. {}\n".format(cnt, op))
-            allowed_values.append(str(cnt))
-            cnt += 1
-        du_op = user_io.read_kbd("--> Selection", allowed_values, '1', True, True, help.region_interview("region-op"))
-        if du_op == 'q':
+        du_operations = [ 'Update Settings and Discover', 'Discover Only' ]
+        user_input = display_menu("Region Update Options", "Select Operation To Perform", du_operations, help.region_interview("region-op"))
+        if user_input == -1:
             return(None)
-        elif du_op == '2':
+        if user_input == 1:
             UPDATE_REGION = False
 
     if user_url.startswith('http://'):
@@ -635,16 +660,9 @@ def get_du_creds(existing_du_url):
         du_metadata['du_url'] = user_url
 
         # prompt for du type
-        sys.stdout.write("\nRegion Types:\n")
-        cnt = 1
-        allowed_values = ['q']
-        for target_type in du_types:
-            sys.stdout.write("    {}. {}\n".format(cnt, target_type))
-            allowed_values.append(str(cnt))
-            cnt += 1
-        user_input = user_io.read_kbd("--> Selection", allowed_values, selected_du_type, True, True, help.region_interview("region-type"))
-        if user_input == 'q':
-            return ''
+        user_input = display_menu("Region Types", "Select Region Type", du_types, help.region_interview("region-type"))
+        if user_input == -1:
+            return('')
         else:
             if type(user_input) is int or user_input.isdigit():
                 if int(user_input) > 0 and int(user_input) -1 in range(-len(du_types), len(du_types)):
@@ -880,7 +898,7 @@ def add_edit_du():
         return(None)
 
 
-def select_du(du_type_filter=None):
+def select_du(menu_prompt, du_type_filter=None):
     # intialize help
     help = Help()
 
@@ -902,19 +920,14 @@ def select_du(du_type_filter=None):
                     if du['du_type'] in du_type_filter:
                         du_list.append(du)
 
-            cnt = 1
-            allowed_values = ['q']
-            sys.stdout.write("\n")
+            region_list = []
             for du in du_list:
-                sys.stdout.write("{}. {}\n".format(cnt, du['url']))
-                allowed_values.append(str(cnt))
-                cnt += 1
-            user_input = user_io.read_kbd("Selection", allowed_values, '', True, True, help.region_interview("select-region"))
-            if user_input == "q":
-                return ''
+                region_list.append(du['url'])
+            user_input = display_menu(None, menu_prompt, region_list, help.region_interview("select-region"))
+            if user_input == -1:
+                return('')
             else:
-                idx = int(user_input) - 1
-                return(du_list[idx])
+                return(du_list[user_input])
         return ''
 
 
@@ -1183,11 +1196,22 @@ def add_region(existing_du_url):
         "VMware"
     ]
 
+    ########## OLD ##############################################
     # check for sub-regions
-    region = PF9_Region(du['url'])
-    sub_regions, du_name_list = region.get_sub_dus()
+    sub_regions, du_name_list = du_utils.get_sub_dus(du)
     if not sub_regions:
-        sys.stdout.write("\nERROR: failed to login to Region\n")
+        sys.stdout.write("\nx.ERROR: failed to login to Region\n")
+        datamodel.write_config(du)
+        return(None)
+    #############################################################
+
+    # check for sub-regions
+    #region = PF9_Region(du['url'])
+    #sub_regions, du_name_list = region.get_sub_dus()
+    #if not region.logged_in():
+    #    sys.stdout.write("\nERROR: failed to login to Region\n")
+
+    if not sub_regions:
         datamodel.write_config(du)
         return(None)
 
