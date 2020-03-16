@@ -77,28 +77,28 @@
     {
       "bond_ifname": "bond0",
       "bond_name": "CentOS Bond Config 1 (ALB)",
-      "bond_members": "ens160 ens192",
+      "bond_members": "ens160",
       "bond_mode": 6,
       "bond_mtu": "9000"
     },
     {
       "bond_ifname": "bond0",
       "bond_name": "CentOS Bond Config 2 (Round-Robin)",
-      "bond_members": "ens160 ens192",
+      "bond_members": "ens160",
       "bond_mode": 0,
       "bond_mtu": "9000"
     },
     {
       "bond_ifname": "bond0",
       "bond_name": "Ubuntu Bond Config 1 (ALB)",
-      "bond_members": "eth0 eth1",
+      "bond_members": "eth0",
       "bond_mode": 6,
       "bond_mtu": "9000"
     },
     {
       "bond_ifname": "bond0",
       "bond_name": "Ubuntu Bond Config 2 (Round-Robin)",
-      "bond_members": "eth0 eth1",
+      "bond_members": "eth0",
       "bond_mode": 0,
       "bond_mtu": "9000"
     }

@@ -83,7 +83,7 @@ def get_cluster_metadata(du, project_id, token):
     return(cluster_metadata)
 
 
-def display_menu(menu_title, menu_prompt, menu_items, help_text):
+def display_menu(menu_title, menu_prompt, menu_items, default_selection, help_text):
     sys.stdout.write("\n")
     if menu_title:
         sys.stdout.write("*** {}:\n".format(menu_title))
@@ -93,7 +93,7 @@ def display_menu(menu_title, menu_prompt, menu_items, help_text):
         sys.stdout.write("{}. {}\n".format(cnt,menu_item))
         allowed_values.append(str(cnt))
         cnt += 1
-    user_input = user_io.read_kbd("{}".format(menu_prompt), allowed_values, '', True, True, help_text)
+    user_input = user_io.read_kbd("{}".format(menu_prompt), allowed_values, default_selection, True, True, help_text)
     if user_input == "q":
         return(-1)
     elif user_input == "n":
@@ -126,11 +126,13 @@ def get_host_metadata(du, project_id, token):
         host_list = []
         for h in du_hosts:
             host_list.append(h['hostname'])
-        menu_selection = display_menu("HOSTS", "Select Host (enter 'n' to define a NEW host)", host_list, help.menu_interview("menu0"))
+        menu_selection = display_menu("HOSTS", "Select Host (enter 'n' to define a NEW host)", host_list, '', help.menu_interview("menu0"))
         if menu_selection == -1:
             return('')
         elif menu_selection == -2:
             NEW_HOST = True
+    else:
+        NEW_HOST = True
 
     # initialize host record
     host_metadata = datamodel.create_host_entry()
@@ -591,16 +593,16 @@ def get_du_creds(existing_du_url):
     encryption = Encryption(globals.ENCRYPTION_KEY_FILE)
 
     if existing_du_url == None:
-        sys.stdout.write("\nx.Adding a Region:\n")
+        sys.stdout.write("\nAdding a Region:\n")
         user_url = user_io.read_kbd("--> Region URL", [], '', True, True, help.region_interview("region-url"))
         if user_url == 'q':
             return ''
     else:
-        sys.stdout.write("\nx.Updating a Region:\n")
+        sys.stdout.write("\nUpdating a Region:\n")
         user_url = existing_du_url
 
         du_operations = [ 'Update Settings and Discover', 'Discover Only' ]
-        user_input = display_menu("Region Update Options", "Select Operation To Perform", du_operations, help.region_interview("region-op"))
+        user_input = display_menu("Region Update Options", "Select Operation To Perform", du_operations, '', help.region_interview("region-op"))
         if user_input == -1:
             return(None)
         if user_input == 1:
@@ -660,13 +662,17 @@ def get_du_creds(existing_du_url):
         du_metadata['du_url'] = user_url
 
         # prompt for du type
-        user_input = display_menu("Region Types", "Select Region Type", du_types, help.region_interview("region-type"))
+        if selected_du_type:
+            menu_default_selection = du_types.index(selected_du_type) + 1
+        else:
+            menu_default_selection = ""
+        user_input = display_menu("Region Types", "Select Region Type", du_types, menu_default_selection, help.region_interview("region-type"))
         if user_input == -1:
             return('')
         else:
             if type(user_input) is int or user_input.isdigit():
-                if int(user_input) > 0 and int(user_input) -1 in range(-len(du_types), len(du_types)):
-                    selected_du_type = du_types[int(user_input) - 1]
+                if int(user_input) > 0 and int(user_input) in range(-len(du_types), len(du_types)):
+                    selected_du_type = du_types[int(user_input)]
             else:
                 for du in du_types:
                     if user_input.upper() == du.upper():
@@ -923,7 +929,7 @@ def select_du(menu_prompt, du_type_filter=None):
             region_list = []
             for du in du_list:
                 region_list.append(du['url'])
-            user_input = display_menu(None, menu_prompt, region_list, help.region_interview("select-region"))
+            user_input = display_menu(None, menu_prompt, region_list, '', help.region_interview("select-region"))
             if user_input == -1:
                 return('')
             else:
@@ -1200,7 +1206,7 @@ def add_region(existing_du_url):
     # check for sub-regions
     sub_regions, du_name_list = du_utils.get_sub_dus(du)
     if not sub_regions:
-        sys.stdout.write("\nx.ERROR: failed to login to Region\n")
+        sys.stdout.write("\nERROR: failed to login to Region\n")
         datamodel.write_config(du)
         return(None)
     #############################################################

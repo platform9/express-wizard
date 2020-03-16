@@ -89,12 +89,30 @@ def build_express_inventory(du,host_entries):
         express_inventory_fh.write("bond_mode={}\n".format(du['bond_mode']))
         express_inventory_fh.write("bond_mtu={}\n".format(du['bond_mtu']))
 
-        # manage bond stanza
-        express_inventory_fh.write("\n# Network Bond Configuration\n")
+        # manage bond_config stanza
+        express_inventory_fh.write("\n# Network Bond Configuration (implemented if manage_network=True)\n")
         express_inventory_fh.write("[bond_config]\n")
         for host in host_entries:
-            if host['sub_if_config'] != "":
-                express_inventory_fh.write("{} bond_sub_interfaces='{}'\n".format(host['hostname'], host['sub_if_config']))
+            # skip hosts without primary-ip
+            if host['ip'] == "":
+                continue
+
+            # if fk_host_profile is set, add host-level bond configuration
+            if host['fk_host_profile'] != "":
+                host_profile_metadata = datamodel.get_aggregate_host_profile(host['fk_host_profile'])
+                if host_profile_metadata:
+                    bond_members = "["
+                    cnt = 0
+                    for ifname in host_profile_metadata['bond_profile']['bond_members'].split(' '):
+                        if cnt == 0:
+                            bond_members += "\"{}\"".format(ifname)
+                        else:
+                            bond_members += ",\"{}\"".format(ifname)
+                        cnt += 1
+                    bond_members += "]"
+                    express_inventory_fh.write("{} bond_members='{}' bond_sub_interfaces='[]'\n".format(host['hostname'],bond_members))
+            else:
+                continue
 
         # manage openstack groups
         express_inventory_fh.write("\n# PMO Inventory Groups & Hosts\n")

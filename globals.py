@@ -14,6 +14,7 @@ AUTH_PROFILE_FILE = "{}/auth-profiles.conf".format(CONFIG_DIR)
 BOND_PROFILE_FILE = "{}/bond-profiles.conf".format(CONFIG_DIR)
 ROLE_PROFILE_FILE = "{}/role-profiles.conf".format(CONFIG_DIR)
 HOST_PROFILE_FILE = "{}/host-profiles.conf".format(CONFIG_DIR)
+PLATFORM_DEFAULT_IMPORTFILE = "{}/scripts/datamodel/default-imports.json".format(os.path.dirname(os.path.realpath(__file__)))
 
 # lock files
 CONFIG_FILE_LOCK = "{}/du.lck".format(LOCK_DIR)

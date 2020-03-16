@@ -113,14 +113,6 @@ def view_inventory(du, host_entries):
         sys.stdout.write("ERROR: failed to build inventory file: {}".format(express_inventory))
 
 
-def view_config(du):
-    express_config = express_utils.build_express_config(du)
-    if express_config:
-        dump_text_file(express_config)
-    else:
-        sys.stdout.write("ERROR: failed to build configuration file: {}".format(express_config))
-
-
 def action_header(title):
     title = "  {}  ".format(title)
     sys.stdout.write("\n{}\n".format(title.center(globals.terminal_width, '*')))
@@ -128,7 +120,6 @@ def action_header(title):
 
 def display_menu3():
     sys.stdout.write("\n***************************************************\n")
-    sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**              -- Reports Menu --               **\n")
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Regions\n")
@@ -138,12 +129,13 @@ def display_menu3():
     sys.stdout.write("5. Bond Profiles\n")
     sys.stdout.write("6. Role Profiles\n")
     sys.stdout.write("7. Host Templates\n")
+    sys.stdout.write("8. PF9-Express Inventory\n")
+    sys.stdout.write("9. Onboarding Logs\n")
     sys.stdout.write("***************************************************\n")
 
 
 def display_menu2():
     sys.stdout.write("\n***************************************************\n")
-    sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**              - Profile Menu --                **\n")
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Manage Auth Profiles\n")
@@ -155,14 +147,10 @@ def display_menu2():
 
 def display_menu1():
     sys.stdout.write("\n***************************************************\n")
-    sys.stdout.write("**           Platform9 Express Wizard            **\n")
     sys.stdout.write("**            -- Maintenance Menu --             **\n")
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Delete Region\n")
     sys.stdout.write("2. Delete Host\n")
-    sys.stdout.write("3. View Configuration File\n")
-    sys.stdout.write("4. View Inventory File\n")
-    sys.stdout.write("5. View Logs\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -216,6 +204,17 @@ def menu_level3():
         elif user_input == '7':
             host_profile_entries = datamodel.get_host_profiles()
             reports.report_host_profiles(host_profile_entries)
+        elif user_input == '8':
+            selected_du = interview.select_du("Enter Region To Display inventory File")
+            if selected_du:
+                host_entries = datamodel.get_hosts(selected_du['url'])
+                view_inventory(selected_du, host_entries)
+        elif user_input == '9':
+            log_files = get_logs()
+            if len(log_files) == 0:
+                sys.stdout.write("\nNo Logs Found")
+            else:
+                view_log(log_files)
         elif user_input in ['q', 'Q']:
             None
         else:
@@ -286,21 +285,6 @@ def menu_level1():
                 datamodel.delete_du(selected_du)
         elif user_input == '2':
             sys.stdout.write("\nNot Implemented\n")
-        elif user_input == '3':
-            selected_du = interview.select_du("Enter Region To View Config")
-            if selected_du:
-                view_config(selected_du)
-        elif user_input == '4':
-            selected_du = interview.select_du("Enter Region To Display inventory File")
-            if selected_du:
-                host_entries = datamodel.get_hosts(selected_du['url'])
-                view_inventory(selected_du, host_entries)
-        elif user_input == '5':
-            log_files = get_logs()
-            if len(log_files) == 0:
-                sys.stdout.write("\nNo Logs Found")
-            else:
-                view_log(log_files)
         elif user_input in ['q', 'Q']:
             None
         else:
@@ -389,7 +373,6 @@ def main():
             os.remove(globals.CONFIG_FILE)
         if os.path.isfile(globals.CLUSTER_FILE):
             os.remove(globals.CLUSTER_FILE)
-
         if os.path.isfile(globals.AUTH_PROFILE_FILE):
             os.remove(globals.AUTH_PROFILE_FILE)
         if os.path.isfile(globals.BOND_PROFILE_FILE):
@@ -398,6 +381,11 @@ def main():
             os.remove(globals.ROLE_PROFILE_FILE)
         if os.path.isfile(globals.HOST_PROFILE_FILE):
             os.remove(globals.HOST_PROFILE_FILE)
+
+        # import standard configurations
+        print("globals.PLATFORM_DEFAULT_IMPORTFILE={}".format(globals.PLATFORM_DEFAULT_IMPORTFILE))
+        datamodel.import_region(globals.PLATFORM_DEFAULT_IMPORTFILE, True)
+
         if not args.jsonImport:
             sys.exit(0)
 

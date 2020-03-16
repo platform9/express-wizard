@@ -287,7 +287,7 @@ def report_host_info(host_entries):
 
     # print unassigned hosts
     unassigned_table = PrettyTable()
-    unassigned_table.field_names = ["HOSTNAME","Primary IP","Host Template","Discovery Status","Source","IP Interfaces"]
+    unassigned_table.field_names = ["HOSTNAME","Primary IP","Host Template","Discovery Status","IP Interfaces"]
     unassigned_table.title = "Unassigned Hosts"
     unassigned_table.align["HOSTNAME"] = "l"
     unassigned_table.align["Primary IP"] = "l"
