@@ -110,7 +110,18 @@ def build_express_inventory(du,host_entries):
                             bond_members += ",\"{}\"".format(ifname)
                         cnt += 1
                     bond_members += "]"
-                    express_inventory_fh.write("{} bond_members='{}' bond_sub_interfaces='[]'\n".format(host['hostname'],bond_members))
+
+                    bond_config = "bond_ifname={} bond_mode={} bond_mtu={}".format(
+                        host_profile_metadata['bond_profile']['bond_ifname'],
+                        host_profile_metadata['bond_profile']['bond_mode'],
+                        host_profile_metadata['bond_profile']['bond_mtu']
+                    )
+                    express_inventory_fh.write("{} {} bond_members='{}' bond_sub_interfaces='[{}]'\n".format(
+                        host['hostname'],
+                        bond_config,
+                        bond_members,
+                        host['sub_if_config']
+                    ))
             else:
                 continue
 

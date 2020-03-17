@@ -670,20 +670,14 @@ def get_du_creds(existing_du_url):
         if user_input == -1:
             return('')
         else:
-            if type(user_input) is int or user_input.isdigit():
-                if int(user_input) > 0 and int(user_input) in range(-len(du_types), len(du_types)):
-                    selected_du_type = du_types[int(user_input)]
-            else:
-                for du in du_types:
-                    if user_input.upper() == du.upper():
-                        selected_du_type = du
+            selected_du_type = du_types[int(user_input)]
 
         # set du type
         du_metadata['du_type'] = selected_du_type
         du_metadata['region_name'] = ""
 
         # get common du parameters
-        du_metadata['du_user'] = user_io.read_kbd("--> Region Username", [], du_user, True, True, help.region_interview("region-username"))
+        du_metadata['du_user'] = user_io.read_kbd("\n--> Region Username", [], du_user, True, True, help.region_interview("region-username"))
         if du_metadata['du_user'] == 'q':
             return ''
         du_metadata['du_password'] = user_io.read_kbd("--> Region Password", [], du_password, False, True, help.region_interview("region-password"))
@@ -883,7 +877,7 @@ def add_edit_du():
     else:
         current_config = datamodel.get_configs()
         if len(current_config) == 0:
-            return(None)
+            return("define-new-du")
         else:
             cnt = 1
             allowed_values = ['q','n']
@@ -1211,6 +1205,7 @@ def add_region(existing_du_url):
         return(None)
     #############################################################
 
+    ########## NEW ##############################################
     # check for sub-regions
     #region = PF9_Region(du['url'])
     #sub_regions, du_name_list = region.get_sub_dus()

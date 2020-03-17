@@ -151,6 +151,7 @@ def display_menu1():
     sys.stdout.write("***************************************************\n")
     sys.stdout.write("1. Delete Region\n")
     sys.stdout.write("2. Delete Host\n")
+    sys.stdout.write("3. Delete Cluster\n")
     sys.stdout.write("***************************************************\n")
 
 
@@ -283,8 +284,33 @@ def menu_level1():
             selected_du = interview.select_du("Select Region To Delete")
             if selected_du:
                 datamodel.delete_du(selected_du)
+                datamodel.delete_du_host(selected_du)
         elif user_input == '2':
-            sys.stdout.write("\nNot Implemented\n")
+            selected_du = interview.select_du("Select Region (that contains the host you want to delete)")
+            if selected_du:
+                du_hosts = datamodel.get_hosts(selected_du['url'])
+                if du_hosts:
+                    host_list = []
+                    for h in du_hosts:
+                        host_list.append(h['hostname'])
+                    menu_selection = interview.display_menu("HOSTS", "Select Host to Delete", host_list, '', help.menu_interview("menu0"))
+                    if not menu_selection in [-1,-2]:
+                        datamodel.delete_du_host(selected_du, du_hosts[menu_selection])
+                else:
+                    sys.stdout.write("\n--- INFO: no hosts found in this region ---\n\n")
+        elif user_input == '3':
+            selected_cluster = interview.select_du("Select Region (that contains the cluster you want to delete)")
+            if selected_cluster:
+                du_clusters = datamodel.get_clusters(selected_cluster['url'])
+                if du_clusters:
+                    cluster_list = []
+                    for c in du_clusters:
+                        cluster_list.append(c['name'])
+                    menu_selection = interview.display_menu("CLUSTERS", "Select Cluster to Delete", cluster_list, '', help.menu_interview("menu0"))
+                    if not menu_selection in [-1,-2]:
+                        datamodel.delete_du_cluster(selected_cluster, du_clusters[menu_selection])
+                else:
+                    sys.stdout.write("\n--- INFO: no clusters found in this region ---\n\n")
         elif user_input in ['q', 'Q']:
             None
         else:
@@ -302,6 +328,7 @@ def menu_level0():
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()
+            print("selected_du = {}".format(selected_du))
             if selected_du != None:
                 if selected_du == "define-new-du":
                     target_du = None
@@ -383,7 +410,6 @@ def main():
             os.remove(globals.HOST_PROFILE_FILE)
 
         # import standard configurations
-        print("globals.PLATFORM_DEFAULT_IMPORTFILE={}".format(globals.PLATFORM_DEFAULT_IMPORTFILE))
         datamodel.import_region(globals.PLATFORM_DEFAULT_IMPORTFILE, True)
 
         if not args.jsonImport:

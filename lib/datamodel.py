@@ -128,7 +128,7 @@ def create_cluster_entry():
 
 def import_region(import_file_path, flag_skip_actions):
     sys.stdout.write("Importing Region (existing data will be over-written) from import file: {}\n".format(import_file_path))
-    sys.stdout.write("--> flag_skip_actions = {}".format(flag_skip_actions))
+    sys.stdout.write("--> flag_skip_actions = {}\n".format(flag_skip_actions))
 
     # for host imports, enforce a minimum set of required keys
     host_record_required_keys = ["du_url", "du_type", "ip", "du_host_type", "hostname"]
@@ -535,6 +535,58 @@ def get_bond_profile_names():
     return(bond_profile_names)
 
 
+def delete_du_cluster(target_du,target_cluster=None):
+    new_cluster_list = []
+    if os.path.isfile(globals.CLUSTER_FILE):
+        with open(globals.CLUSTER_FILE) as json_file:
+            cluster_records = json.load(json_file)
+        for cluster_record in cluster_records:
+            if not target_cluster:
+                sys.stdout.write("Deleting cluster: {}\n".format(cluster_record['name']))
+            else:
+                if cluster_record['du_url'] == target_du['url'] and cluster_record['name'] == target_cluster['name']:
+                    sys.stdout.write("Deleting cluster: {}\n".format(target_cluster['name']))
+                else:
+                    new_cluster_list.append(cluster_record)
+
+        # update Cluster database
+        try:
+            with open(globals.CLUSTER_FILE, 'w') as outfile:
+                json.dump(new_cluster_list, outfile)
+        except:
+            sys.stdout.write("\nERROR: failed to update cluster database: {}".format(globals.CLUSTER_FILE))
+            return()
+    else:
+        sys.stdout.write("\nERROR: failed to open cluster database: {}".format(globals.CLUSTER_FILE))
+        return()
+
+
+def delete_du_host(target_du,target_host=None):
+    new_host_list = []
+    if os.path.isfile(globals.HOST_FILE):
+        with open(globals.HOST_FILE) as json_file:
+            host_records = json.load(json_file)
+        for host_record in host_records:
+            if not target_host:
+                sys.stdout.write("Deleting host: {}\n".format(host_record['hostname']))
+            else:
+                if host_record['du_url'] == target_du['url'] and host_record['hostname'] == target_host['hostname']:
+                    sys.stdout.write("Deleting host: {}\n".format(target_host['hostname']))
+                else:
+                    new_host_list.append(host_record)
+
+        # update Host database
+        try:
+            with open(globals.HOST_FILE, 'w') as outfile:
+                json.dump(new_host_list, outfile)
+        except:
+            sys.stdout.write("\nERROR: failed to update host database: {}".format(globals.HOST_FILE))
+            return()
+    else:
+        sys.stdout.write("\nERROR: failed to open host database: {}".format(globals.HOST_FILE))
+        return()
+
+
 def delete_du(target_du):
     new_du_list = []
     if os.path.isfile(globals.CONFIG_FILE):
@@ -542,18 +594,18 @@ def delete_du(target_du):
             du_configs = json.load(json_file)
         for du in du_configs:
             if du['url'] == target_du['url']:
-                sys.stdout.write("--> found target Region\n")
+                sys.stdout.write("Deleting region: {}\n".format(du['url']))
             else:
                 new_du_list.append(du)
-    else:
-        sys.stdout.write("\nERROR: failed to open Region database: {}".format(globals.CONFIG_FILE))
 
-    # update DU database
-    try:
-        with open(globals.CONFIG_FILE, 'w') as outfile:
-            json.dump(new_du_list, outfile)
-    except:
-        sys.stdout.write("\nERROR: failed to update Region database: {}".format(globals.CONFIG_FILE))
+        # update DU database
+        try:
+            with open(globals.CONFIG_FILE, 'w') as outfile:
+                json.dump(new_du_list, outfile)
+        except:
+            sys.stdout.write("\nERROR: failed to update region database: {}".format(globals.CONFIG_FILE))
+    else:
+        sys.stdout.write("\nERROR: failed to open region database: {}".format(globals.CONFIG_FILE))
 
 
 def get_hosts(du_url):
@@ -888,17 +940,23 @@ def discover_region_hosts(discover_target):
         # get current lists of hosts from datamodel
         datamodel_hosts = datamodel.get_hosts(discover_target['url'])
 
-        # get  current list of hosts from resmgr
-        discovered_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
+        # get current list of hosts from resmgr
+        # note: the 'record_source' field will be set to 'Discovered' (for each element in the returned list)
+        resmgr_hosts = resmgr_utils.discover_du_hosts(discover_target['url'],
                                                           discover_target['du_type'],
                                                           project_id,
                                                           token,
                                                           True)
         discovered_hostnames = []
-        for host in discovered_hosts:
-            # copy user-managed fields from datamodel host record (if exists)
+        for host in resmgr_hosts:
+            # process all hosts from data model
             for dm_host in datamodel_hosts:
                 if dm_host['hostname'] == host['hostname']:
+                    # skip user-defined hosts
+                    if dm_host['record_source'] == "User-Defined":
+                        host['record_source'] = "User-Defined"
+
+                    # copy user-managed fields from datamodel host record (if exists)
                     if dm_host['fk_host_profile'] != "":
                         host['fk_host_profile'] = dm_host['fk_host_profile']
                     if dm_host['discovery_last_auth'] != "":
@@ -919,7 +977,8 @@ def discover_region_hosts(discover_target):
                 host['discovery_last_ip'] = discovery_metadata['discovery-last-ip']
 
             discovered_hostnames.append(host['hostname'])
-            datamodel.write_host(host)
+            if host['record_source'] == "Discovered":
+                datamodel.write_host(host)
             num_hosts += 1
 
         # trigger ssh-based discovery for hosts that are present in datamodel (and mapped to this region) but not in resmgr
