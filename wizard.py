@@ -328,7 +328,6 @@ def menu_level0():
         if user_input == '1':
             action_header("MANAGE REGIONS")
             selected_du = interview.add_edit_du()
-            print("selected_du = {}".format(selected_du))
             if selected_du != None:
                 if selected_du == "define-new-du":
                     target_du = None
